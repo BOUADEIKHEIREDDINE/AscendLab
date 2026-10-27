@@ -1,3 +1,4 @@
 <resources>
-    <string name="app_name">Ascend Lab</string>
+    <string name="app_name">AscendLab</string>
+    <string name="tagline">Training made simple.</string>
 </resources>

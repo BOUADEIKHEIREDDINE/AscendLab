@@ -1,0 +1,5 @@
+<resources>
+    <!-- "Daily Ascent" palette, mirrored from ui/theme/Color.kt for XML use -->
+    <color name="midnight_blue">#101820</color>
+    <color name="mint_green">#75E2BE</color>
+</resources>

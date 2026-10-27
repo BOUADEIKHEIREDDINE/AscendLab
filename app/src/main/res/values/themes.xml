@@ -1,3 +1,10 @@
 <resources>
-    <style name="Theme.AscendLab" parent="android:Theme.Material.Light.NoActionBar" />
+    <!-- Dark window so launch and screen transitions never flash white -->
+    <style name="Theme.AscendLab" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/midnight_blue</item>
+        <item name="android:colorBackground">@color/midnight_blue</item>
+        <item name="android:colorAccent">@color/mint_green</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+    </style>
 </resources>

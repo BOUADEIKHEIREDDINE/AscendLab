@@ -2,14 +2,15 @@ package com.ascendlab.app.ui.navigation
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -47,13 +48,16 @@ fun AscendNavHost(navController: NavHostController = rememberNavController()) {
     Scaffold(
         bottomBar = {
             if (showTabs) {
-                NavigationBar {
+                NavigationBar(containerColor = MaterialTheme.colorScheme.surfaceContainer) {
                     Tab.entries.forEach { tab ->
                         NavigationBarItem(
                             selected = backStackEntry?.destination?.hierarchyContains(tab) == true,
                             onClick = { navController.navigateToTab(tab) },
                             icon = { Icon(tab.icon, contentDescription = tab.label) },
                             label = { Text(tab.label) },
+                            colors = NavigationBarItemDefaults.colors(
+                                selectedTextColor = MaterialTheme.colorScheme.primary,
+                            ),
                         )
                     }
                 }
@@ -105,17 +109,20 @@ private val tabPages = mapOf(
 private fun androidx.navigation.NavDestination.hierarchyContains(tab: Tab): Boolean =
     route in tabPages.getValue(tab)
 
+// Home is the root of the back stack once onboarding is done (the graph's start
+// destination, Welcome, has been popped by then), so tabs pop back to Home.
 private fun NavHostController.navigateToTab(tab: Tab) {
     navigate(tab.route) {
-        popUpTo(graph.findStartDestination().id) { saveState = true }
+        popUpTo(Routes.HOME) { saveState = true }
         launchSingleTop = true
         restoreState = true
     }
 }
 
-/** Leaves onboarding for good and lands on Home. */
+/** Leaves onboarding for good and lands on Home, clearing everything before it. */
 fun NavHostController.finishOnboarding() {
     navigate(Routes.HOME) {
-        popUpTo(Routes.WELCOME) { inclusive = true }
+        popUpTo(graph.id) { inclusive = true }
+        launchSingleTop = true
     }
 }
