@@ -11,6 +11,7 @@ object Routes {
     // Onboarding (shown once)
     const val WELCOME = "welcome"
     const val SIGN_UP = "sign_up"
+    const val LOG_IN = "log_in"
     const val CHOOSE_VERSION = "choose_version"
     const val YOUR_BODY = "your_body"
     const val YOUR_GOALS = "your_goals"
@@ -34,6 +35,7 @@ object Routes {
     // Profile tab
     const val PROFILE = "profile"
     const val SETTINGS = "settings"
+    const val EDIT_GOALS = "edit_goals"
 }
 
 enum class Tab(val route: String, val label: String, val icon: ImageVector) {

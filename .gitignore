@@ -3,3 +3,9 @@ build/
 local.properties
 .idea/
 *.iml
+
+# Firebase emulator logs
+*-debug.log
+
+# Firebase config: download it from the Firebase console (Project settings > Your apps)
+app/google-services.json

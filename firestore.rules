@@ -1,0 +1,11 @@
+rules_version = '2';
+
+// Same rules as published in the Firebase console (Firestore > Rules).
+// Each person can read and write only their own profile document.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}
