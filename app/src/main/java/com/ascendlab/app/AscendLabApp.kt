@@ -2,6 +2,7 @@ package com.ascendlab.app
 
 import android.app.Application
 import com.ascendlab.app.data.ProfileRepository
+import com.ascendlab.app.data.TrainRepository
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 
@@ -15,5 +16,6 @@ class AscendLabApp : Application() {
             FirebaseFirestore.getInstance().useEmulator("10.0.2.2", 8080)
         }
         ProfileRepository.init(this)
+        TrainRepository.init(this)
     }
 }

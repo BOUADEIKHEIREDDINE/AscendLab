@@ -9,3 +9,6 @@ local.properties
 
 # Firebase config: download it from the Firebase console (Project settings > Your apps)
 app/google-services.json
+
+# Temporary files from the shared drive
+.fuse_hidden*

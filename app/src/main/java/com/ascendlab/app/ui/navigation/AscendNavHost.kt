@@ -1,5 +1,17 @@
 package com.ascendlab.app.ui.navigation
 
+import com.ascendlab.app.ui.screens.home.StoryScreen
+import com.ascendlab.app.ui.screens.home.CompareScreen
+import com.ascendlab.app.ui.screens.home.CommentsScreen
+import com.ascendlab.app.ui.screens.train.CalendarScreen
+import com.ascendlab.app.ui.screens.train.ExerciseLibraryScreen
+import com.ascendlab.app.ui.screens.train.StatisticsScreen
+import com.ascendlab.app.ui.screens.train.ExerciseDetailScreen
+import com.ascendlab.app.ui.screens.train.WorkoutDetailScreen
+import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.Column
+import com.ascendlab.app.ui.components.Hairline
+import com.ascendlab.app.ui.components.rememberHaptics
 import androidx.compose.animation.AnimatedContentTransitionScope.SlideDirection
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -36,11 +48,10 @@ import com.ascendlab.app.R
 import com.ascendlab.app.data.AuthRepository
 import com.ascendlab.app.data.ProfileRepository
 import com.ascendlab.app.data.UserProfile
-import com.ascendlab.app.ui.screens.food.AddFoodScreen
 import com.ascendlab.app.ui.screens.food.CalorieTrackerScreen
-import com.ascendlab.app.ui.screens.food.MealDetailScreen
 import com.ascendlab.app.ui.screens.food.NutritionPlannerScreen
 import com.ascendlab.app.ui.screens.home.CreatePostScreen
+import com.ascendlab.app.ui.screens.home.FriendsScreen
 import com.ascendlab.app.ui.screens.home.HomeScreen
 import com.ascendlab.app.ui.screens.onboarding.ChooseVersionScreen
 import com.ascendlab.app.ui.screens.onboarding.OnboardingViewModel
@@ -52,7 +63,8 @@ import com.ascendlab.app.ui.screens.onboarding.YourGoalsScreen
 import com.ascendlab.app.ui.screens.profile.EditGoalsScreen
 import com.ascendlab.app.ui.screens.profile.ProfileScreen
 import com.ascendlab.app.ui.screens.profile.SettingsScreen
-import com.ascendlab.app.ui.screens.train.ExerciseDetailScreen
+import com.ascendlab.app.ui.screens.train.ProgramsScreen
+import com.ascendlab.app.ui.screens.train.RoutineEditorScreen
 import com.ascendlab.app.ui.screens.train.TrainingPlanScreen
 import com.ascendlab.app.ui.screens.train.WorkoutSessionScreen
 
@@ -93,23 +105,33 @@ fun AscendNavHost(navController: NavHostController = rememberNavController()) {
 
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
-    val showTabs = currentRoute != null && currentRoute !in onboardingRoutes
+    // The live workout takes the whole screen, like a dedicated training mode.
+    val showTabs = currentRoute != null && currentRoute !in onboardingRoutes && currentRoute != Routes.WORKOUT_SESSION && currentRoute != Routes.STORY
+    val haptics = rememberHaptics()
 
     Scaffold(
         bottomBar = {
             if (showTabs) {
-                NavigationBar(containerColor = MaterialTheme.colorScheme.surfaceContainer) {
+                // Same colour as the page with a hairline on top, instead of a raised slab.
+                Column {
+                Hairline()
+                NavigationBar(containerColor = MaterialTheme.colorScheme.background, tonalElevation = 0.dp) {
                     Tab.entries.forEach { tab ->
                         NavigationBarItem(
                             selected = backStackEntry?.destination?.hierarchyContains(tab) == true,
-                            onClick = { navController.navigateToTab(tab) },
+                            onClick = { haptics.tick(); navController.navigateToTab(tab) },
                             icon = { Icon(tab.icon, contentDescription = tab.label) },
                             label = { Text(tab.label) },
                             colors = NavigationBarItemDefaults.colors(
+                                selectedIconColor = MaterialTheme.colorScheme.primary,
                                 selectedTextColor = MaterialTheme.colorScheme.primary,
+                                indicatorColor = androidx.compose.ui.graphics.Color.Transparent,
+                                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
                             ),
                         )
                     }
+                }
                 }
             }
         },
@@ -136,17 +158,37 @@ fun AscendNavHost(navController: NavHostController = rememberNavController()) {
             // Home tab
             composable(Routes.HOME) { HomeScreen(navController) }
             composable(Routes.CREATE_POST) { CreatePostScreen(navController) }
+            composable(Routes.FRIENDS) { FriendsScreen(navController) }
+            composable(Routes.COMMENTS) { e -> CommentsScreen(navController, e.arguments?.getString("postId").orEmpty()) }
+            composable(Routes.COMPARE) { CompareScreen(navController) }
+            composable(Routes.STORY) { e -> StoryScreen(navController, e.arguments?.getString("uid").orEmpty()) }
 
             // Train tab
             composable(Routes.TRAINING_PLAN) { TrainingPlanScreen(navController) }
             composable(Routes.WORKOUT_SESSION) { WorkoutSessionScreen(navController) }
-            composable(Routes.EXERCISE_DETAIL) { ExerciseDetailScreen(navController) }
+            composable(Routes.PROGRAMS) { ProgramsScreen(navController) }
+            composable(Routes.WORKOUT_DETAIL) { e -> WorkoutDetailScreen(navController, e.arguments?.getString("workoutId").orEmpty()) }
+            composable(Routes.EXERCISE_DETAIL) { e ->
+                ExerciseDetailScreen(navController, e.arguments?.getString("exerciseId").orEmpty(), e.arguments?.getString("name").orEmpty())
+            }
+            composable(Routes.STATISTICS) { StatisticsScreen(navController) }
+            composable(Routes.EXERCISE_LIBRARY) { ExerciseLibraryScreen(navController) }
+            composable(Routes.CALENDAR) { CalendarScreen(navController) }
+            composable(Routes.ROUTINE_EDITOR) { entry ->
+                RoutineEditorScreen(
+                    navController,
+                    programId = entry.arguments?.getString("programId").orEmpty(),
+                    routineId = entry.arguments?.getString("routineId")?.takeIf { it != "new" },
+                )
+            }
 
             // Food tab
             composable(Routes.CALORIE_TRACKER) { CalorieTrackerScreen(navController) }
-            composable(Routes.ADD_FOOD) { AddFoodScreen(navController) }
+            composable(Routes.ADD_FOOD) { e ->
+                val type = com.ascendlab.app.data.MealType.entries.firstOrNull { it.name == e.arguments?.getString("type") }
+                CreatePostScreen(navController, initialType = type)
+            }
             composable(Routes.NUTRITION_PLANNER) { NutritionPlannerScreen(navController) }
-            composable(Routes.MEAL_DETAIL) { MealDetailScreen(navController) }
 
             // Profile tab
             composable(Routes.PROFILE) { ProfileScreen(navController) }
@@ -168,10 +210,10 @@ private fun Splash() {
 }
 
 private val tabPages = mapOf(
-    Tab.HOME to setOf(Routes.HOME, Routes.CREATE_POST),
-    Tab.TRAIN to setOf(Routes.TRAINING_PLAN, Routes.WORKOUT_SESSION, Routes.EXERCISE_DETAIL),
-    Tab.FOOD to setOf(Routes.CALORIE_TRACKER, Routes.ADD_FOOD, Routes.NUTRITION_PLANNER, Routes.MEAL_DETAIL),
-    Tab.PROFILE to setOf(Routes.PROFILE, Routes.SETTINGS, Routes.EDIT_GOALS),
+    Tab.HOME to setOf(Routes.HOME, Routes.CREATE_POST, Routes.FRIENDS, Routes.COMMENTS, Routes.STORY),
+    Tab.TRAIN to setOf(Routes.TRAINING_PLAN, Routes.WORKOUT_SESSION, Routes.PROGRAMS, Routes.ROUTINE_EDITOR, Routes.WORKOUT_DETAIL, Routes.EXERCISE_DETAIL),
+    Tab.FOOD to setOf(Routes.CALORIE_TRACKER, Routes.ADD_FOOD, Routes.NUTRITION_PLANNER),
+    Tab.PROFILE to setOf(Routes.PROFILE, Routes.SETTINGS, Routes.EDIT_GOALS, Routes.STATISTICS, Routes.EXERCISE_LIBRARY, Routes.CALENDAR, Routes.COMPARE),
 )
 
 private fun androidx.navigation.NavDestination.hierarchyContains(tab: Tab): Boolean =

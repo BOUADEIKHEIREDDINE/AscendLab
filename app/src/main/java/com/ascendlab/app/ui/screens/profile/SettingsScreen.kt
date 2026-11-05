@@ -1,5 +1,6 @@
 package com.ascendlab.app.ui.screens.profile
 
+import com.ascendlab.app.ui.components.PageHeader
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -81,15 +82,10 @@ fun SettingsScreen(navController: NavHostController) {
     LaunchedEffect(Unit) { if (profile == null) ProfileRepository.load() }
 
     Column(Modifier.fillMaxSize()) {
-        Row(Modifier.padding(start = 4.dp, top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = { navController.popBackStack() }) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-            }
-            Text("Settings", style = MaterialTheme.typography.headlineSmall)
-        }
+        PageHeader("Settings", onBack = { navController.popBackStack() })
 
         Column(
-            Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 8.dp),
+            Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp),
         ) {
             val p = profile
@@ -102,7 +98,7 @@ fun SettingsScreen(navController: NavHostController) {
                         onClick = { navController.navigate(Routes.EDIT_GOALS) },
                     )
                     if (p?.heightCm != null && p.weightKg != null && p.age != null) {
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                        HorizontalDivider(Modifier.padding(start = 56.dp), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outline)
                         // The body summary re-renders in the chosen units, with a quick crossfade.
                         AnimatedContent(
                             targetState = p.units,
@@ -145,7 +141,7 @@ fun SettingsScreen(navController: NavHostController) {
             Appear(2) {
                 Section("Coming soon") {
                     SettingRow(icon = Icons.Filled.Notifications, title = "Notifications", subtitle = "Reminders for workouts and meals", enabled = false)
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                    HorizontalDivider(Modifier.padding(start = 56.dp), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outline)
                     SettingRow(icon = Icons.Filled.Language, title = "Language", subtitle = "English", enabled = false)
                 }
             }
@@ -158,7 +154,7 @@ fun SettingsScreen(navController: NavHostController) {
                         subtitle = AuthRepository.currentEmail ?: "Signed in",
                         onClick = { navController.signOut() },
                     )
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                    HorizontalDivider(Modifier.padding(start = 56.dp), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outline)
                     SettingRow(
                         icon = Icons.Filled.DeleteForever,
                         title = "Delete account",
@@ -261,14 +257,9 @@ private fun Section(title: String, content: @Composable () -> Unit) {
             title,
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.padding(start = 8.dp),
+            modifier = Modifier.padding(start = 16.dp),
         )
-        Card(
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceContainer,
-                contentColor = MaterialTheme.colorScheme.onSurface,
-            ),
-        ) { Column { content() } }
+        Column { content() }
     }
 }
 

@@ -20,17 +20,32 @@ object Routes {
     // Home tab (Home and Feed are the same page)
     const val HOME = "home"
     const val CREATE_POST = "create_post"
+    const val FRIENDS = "friends"
+    const val COMMENTS = "comments/{postId}"
+    fun comments(postId: String) = "comments/$postId"
+    const val COMPARE = "compare"
+    const val STORY = "story/{uid}"
+    fun story(uid: String) = "story/$uid"
 
     // Train tab
     const val TRAINING_PLAN = "training_plan"
     const val WORKOUT_SESSION = "workout_session"
-    const val EXERCISE_DETAIL = "exercise_detail"
+    const val PROGRAMS = "programs"
+    const val WORKOUT_DETAIL = "workout/{workoutId}"
+    fun workoutDetail(id: String) = "workout/$id"
+    const val EXERCISE_DETAIL = "exercise/{exerciseId}?name={name}"
+    fun exerciseDetail(id: String, name: String) = "exercise/${android.net.Uri.encode(id)}?name=${android.net.Uri.encode(name)}"
+    const val STATISTICS = "statistics"
+    const val EXERCISE_LIBRARY = "exercise_library"
+    const val CALENDAR = "calendar"
+    const val ROUTINE_EDITOR = "routine_editor/{programId}/{routineId}"
+    fun routineEditor(programId: String, routineId: String?) = "routine_editor/$programId/${routineId ?: "new"}"
 
     // Food tab
     const val CALORIE_TRACKER = "calorie_tracker"
-    const val ADD_FOOD = "add_food"
+    const val ADD_FOOD = "add_food?type={type}"
+    fun addFood(type: com.ascendlab.app.data.MealType? = null) = "add_food?type=${type?.name ?: ""}"
     const val NUTRITION_PLANNER = "nutrition_planner"
-    const val MEAL_DETAIL = "meal_detail"
 
     // Profile tab
     const val PROFILE = "profile"

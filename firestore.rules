@@ -1,11 +1,145 @@
 rules_version = '2';
 
-// Same rules as published in the Firebase console (Firestore > Rules).
-// Each person can read and write only their own profile document.
+// Deployed with: npx firebase-tools deploy --only firestore
 service cloud.firestore {
   match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+
+    // Items added to or removed from a list between the stored and the new version.
+    function changedItems(before, after) {
+      return after.toSet().difference(before.toSet())
+        .union(before.toSet().difference(after.toSet()));
+    }
+
+    // Private profile (body data, goals), programs, workout history: only their owner.
     match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read, write: if signedIn() && request.auth.uid == userId;
+
+      match /{document=**} {
+        allow read, write: if signedIn() && request.auth.uid == userId;
+      }
+    }
+
+    // Name, friend code and friend list. Readable one by one (you need the uid, which
+    // you only learn from a friend code), never listable.
+    match /publicProfiles/{userId} {
+      allow get: if signedIn();
+      allow create: if signedIn() && request.auth.uid == userId
+        && request.resource.data.keys().hasOnly(['name', 'code', 'friends'])
+        && request.resource.data.name is string && request.resource.data.name.size() <= 30
+        && request.resource.data.friends is list && request.resource.data.friends.size() <= 30;
+      allow update: if signedIn() && (
+        (request.auth.uid == userId
+          && request.resource.data.keys().hasOnly(['name', 'code', 'friends'])
+          && request.resource.data.code == resource.data.code
+          && request.resource.data.name is string && request.resource.data.name.size() <= 30
+          && request.resource.data.friends.size() <= 30)
+        // Anyone else may only add or remove themselves from the friend list.
+        || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['friends'])
+          && changedItems(resource.data.friends, request.resource.data.friends).hasOnly([request.auth.uid])
+          && request.resource.data.friends.size() <= 30)
+      );
+      allow delete: if signedIn() && request.auth.uid == userId;
+    }
+
+    // Friend code -> owner uid. Look-up by exact code only.
+    match /friendCodes/{code} {
+      allow get: if signedIn();
+      allow create: if signedIn() && request.resource.data.keys().hasOnly(['uid'])
+        && request.resource.data.uid == request.auth.uid && code.size() == 6;
+      allow delete: if signedIn() && resource.data.uid == request.auth.uid;
+    }
+
+    // Logged meals. Visible to the author and the friends they were shared with.
+    match /posts/{postId} {
+      // Shared by meal and workout posts.
+      function validBase(d) {
+        return d.uid is string && d.authorName is string && d.authorName.size() <= 30
+          && d.audience is list && d.audience.size() <= 31 && d.uid in d.audience
+          && d.dayKey is string && d.dayKey.size() == 10
+          && d.description is string && d.description.size() <= 300
+          && d.likes is list && d.createdAt is timestamp;
+      }
+
+      function validMeal(d) {
+        return !('kind' in d)
+          && d.keys().hasOnly(['uid', 'authorName', 'audience', 'dayKey', 'mealType', 'description',
+                               'calories', 'target', 'protein', 'proteinTarget', 'carbs', 'fat',
+                               'photo', 'likes', 'createdAt', 'commentCount'])
+          && d.mealType in ['BREAKFAST', 'LUNCH', 'DINNER', 'SNACK']
+          && d.description.size() <= 200
+          && d.calories is int && d.calories > 0 && d.calories <= 5000
+          && d.target is int && d.target >= 0 && d.target <= 10000
+          && (!('protein' in d) || (d.protein is int && d.protein >= 0 && d.protein <= 400))
+          && (!('carbs' in d) || (d.carbs is int && d.carbs >= 0 && d.carbs <= 600))
+          && (!('fat' in d) || (d.fat is int && d.fat >= 0 && d.fat <= 300))
+          && (!('proteinTarget' in d) || (d.proteinTarget is int && d.proteinTarget >= 0 && d.proteinTarget <= 1000))
+          && (d.photo == null || (d.photo is string && d.photo.size() <= 700000));
+      }
+
+      function validWorkout(d) {
+        return d.kind == 'workout'
+          && d.keys().hasOnly(['kind', 'uid', 'authorName', 'audience', 'dayKey', 'title', 'description',
+                               'durationSec', 'volumeKg', 'sets', 'exercises', 'records', 'likes', 'createdAt', 'commentCount'])
+          && (!('records' in d) || (d.records is int && d.records >= 0 && d.records <= 500))
+          && d.title is string && d.title.size() <= 60
+          && d.durationSec is int && d.durationSec >= 0 && d.durationSec <= 86400
+          && d.volumeKg is int && d.volumeKg >= 0 && d.volumeKg <= 1000000
+          && d.sets is int && d.sets >= 0 && d.sets <= 500
+          && d.exercises is list && d.exercises.size() <= 40;
+      }
+
+      function validPost(d) {
+        return validBase(d) && (validMeal(d) || validWorkout(d));
+      }
+
+      allow read: if signedIn()
+        && (request.auth.uid in resource.data.audience || resource.data.uid == request.auth.uid);
+      allow create: if signedIn() && request.resource.data.uid == request.auth.uid
+        && validPost(request.resource.data) && request.resource.data.likes.size() == 0;
+      allow update: if signedIn() && (
+        (resource.data.uid == request.auth.uid
+          && request.resource.data.uid == resource.data.uid
+          && validPost(request.resource.data))
+        // Friends can only like or unlike, as themselves.
+        || (request.auth.uid in resource.data.audience
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes'])
+          && changedItems(resource.data.likes, request.resource.data.likes).hasOnly([request.auth.uid]))
+        // ...or move the comment count by one when they add or remove a comment.
+        || (request.auth.uid in resource.data.audience
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['commentCount'])
+          && request.resource.data.commentCount is int
+          && (request.resource.data.commentCount - resource.data.get('commentCount', 0)) in [1, -1])
+      );
+      allow delete: if signedIn() && resource.data.uid == request.auth.uid;
+
+      // Comments: text and/or a small photo, visible to the post's audience.
+      match /comments/{commentId} {
+        function post() { return get(/databases/$(database)/documents/posts/$(postId)).data; }
+        allow read: if signedIn() && request.auth.uid in post().audience;
+        allow create: if signedIn() && request.auth.uid in post().audience
+          && request.resource.data.uid == request.auth.uid
+          && request.resource.data.keys().hasOnly(['uid', 'authorName', 'text', 'photo', 'createdAt'])
+          && request.resource.data.authorName is string && request.resource.data.authorName.size() <= 30
+          && request.resource.data.text is string && request.resource.data.text.size() <= 500
+          && (request.resource.data.photo == null
+              || (request.resource.data.photo is string && request.resource.data.photo.size() <= 600000))
+          && (request.resource.data.text.size() > 0 || request.resource.data.photo != null)
+          && request.resource.data.createdAt is timestamp;
+        // The commenter, or the post's author, can remove a comment.
+        allow delete: if signedIn() && (resource.data.uid == request.auth.uid || post().uid == request.auth.uid);
+      }
+    }
+
+    // Daily calories and weigh-ins for the "compare with friends" charts:
+    // the owner writes, the owner and their friends read.
+    match /stats/{userId} {
+      allow get: if signedIn() && (request.auth.uid == userId
+        || request.auth.uid in get(/databases/$(database)/documents/publicProfiles/$(userId)).data.friends);
+      allow create, update: if signedIn() && request.auth.uid == userId
+        && request.resource.data.keys().hasOnly(['kcal', 'weights', 'shareWeight'])
+        && request.resource.data.get('kcal', {}) is map && request.resource.data.get('weights', {}) is map;
+      allow delete: if signedIn() && request.auth.uid == userId;
     }
   }
 }

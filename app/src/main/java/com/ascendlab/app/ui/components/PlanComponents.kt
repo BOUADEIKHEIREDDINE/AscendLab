@@ -51,13 +51,11 @@ fun formatKcal(value: Int): String = NumberFormat.getIntegerInstance().format(va
 
 @Composable
 private fun PlanCard(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainer,
-            contentColor = MaterialTheme.colorScheme.onSurface,
-        ),
-    ) { Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) { content() } }
+    // Flat section with a hairline on top: content sits on the page, not in a box.
+    Column(modifier.fillMaxWidth()) {
+        Hairline()
+        Column(Modifier.padding(vertical = 20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) { content() }
+    }
 }
 
 /** A number that counts up from [from] to [value] (or from its previous value when it changes). */

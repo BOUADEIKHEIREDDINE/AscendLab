@@ -65,6 +65,9 @@ object AuthRepository {
     fun signOut() {
         auth.signOut()
         ProfileRepository.clearSession()
+        SocialRepository.clearSession()
+        TrainRepository.clearSession()
+        StatsRepository.syncedThisSession = false
     }
 
     /**
@@ -80,7 +83,10 @@ object AuthRepository {
             googleCredential(context)
         }
         user.reauthenticate(credential).await()
-        // The profile goes first: once the account is gone, the rules no longer let us delete it.
+        // The data goes first: once the account is gone, the rules no longer let us delete it.
+        SocialRepository.deleteCurrent()
+        StatsRepository.deleteCurrent()
+        TrainRepository.deleteCurrent()
         ProfileRepository.deleteCurrent()
         user.delete().await()
         AuthResult.Success()
