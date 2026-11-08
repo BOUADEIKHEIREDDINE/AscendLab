@@ -47,7 +47,13 @@ Energy, clarity and steady progress. The logo is a geometric **A** whose cut-out
 
 The theme lives in [`ui/theme/`](app/src/main/java/com/ascendlab/app/ui/theme).
 
-## Tech stack
+## iOS (and Android and web): Expo app
+
+The [`mobile/`](mobile) folder holds a full port of the app built with Expo and React Native. It runs
+on iPhone, Android and the web, uses the same Firebase project and has the same features. See
+[`mobile/README.md`](mobile/README.md) to run it.
+
+## Tech stack (Kotlin app)
 
 - Kotlin, Jetpack Compose, Material 3
 - Navigation Compose with a bottom tab bar (Home, Train, Food, Profile)

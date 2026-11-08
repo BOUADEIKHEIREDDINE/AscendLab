@@ -1,0 +1,5 @@
+{
+  "_note": "Test accounts for the local Firebase Emulator Suite only (EXPO_PUBLIC_USE_FIREBASE_EMULATOR=true). They do not exist in the real project.",
+  "primary": { "email": "tester.one@ascendlab.test", "password": "emulator-only-1" },
+  "friend": { "email": "tester.two@ascendlab.test", "password": "emulator-only-2" }
+}
