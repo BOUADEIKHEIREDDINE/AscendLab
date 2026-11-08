@@ -2,14 +2,14 @@ import React, { useState } from 'react';
 import { FlatList, View } from 'react-native';
 import { profileStore } from '../../../data/profileRepo';
 import { activeProgramOf, activeStore, historyLive, TrainRepository, trainLive } from '../../../data/trainRepo';
-import { doneSets, lastSets, Routine, setCount, WorkoutMath } from '../../../data/training';
+import { doneSets, Routine, setCount, WorkoutMath } from '../../../data/training';
 import { useStore } from '../../../lib/store';
 import { useNav } from '../../../navigation/types';
 import { c, Gutter } from '../../theme';
 import { haptics } from '../../haptics';
 import { relativeDay } from '../../format';
 import { Button, Hairline, Icon, IconButton, PressableScale, Screen, SectionTitle, SkeletonCard, T, TabHeader } from '../../components/core';
-import { ActionMenu, Dialog } from '../../components/overlays';
+import { ActionMenu, Dialog, toast } from '../../components/overlays';
 
 export function TrainingPlanScreen() {
   const nav = useNav();
@@ -22,6 +22,7 @@ export function TrainingPlanScreen() {
   const [pendingStart, setPendingStart] = useState<Routine | null>(null);
   const [confirmReplace, setConfirmReplace] = useState(false);
   const [deleting, setDeleting] = useState<Routine | null>(null);
+  const [rebuilding, setRebuilding] = useState(false);
   const recent = (history ?? []).slice(0, 5);
 
   function start(routine: Routine | null) {
@@ -30,7 +31,7 @@ export function TrainingPlanScreen() {
       setPendingStart(routine);
       setConfirmReplace(true);
     } else {
-      TrainRepository.start(routine, lastSets(history));
+      TrainRepository.start(routine, history ?? []);
       nav.navigate('WorkoutSession');
     }
   }
@@ -124,6 +125,7 @@ export function TrainingPlanScreen() {
         onDismiss={() => setProgramMenu(false)}
         items={[
           ...state.programs.map((p) => ({ label: p.name, checked: p.id === program?.id, onPress: () => TrainRepository.selectProgram(p.id) })),
+          { label: 'Rebuild my program from my plan', icon: 'autorenew' as const, onPress: () => setRebuilding(true) },
           { label: 'Manage programs', icon: 'settings' as const, onPress: () => nav.navigate('Programs') },
         ]}
       />
@@ -136,12 +138,28 @@ export function TrainingPlanScreen() {
         confirm={{
           label: 'Discard and start', danger: true, onPress: () => {
             setConfirmReplace(false);
-            TrainRepository.start(pendingStart, lastSets(history));
+            TrainRepository.start(pendingStart, history ?? []);
             nav.navigate('WorkoutSession');
           },
         }}
       >
         <T>You already have a workout going. Discard it and start a new one?</T>
+      </Dialog>
+
+      <Dialog
+        visible={rebuilding}
+        onDismiss={() => setRebuilding(false)}
+        title="Rebuild my program?"
+        dismiss={{ label: 'Cancel', onPress: () => setRebuilding(false) }}
+        confirm={{
+          label: 'Rebuild', onPress: () => {
+            setRebuilding(false);
+            if (TrainRepository.rebuildFromPlan()) { haptics.confirm(); toast('New program built from your plan'); }
+            else toast('Finish your goals in Settings first');
+          },
+        }}
+      >
+        <T>We build a new program from your current goals, level and training days, and make it active. Your other programs and your history stay.</T>
       </Dialog>
 
       <Dialog

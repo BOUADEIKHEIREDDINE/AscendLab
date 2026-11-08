@@ -11,12 +11,13 @@ import {
 } from 'firebase/firestore';
 import { background, currentUid, db } from '../lib/firebase';
 import { createLive, createStore } from '../lib/store';
-import { Convert, hasEverythingForPlan } from './profile';
+import { Convert, gymPlan, hasEverythingForPlan } from './profile';
+import { DEFAULT_TARGET, exercisePlan, ExercisePlan, restSecFor, sessionsByExercise, warmUpLines } from './progress';
 import { ProfileRepository, profileStore } from './profileRepo';
 import { SocialRepository } from './socialRepo';
 import {
-  ActiveWorkout, activeFromJson, activeToJson, countRecords, LoggedExercise, LoggedSet, newSet,
-  Program, recordsByExercise, Routine, routineFromMap, routineToMap, starterRoutines, WorkoutMath, WorkoutRecord, workoutFromDoc,
+  ActiveWorkout, activeFromJson, activeToJson, countRecords, LoggedExercise, newSet,
+  lastSets, Program, recordsByExercise, Routine, routineFromMap, routineToMap, starterRoutines, WorkoutMath, WorkoutRecord, workoutFromDoc,
 } from './training';
 
 /** The Train tab's state as screens see it. */
@@ -182,15 +183,34 @@ export const TrainRepository = {
   // ---------- Live workout ----------
 
   /**
-   * Starts a workout. When `previous` holds the last session of an exercise, its set layout
-   * (warm-ups included) is repeated, so "Previous" lines up set by set.
+   * Starts a workout. Program generator exercises get today's plan from their history
+   * (suggested weight, advice, rest, find-your-weight) and the first one a warm-up set.
+   * Other exercises repeat the set layout of their last session, so "Previous" lines up.
    */
-  start(routine: Routine | null, previous: Map<string, LoggedSet[]> = new Map()): void {
+  start(routine: Routine | null, history: WorkoutRecord[] = []): void {
+    const previous = lastSets(history);
+    const sessions = sessionsByExercise(history);
+    const profile = profileStore.get();
+    const cycle = profile && profile.place !== 'HOME' ? gymPlan(profile)?.state.schedule.cycle ?? [] : [];
+    const day = cycle.find((d) => d.name === routine?.name);
     activeStore.set({
       title: routine?.name ?? 'Workout',
       routineId: routine?.id ?? null,
       startedAt: Date.now(),
-      exercises: (routine?.exercises ?? []).map((re) => {
+      exercises: (routine?.exercises ?? []).map((re, i) => {
+        const planned = (day?.exercises ?? cycle.flatMap((d) => d.exercises)).find((x) => x.exerciseId === re.exerciseId);
+        const restSec = planned?.restSec ?? restSecFor(re.exerciseId);
+        const plan = restSec == null ? null : exercisePlan(re.exerciseId, sessions.get(re.exerciseId) ?? [], {
+          sets: Math.max(re.sets, 1),
+          repMin: planned?.repMin ?? DEFAULT_TARGET.repMin,
+          repMax: planned?.repMax ?? DEFAULT_TARGET.repMax,
+          restSec,
+        }, i === 0);
+        if (plan) {
+          const working = Array.from({ length: plan.sets }, () => newSet());
+          const sets = plan.warmUpKg != null ? [newSet({ type: 'WARMUP' }), ...working] : working;
+          return { exerciseId: re.exerciseId, name: re.name, sets, targetReps: plan.repMax, plan };
+        }
         const last = previous.get(re.exerciseId);
         const sets = last && last.length > 0
           ? last.map((s) => newSet({ type: s.type }))
@@ -199,8 +219,32 @@ export const TrainRepository = {
       }),
       restEndsAt: null,
       restSeconds: restSecondsForGoal(),
+      ...(day ? { warmUp: warmUpLines(day) } : {}),
     });
     persist();
+  },
+
+  /** Plan for an exercise added during the workout (generator exercises only). */
+  planForAdded(exerciseId: string, history: WorkoutRecord[]): ExercisePlan | null {
+    const restSec = restSecFor(exerciseId);
+    if (restSec == null) return null;
+    return exercisePlan(exerciseId, sessionsByExercise(history).get(exerciseId) ?? [], { ...DEFAULT_TARGET, restSec });
+  },
+
+  /**
+   * Adds a new program built from the current plan and makes it active. Existing programs
+   * and the workout history are kept. Returns false when the profile isn't complete.
+   */
+  rebuildFromPlan(): boolean {
+    const uid = currentUid();
+    const profile = profileStore.get();
+    if (!uid || !hasEverythingForPlan(profile)) return false;
+    const ref = doc(collection(userDoc(uid), 'programs'));
+    const batch = writeBatch(db);
+    batch.set(ref, programMap('My AscendLab plan', starterRoutines(profile)));
+    batch.set(doc(userDoc(uid), 'meta', 'train'), { seeded: true, activeProgramId: ref.id }, { merge: true });
+    background(batch.commit());
+    return true;
   },
 
   update(transform: (w: ActiveWorkout) => ActiveWorkout): void {

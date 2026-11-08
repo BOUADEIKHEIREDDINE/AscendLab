@@ -4,6 +4,7 @@ import { Animated, FlatList, Platform, Pressable, TextInput, View } from 'react-
 import { Convert, formatNumber, UNIT, Units } from '../../../data/profile';
 import { profileStore } from '../../../data/profileRepo';
 import { activeStore, TrainRepository } from '../../../data/trainRepo';
+import { afterFindWeightSet } from '../../../data/progress';
 import {
   ActiveExercise, ActiveWorkout, beatenBy, clock, doneSets, ExerciseLibrary, ExerciseRecords, LoggedSet, newSet,
   recordsByExercise, recordsFrom, SET_TYPE, SET_TYPES, SetEntry, SetType, WorkoutMath, WorkoutRecord,
@@ -91,7 +92,9 @@ export function WorkoutSessionScreen() {
         keyExtractor={(x, i) => `${x.exerciseId}-${i}`}
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={{ paddingBottom: 24 }}
-        ListHeaderComponent={w.exercises.length === 0 ? <T v="bodyLarge" color={c.onSurfaceVariant} style={{ padding: Gutter }}>Add your first exercise to get going.</T> : undefined}
+        ListHeaderComponent={w.exercises.length === 0
+          ? <T v="bodyLarge" color={c.onSurfaceVariant} style={{ padding: Gutter }}>Add your first exercise to get going.</T>
+          : w.warmUp && w.warmUp.length > 0 ? <WarmUpCard lines={w.warmUp} /> : undefined}
         renderItem={({ item, index }) => (
           <View>
             <ExerciseBlock
@@ -115,7 +118,7 @@ export function WorkoutSessionScreen() {
       />
 
       {/* Docked at the bottom so it never pushes the sets around while you tap. */}
-      {resting && <RestBar secondsLeft={Math.max(Math.trunc((w.restEndsAt! - now) / 1000), 0)} total={w.restSeconds} />}
+      {resting && <RestBar secondsLeft={Math.max(Math.trunc((w.restEndsAt! - now) / 1000), 0)} total={w.restTotal ?? w.restSeconds} />}
 
       {/* Live personal-record alert: floats over the header like a toast, so the sets never move. */}
       {prBanner && (
@@ -135,7 +138,11 @@ export function WorkoutSessionScreen() {
         onPick={(picked) => {
           TrainRepository.update((cur) => ({
             ...cur,
-            exercises: [...cur.exercises, ...picked.map((x) => ({ exerciseId: x.id, name: x.name, sets: [newSet(), newSet(), newSet()], targetReps: null }))],
+            exercises: [...cur.exercises, ...picked.map((x) => {
+              const plan = TrainRepository.planForAdded(x.id, history);
+              const sets = Array.from({ length: plan?.sets ?? 3 }, () => newSet());
+              return { exerciseId: x.id, name: x.name, sets, targetReps: plan?.repMax ?? null, plan };
+            })],
           }));
           setPicking(false);
         }}
@@ -155,6 +162,18 @@ export function WorkoutSessionScreen() {
     </Screen>
   );
 }
+
+/** The session's optional warm-up, before the first exercise. */
+function WarmUpCard({ lines }: { lines: string[] }) {
+  return (
+    <View style={{ marginHorizontal: Gutter, marginTop: 12, padding: 12, borderRadius: 12, backgroundColor: c.surfaceContainer, gap: 4 }}>
+      <T v="titleSmall">Warm-up (optional)</T>
+      {lines.map((line) => <T key={line} v="bodySmall" color={c.onSurfaceVariant}>• {line}</T>)}
+    </View>
+  );
+}
+
+const restText = (sec: number) => (sec % 60 === 0 ? `${sec / 60} min` : `${Math.floor(sec / 60)}.5 min`);
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
@@ -186,7 +205,13 @@ function ExerciseBlock({ ex, index, previous, records, units, onOpen, onRecord }
   onOpen: () => void; onRecord: (label: string) => void;
 }) {
   const [menu, setMenu] = useState(false);
+  const plan = ex.plan ?? null;
   const bodyweight = ExerciseLibrary.isBodyweight(ex.exerciseId);
+  const display = (kgValue: number) => formatNumber(units === 'IMPERIAL' ? Convert.kgToLb(kgValue) : kgValue);
+  // "Previous" pairs warm-ups with warm-ups and working sets with working sets.
+  const prevWarm = (previous ?? []).filter((s) => s.type === 'WARMUP');
+  const prevWork = (previous ?? []).filter((s) => s.type !== 'WARMUP');
+  let warmCount = 0;
   const unit = UNIT[units].weightUnit.toUpperCase();
 
   const updateExercise = (transform: (e: ActiveExercise) => ActiveExercise) =>
@@ -204,6 +229,14 @@ function ExerciseBlock({ ex, index, previous, records, units, onOpen, onRecord }
         </View>
         <IconButton name="more-vert" label="More" onPress={() => setMenu(true)} />
       </View>
+      {plan && (
+        <View style={{ paddingHorizontal: Gutter, paddingBottom: 4, gap: 2 }}>
+          <T v="bodySmall" color={c.onSurfaceVariant}>
+            {plan.sets} × {plan.repMin}–{plan.repMax} reps to failure · rest {restText(plan.restSec)}
+          </T>
+          {plan.note && <T v="bodySmall" color={plan.findWeight ? colors.apricot : c.primary}>{plan.note}</T>}
+        </View>
+      )}
       <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: Gutter - 8, paddingVertical: 4 }}>
         <Header text="SET" width={36} />
         <Header text="PREVIOUS" flex={1.4} />
@@ -213,12 +246,15 @@ function ExerciseBlock({ ex, index, previous, records, units, onOpen, onRecord }
       </View>
       {ex.sets.map((set, setIndex) => {
         if (set.type === 'NORMAL') normalCount++;
-        const prev = previous?.[setIndex];
-        const prevWeight = prev && prev.weightKg > 0 ? formatNumber(units === 'IMPERIAL' ? Convert.kgToLb(prev.weightKg) : prev.weightKg) : null;
+        const warm = set.type === 'WARMUP';
+        const prev = warm ? prevWarm[warmCount++] : prevWork[setIndex - warmCount];
+        const prevWeight = prev && prev.weightKg > 0 ? display(prev.weightKg) : null;
         const prevText = prev ? `${prevWeight ? `${prevWeight} × ` : ''}${prev.reps}` : '–';
-        const repsHint = prev ? String(prev.reps) : ex.targetReps != null ? String(ex.targetReps) : '';
-        // Grey hint: last session's weight, else the set above (sets usually repeat the weight).
-        const weightHint = prevWeight ?? (ex.sets[setIndex - 1]?.weight || (bodyweight ? '0' : ''));
+        const planWeight = warm ? plan?.warmUpKg : plan?.suggestedKg;
+        const repsHint = warm && plan ? '5' : prev ? String(prev.reps) : ex.targetReps != null ? String(ex.targetReps) : '';
+        // Grey hint: today's planned weight, else last session's, else the set above.
+        const weightHint = planWeight != null && planWeight > 0 ? display(planWeight)
+          : prevWeight ?? (ex.sets[setIndex - 1]?.weight || (bodyweight ? '0' : ''));
         return (
           <SetRow
             key={setIndex}
@@ -235,11 +271,12 @@ function ExerciseBlock({ ex, index, previous, records, units, onOpen, onRecord }
               // An empty box means "same as the grey hint".
               const filled: SetEntry = {
                 ...set,
-                weight: set.weight || prevWeight || ex.sets[setIndex - 1]?.weight || '',
+                weight: set.weight || weightHint || '',
                 reps: set.reps || repsHint,
                 done: nowDone,
               };
               if (nowDone && !filled.reps) return;
+              if (nowDone && plan?.findWeight && !warm && !filled.weight) { toast('Type the weight you used'); return; }
               if (nowDone && records) {
                 // Compare with history plus the sets already done today, so only real bests fire.
                 const today = ex.sets.filter((s, j) => j !== setIndex && s.done)
@@ -256,10 +293,26 @@ function ExerciseBlock({ ex, index, previous, records, units, onOpen, onRecord }
                 const label = beatenBy(best, { weightKg: toKg(filled.weight, units), reps: parseInt(filled.reps, 10) || 0, type: filled.type })[0];
                 if (label) onRecord(label);
               }
+              // Find your weight: each working set tells the next one what to lift.
+              let nextPlan = plan;
+              let extraSet = false;
+              if (nowDone && plan?.findWeight && !warm) {
+                const workingDone = ex.sets.filter((s, j) => (j === setIndex || s.done) && s.type !== 'WARMUP').length;
+                const step = afterFindWeightSet(plan, toKg(filled.weight, units), parseInt(filled.reps, 10) || 0, workingDone);
+                nextPlan = { ...plan, note: step.note, suggestedKg: step.found ? toKg(filled.weight, units) : step.nextKg, findWeight: !step.found };
+                const remaining = ex.sets.some((s, j) => j > setIndex && !s.done && s.type !== 'WARMUP');
+                extraSet = step.addSet && !remaining;
+              }
+              const restSec = warm ? 60 : plan?.restSec ?? undefined;
               TrainRepository.update((w) => ({
                 ...w,
-                exercises: w.exercises.map((e, i) => (i !== index ? e : { ...e, sets: e.sets.map((old, j) => (j === setIndex ? filled : old)) })),
-                restEndsAt: nowDone ? Date.now() + w.restSeconds * 1000 : w.restEndsAt,
+                exercises: w.exercises.map((e, i) => (i !== index ? e : {
+                  ...e,
+                  plan: nextPlan,
+                  sets: [...e.sets.map((old, j) => (j === setIndex ? filled : old)), ...(extraSet ? [newSet()] : [])],
+                })),
+                restEndsAt: nowDone ? Date.now() + (restSec ?? w.restSeconds) * 1000 : w.restEndsAt,
+                restTotal: nowDone ? restSec ?? w.restSeconds : w.restTotal,
               }));
             }}
           />

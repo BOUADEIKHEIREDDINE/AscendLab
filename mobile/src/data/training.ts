@@ -5,6 +5,7 @@
  */
 import { CATALOG, type Muscle as CatalogMuscle } from '../lib/program-generator/catalog';
 import { Convert, gymPlan, PlanCalculator, roundInt, Units, UNIT, UserProfile } from './profile';
+import type { ExercisePlan } from './progress';
 
 export type Muscle = 'CHEST' | 'BACK' | 'SHOULDERS' | 'ARMS' | 'LEGS' | 'GLUTES' | 'CORE' | 'CARDIO' | 'OTHER';
 export const MUSCLES: Muscle[] = ['CHEST', 'BACK', 'SHOULDERS', 'ARMS', 'LEGS', 'GLUTES', 'CORE', 'CARDIO', 'OTHER'];
@@ -237,7 +238,14 @@ const setTypeOf = (v: unknown): SetType => (SET_TYPES.includes(v as SetType) ? (
 export interface SetEntry { weight: string; reps: string; done: boolean; type: SetType }
 export const newSet = (partial: Partial<SetEntry> = {}): SetEntry => ({ weight: '', reps: '', done: false, type: 'NORMAL', ...partial });
 
-export interface ActiveExercise { exerciseId: string; name: string; sets: SetEntry[]; targetReps: number | null }
+export interface ActiveExercise {
+  exerciseId: string;
+  name: string;
+  sets: SetEntry[];
+  targetReps: number | null;
+  /** Today's target, suggested weight and advice (program generator exercises only). */
+  plan?: ExercisePlan | null;
+}
 
 export interface ActiveWorkout {
   title: string;
@@ -247,6 +255,10 @@ export interface ActiveWorkout {
   /** When the current rest countdown ends (epoch ms), or null when not resting. */
   restEndsAt: number | null;
   restSeconds: number;
+  /** The session's optional warm-up, one line each (generated sessions only). */
+  warmUp?: string[];
+  /** Length of the current rest, for the countdown bar (exercises have their own rest). */
+  restTotal?: number;
 }
 
 export const doneSets = (w: ActiveWorkout) => w.exercises.reduce((n, x) => n + x.sets.filter((s) => s.done).length, 0);
@@ -255,8 +267,9 @@ export const doneSets = (w: ActiveWorkout) => w.exercises.reduce((n, x) => n + x
 export function activeToJson(w: ActiveWorkout): string {
   return JSON.stringify({
     title: w.title, routineId: w.routineId, startedAt: w.startedAt, restEndsAt: w.restEndsAt, restSeconds: w.restSeconds,
+    warmUp: w.warmUp,
     exercises: w.exercises.map((x) => ({
-      exerciseId: x.exerciseId, name: x.name, targetReps: x.targetReps,
+      exerciseId: x.exerciseId, name: x.name, targetReps: x.targetReps, plan: x.plan ?? undefined,
       sets: x.sets.map((s) => ({ w: s.weight, r: s.reps, d: s.done, t: s.type })),
     })),
   });
@@ -271,10 +284,12 @@ export function activeFromJson(json: string): ActiveWorkout | null {
       startedAt: Number(o.startedAt),
       restEndsAt: o.restEndsAt ?? null,
       restSeconds: typeof o.restSeconds === 'number' ? o.restSeconds : 90,
+      ...(Array.isArray(o.warmUp) ? { warmUp: o.warmUp.map(String) } : {}),
       exercises: (o.exercises as any[]).map((x) => ({
         exerciseId: String(x.exerciseId),
         name: String(x.name),
         targetReps: x.targetReps ?? null,
+        ...(x.plan && typeof x.plan === 'object' ? { plan: x.plan as ExercisePlan } : {}),
         sets: (x.sets as any[]).map((s) => ({ weight: String(s.w ?? ''), reps: String(s.r ?? ''), done: !!s.d, type: setTypeOf(s.t) })),
       })),
     };
