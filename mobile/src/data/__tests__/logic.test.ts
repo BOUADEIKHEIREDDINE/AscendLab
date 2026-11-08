@@ -1,66 +1,98 @@
 /**
- * The plan, body checks and workout maths. The first two groups are a one-to-one port of
- * the Android app's PlanCalculatorTest and BodyChecksTest, so both apps give the same plan.
+ * The plan, body checks and workout maths. The plan now runs on the goal engine and the
+ * program generator (src/lib/, with their own tests); BodyChecks is still a one-to-one port
+ * of the Android app's BodyChecksTest.
  */
 import { Timestamp } from 'firebase/firestore';
 import {
-  BodyChecks, Convert, emptyProfile, PlanCalculator, profileFromMap, profileToMap, UserProfile,
+  BodyChecks, chosenDays, Convert, emptyProfile, PlanCalculator, profileFromMap, profileToMap, UserProfile, withDays,
 } from '../profile';
+
 import { Days, FeedPost, gapLabel, postFromMap } from '../social';
 import {
   activeFromJson, activeToJson, ActiveWorkout, beatenBy, countRecords, ExerciseLibrary, LoggedExercise, recordsByExercise,
-  recordsFrom, WorkoutMath, workoutFromDoc,
+  recordsFrom, starterRoutines, WorkoutMath, workoutFromDoc,
 } from '../training';
 
 const man: UserProfile = {
   ...emptyProfile(),
-  sex: 'MAN', age: 30, heightCm: 180, weightKg: 80, activity: 'MODERATE', goal: 'GET_FIT', daysPerWeek: 3, place: 'GYM',
+  sex: 'MAN', age: 30, heightCm: 180, weightKg: 80, activity: 'MODERATE', goal: 'MAINTAIN', daysPerWeek: 3, place: 'GYM',
 };
 
-describe('PlanCalculator (same results as the Android app)', () => {
-  test('maintenance follows Mifflin-St Jeor', () => {
-    // BMR = 10*80 + 6.25*180 - 5*30 + 5 = 1780; x1.55 = 2759 -> 2760
+describe('PlanCalculator: calories from the goal engine', () => {
+  test('maintenance = Mifflin-St Jeor x activity + planned lifting', () => {
+    // BMR = 10*80 + 6.25*180 - 5*30 + 5 = 1780; x1.55 = 2759; + 3 full-body sessions (83 kcal/day) = 2842
     const t = PlanCalculator.nutrition(man);
     expect(t.bmr).toBe(1780);
-    expect(t.maintenance).toBe(2760);
-    expect(t.calories).toBe(2760);
+    expect(t.liftingKcal).toBe(83);
+    expect(t.maintenance).toBe(2840);
+    expect(t.calories).toBe(2840);
   });
 
-  test('goals shift calories by a moderate amount', () => {
-    expect(PlanCalculator.nutrition({ ...man, goal: 'LOSE_FAT' }).calories).toBe(2210);
-    expect(PlanCalculator.nutrition({ ...man, goal: 'BUILD_MUSCLE' }).calories).toBe(3030);
+  test('goals move calories by a weekly rate of body weight', () => {
+    // 0.5% of 80 kg a week = 440 kcal a day; 0.25% = 220
+    expect(PlanCalculator.nutrition({ ...man, goal: 'LOSE_FAT' }).calories).toBe(2400);
+    expect(PlanCalculator.nutrition({ ...man, goal: 'BUILD_MUSCLE' }).calories).toBe(3060);
+    expect(PlanCalculator.nutrition({ ...man, goal: 'GAIN_WEIGHT' }).calories).toBe(3280);
+    // BMI under 25: recomposition at maintenance
+    expect(PlanCalculator.nutrition({ ...man, goal: 'RECOMPOSITION' }).calories).toBe(2840);
   });
 
   test('woman formula uses the -161 offset', () => {
     expect(PlanCalculator.nutrition({ ...man, sex: 'WOMAN' }).bmr).toBe(1610);
   });
 
-  test('fat loss never drops below the safe minimum', () => {
-    const small: UserProfile = { ...man, sex: 'WOMAN', age: 70, heightCm: 150, weightKg: 45, activity: 'SEDENTARY', goal: 'LOSE_FAT' };
-    expect(PlanCalculator.nutrition(small).calories).toBe(1200);
+  test('weight loss never drops below the safe minimum', () => {
+    const small: UserProfile = { ...man, sex: 'WOMAN', age: 70, heightCm: 150, weightKg: 45, activity: 'SEDENTARY', goal: 'LOSE_FAT', daysPerWeek: 2 };
+    const t = PlanCalculator.nutrition(small);
+    expect(t.calories).toBe(1200);
+    expect(t.atMinimum).toBe(true);
   });
 
   test('macros add up to the calorie target', () => {
-    (['LOSE_FAT', 'BUILD_MUSCLE', 'GET_FIT'] as const).forEach((goal) => {
+    (['LOSE_FAT', 'BUILD_MUSCLE', 'GAIN_WEIGHT', 'RECOMPOSITION', 'MAINTAIN'] as const).forEach((goal) => {
       const t = PlanCalculator.nutrition({ ...man, goal });
       expect(Math.abs(t.proteinG * 4 + t.carbsG * 4 + t.fatG * 9 - t.calories)).toBeLessThanOrEqual(12);
     });
   });
+});
 
-  test('protein is capped for larger bodies', () => {
-    expect(PlanCalculator.nutrition({ ...man, weightKg: 160 }).proteinG).toBe(140);
-  });
-
-  test('split and schedule match the days chosen', () => {
+describe('PlanCalculator: training from the program generator', () => {
+  test('gym: real sessions on well-spaced days', () => {
     for (let days = 2; days <= 6; days++) {
       const week = PlanCalculator.training({ ...man, daysPerWeek: days });
       expect(week.days).toHaveLength(days);
       expect(new Set(week.days.map((d) => d.dayIndex)).size).toBe(days);
-      week.days.forEach((d) => { expect(d.dayIndex).toBeGreaterThanOrEqual(0); expect(d.dayIndex).toBeLessThanOrEqual(6); });
+      expect(week.generated).not.toBeNull();
     }
-    expect(PlanCalculator.training({ ...man, daysPerWeek: 3 }).splitName).toBe('Full body');
+    expect(PlanCalculator.training(man).splitName).toBe('Full body');
+    expect(PlanCalculator.training(man).days.map((d) => d.title)).toEqual(['Full body A', 'Full body B', 'Full body A']);
     expect(PlanCalculator.training({ ...man, daysPerWeek: 4 }).splitName).toBe('Upper / Lower');
-    expect(PlanCalculator.training({ ...man, daysPerWeek: 6 }).splitName).toBe('Push / Pull / Legs');
+  });
+
+  test('the tapped weekdays are the training days; "only N" picks the best-spaced', () => {
+    const p = withDays(man, [1, 3, 5], null);
+    expect(PlanCalculator.training(p).days.map((d) => d.dayIndex)).toEqual([1, 3, 5]);
+    expect(chosenDays(withDays(man, [0, 1, 2, 3, 4, 5, 6], 3))).toEqual([0, 2, 4]);
+    expect(withDays(man, [0, 1, 2, 3, 4, 5, 6], null).daysPerWeek).toBe(6);
+    expect(withDays(man, [2], null).daysPerWeek).toBeNull();
+  });
+
+  test('steps and cardio come with the plan; none when gaining', () => {
+    expect(PlanCalculator.training({ ...man, goal: 'LOSE_FAT' }).extras[0]).toBe('10,000 steps a day, every day');
+    expect(PlanCalculator.training({ ...man, goal: 'GAIN_WEIGHT' }).extras).toEqual(['8,000 steps a day, every day']);
+  });
+
+  test('home keeps the simple plan', () => {
+    const week = PlanCalculator.training({ ...man, place: 'HOME' });
+    expect(week.generated).toBeNull();
+    expect(week.splitName).toBe('Full body');
+  });
+
+  test('the starter program is one routine per generated session', () => {
+    const routines = starterRoutines(man);
+    expect(routines.map((r) => r.name)).toEqual(['Full body A', 'Full body B']);
+    expect(routines[0].exercises[0]).toMatchObject({ name: 'Hack Squat', sets: 2, reps: 10 });
   });
 
   test('editing goals regenerates a different plan', () => {
@@ -100,9 +132,19 @@ describe('BodyChecks (same results as the Android app)', () => {
   });
 
   test('profile survives a save and load', () => {
-    const p: UserProfile = { sex: 'WOMAN', age: 28, heightCm: 165, weightKg: 60, activity: 'LIGHT', goal: 'LOSE_FAT', daysPerWeek: 3, place: 'HOME', units: 'IMPERIAL', onboardingComplete: true };
+    const p: UserProfile = {
+      sex: 'WOMAN', age: 28, heightCm: 165, weightKg: 60, activity: 'LIGHT', goal: 'LOSE_FAT', level: 'BEGINNER',
+      trainingDays: [0, 2, 4], trainCount: null, daysPerWeek: 3, place: 'HOME', units: 'IMPERIAL', onboardingComplete: true,
+    };
     expect(profileFromMap(profileToMap(p))).toEqual(p);
     expect(profileFromMap({ sex: 'ALIEN' })).toEqual(emptyProfile());
+  });
+
+  test('profiles saved by older versions still load', () => {
+    const old = profileFromMap({ goal: 'GET_FIT', daysPerWeek: 4 });
+    expect(old.goal).toBe('MAINTAIN');
+    expect(old.level).toBeNull();
+    expect(chosenDays(old)).toEqual([0, 1, 3, 4]);
   });
 });
 

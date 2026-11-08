@@ -11,12 +11,12 @@ import {
 } from 'firebase/firestore';
 import { background, currentUid, db } from '../lib/firebase';
 import { createLive, createStore } from '../lib/store';
-import { Convert, hasEverythingForPlan, PlanCalculator } from './profile';
+import { Convert, hasEverythingForPlan } from './profile';
 import { ProfileRepository, profileStore } from './profileRepo';
 import { SocialRepository } from './socialRepo';
 import {
-  ActiveWorkout, activeFromJson, activeToJson, countRecords, ExerciseLibrary, LoggedExercise, LoggedSet, newSet,
-  Program, recordsByExercise, Routine, routineFromMap, routineToMap, uuid, WorkoutMath, WorkoutRecord, workoutFromDoc,
+  ActiveWorkout, activeFromJson, activeToJson, countRecords, LoggedExercise, LoggedSet, newSet,
+  Program, recordsByExercise, Routine, routineFromMap, routineToMap, starterRoutines, WorkoutMath, WorkoutRecord, workoutFromDoc,
 } from './training';
 
 /** The Train tab's state as screens see it. */
@@ -47,17 +47,7 @@ function createStarterProgram(uid: string): void {
     background(setDoc(meta, { seeded: true }, { merge: true }));
     return;
   }
-  const week = PlanCalculator.training(profile);
-  const home = profile.place === 'HOME';
-  const reps = profile.goal === 'BUILD_MUSCLE' ? 10 : 12;
-  const titles = [...new Set(week.days.map((d) => d.title))];
-  const routines: Routine[] = titles.map((title) => ({
-    id: uuid(),
-    name: title,
-    exercises: ExerciseLibrary.starterExercises(title, home)
-      .flatMap((id) => { const x = ExerciseLibrary.find(id); return x ? [x] : []; })
-      .map((x) => ({ exerciseId: x.id, name: x.name, sets: 3, reps })),
-  }));
+  const routines = starterRoutines(profile);
   const ref = doc(collection(userDoc(uid), 'programs'));
   const batch = writeBatch(db);
   batch.set(ref, programMap('My AscendLab plan', routines));

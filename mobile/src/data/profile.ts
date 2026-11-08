@@ -1,8 +1,18 @@
 /**
  * The person's profile, unit conversions, sanity checks and the plan calculator.
- * Ported one-to-one from the Android app (UserProfile.kt, BodyChecks.kt, PlanCalculator.kt)
- * so both apps produce exactly the same plan from the same answers.
+ * Profile, conversions and body checks are ported from the Android app (UserProfile.kt,
+ * BodyChecks.kt). The plan calculator now runs on the evidence-based engines in `src/lib/`:
+ * calories from the goal engine, gym training from the program generator. Home training
+ * keeps the Android app's simple version until the generator supports it.
  */
+import { liftingKcalPerDay } from '../lib/goal-engine/energy';
+import { computeTargets } from '../lib/goal-engine/targets';
+import type { Goal as EngineGoal } from '../lib/goal-engine/targets';
+import type { ActivityLevel as EngineActivity } from '../lib/goal-engine/energy';
+import { buildPlan, type WeekPlan } from '../lib/program-generator/plan';
+import { splitOptions, type Level as EngineLevel } from '../lib/program-generator/program';
+import { chooseTrainingDays, type Weekday } from '../lib/program-generator/schedule';
+import { CATALOG } from '../lib/program-generator/catalog';
 
 export type Sex = 'MAN' | 'WOMAN';
 export const SEX_LABEL: Record<Sex, string> = { MAN: 'Man', WOMAN: 'Woman' };
@@ -20,13 +30,28 @@ export const ACTIVITY: Record<ActivityLevel, { label: string; description: strin
   VERY: { label: 'Very active', description: 'Physical work or lots of movement', example: 'Construction, delivery by bike', multiplier: 1.725 },
 };
 
-export type Goal = 'LOSE_FAT' | 'BUILD_MUSCLE' | 'GET_FIT';
-export const GOALS: Goal[] = ['LOSE_FAT', 'BUILD_MUSCLE', 'GET_FIT'];
+/** GET_FIT, from older versions, now reads as MAINTAIN. */
+export type Goal = 'LOSE_FAT' | 'BUILD_MUSCLE' | 'GAIN_WEIGHT' | 'RECOMPOSITION' | 'MAINTAIN';
+export const GOALS: Goal[] = ['LOSE_FAT', 'BUILD_MUSCLE', 'GAIN_WEIGHT', 'RECOMPOSITION', 'MAINTAIN'];
 export const GOAL: Record<Goal, { label: string; description: string }> = {
-  LOSE_FAT: { label: 'Lose fat', description: 'Slim down steadily while keeping your strength' },
-  BUILD_MUSCLE: { label: 'Build muscle', description: 'Get stronger and add lean muscle' },
-  GET_FIT: { label: 'Get fit', description: 'Feel better, move better, build a routine' },
+  LOSE_FAT: { label: 'Lose weight', description: 'Lose fat steadily while keeping your muscle' },
+  BUILD_MUSCLE: { label: 'Build muscle', description: 'Add muscle with a small surplus, little fat' },
+  GAIN_WEIGHT: { label: 'Gain weight', description: 'Put on weight faster, muscle and some fat' },
+  RECOMPOSITION: { label: 'Recomposition', description: 'Lose fat and build muscle at the same time' },
+  MAINTAIN: { label: 'Maintain', description: 'Keep your weight, get fitter and stronger' },
 };
+const ENGINE_GOAL: Record<Goal, EngineGoal> = {
+  LOSE_FAT: 'lose_weight', BUILD_MUSCLE: 'lean_gain', GAIN_WEIGHT: 'gain_weight', RECOMPOSITION: 'recomposition', MAINTAIN: 'maintain',
+};
+
+export type Level = 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED';
+export const LEVELS: Level[] = ['BEGINNER', 'INTERMEDIATE', 'ADVANCED'];
+export const LEVEL: Record<Level, { label: string; description: string }> = {
+  BEGINNER: { label: 'Beginner', description: 'New to lifting, or less than a year of regular training' },
+  INTERMEDIATE: { label: 'Intermediate', description: '1 to 3 years of regular training' },
+  ADVANCED: { label: 'Advanced', description: 'More than 3 years, you know your lifts well' },
+};
+const ENGINE_LEVEL: Record<Level, EngineLevel> = { BEGINNER: 'beginner', INTERMEDIATE: 'intermediate', ADVANCED: 'advanced' };
 
 export type TrainingPlace = 'GYM' | 'HOME';
 export const PLACES: TrainingPlace[] = ['GYM', 'HOME'];
@@ -53,6 +78,13 @@ export interface UserProfile {
   weightKg: number | null;
   activity: ActivityLevel | null;
   goal: Goal | null;
+  /** Lifting experience. Missing on older profiles: treated as beginner (machines only). */
+  level: Level | null;
+  /** Weekdays the person can train, 0 = Monday ... 6 = Sunday. */
+  trainingDays: number[] | null;
+  /** "Only train N of them"; null = all tapped days (at most 6). */
+  trainCount: number | null;
+  /** How many days are actually trained; kept in sync with trainingDays and trainCount. */
   daysPerWeek: number | null;
   place: TrainingPlace | null;
   units: Units;
@@ -63,9 +95,28 @@ export const MIN_DAYS = 2;
 export const MAX_DAYS = 6;
 
 export const emptyProfile = (): UserProfile => ({
-  sex: null, age: null, heightCm: null, weightKg: null, activity: null,
-  goal: null, daysPerWeek: null, place: null, units: 'METRIC', onboardingComplete: false,
+  sex: null, age: null, heightCm: null, weightKg: null, activity: null, goal: null,
+  level: null, trainingDays: null, trainCount: null, daysPerWeek: null, place: null, units: 'METRIC', onboardingComplete: false,
 });
+
+/** Spread-out days for a number of days, used for profiles saved before the weekday picker. */
+const DEFAULT_DAYS: Record<number, number[]> = { 2: [0, 3], 3: [0, 2, 4], 4: [0, 1, 3, 4], 5: [0, 1, 2, 4, 5], 6: [0, 1, 2, 3, 4, 5] };
+
+/** The days that will be trained, from the tapped days and "only N". Null when fewer than 2 are tapped. */
+export function chosenDays(p: Pick<UserProfile, 'trainingDays' | 'trainCount' | 'daysPerWeek'>): number[] | null {
+  const tapped = p.trainingDays ?? (p.daysPerWeek != null ? DEFAULT_DAYS[Math.min(Math.max(p.daysPerWeek, MIN_DAYS), MAX_DAYS)] : null);
+  if (!tapped || new Set(tapped).size < MIN_DAYS) return null;
+  const count = p.trainCount != null && p.trainCount < new Set(tapped).size ? p.trainCount : undefined;
+  return chooseTrainingDays(tapped as Weekday[], count);
+}
+
+/** Sets the tapped days and "only N", and keeps daysPerWeek in sync. */
+export function withDays(p: UserProfile, trainingDays: number[], trainCount: number | null): UserProfile {
+  const days = [...new Set(trainingDays)].sort((a, b) => a - b);
+  const count = trainCount != null && trainCount >= MIN_DAYS && trainCount < Math.min(days.length, 7) ? trainCount : null;
+  const next = { ...p, trainingDays: days, trainCount: count };
+  return { ...next, daysPerWeek: chosenDays(next)?.length ?? null };
+}
 
 export function isEmptyProfile(p: UserProfile): boolean {
   return JSON.stringify(p) === JSON.stringify(emptyProfile());
@@ -81,10 +132,17 @@ export function hasEverythingForPlan(p: UserProfile | null | undefined): p is Us
 
 export function profileToMap(p: UserProfile): Record<string, unknown> {
   return {
-    sex: p.sex, age: p.age, heightCm: p.heightCm, weightKg: p.weightKg, activity: p.activity,
-    goal: p.goal, daysPerWeek: p.daysPerWeek, place: p.place, units: p.units, onboardingComplete: p.onboardingComplete,
+    sex: p.sex, age: p.age, heightCm: p.heightCm, weightKg: p.weightKg, activity: p.activity, goal: p.goal,
+    level: p.level, trainingDays: p.trainingDays, trainCount: p.trainCount,
+    daysPerWeek: p.daysPerWeek, place: p.place, units: p.units, onboardingComplete: p.onboardingComplete,
   };
 }
+
+const weekdays = (v: unknown): number[] | null => {
+  if (!Array.isArray(v)) return null;
+  const days = v.filter((d) => Number.isInteger(d) && d >= 0 && d <= 6) as number[];
+  return days.length > 0 ? [...new Set(days)].sort((a, b) => a - b) : null;
+};
 
 function enumOrNull<T extends string>(values: readonly T[], v: unknown): T | null {
   return values.includes(v as T) ? (v as T) : null;
@@ -95,13 +153,17 @@ const num = (v: unknown): number | null => (typeof v === 'number' && isFinite(v)
 export function profileFromMap(m: Record<string, unknown>): UserProfile {
   const age = num(m.age);
   const days = num(m.daysPerWeek);
+  const count = num(m.trainCount);
   return {
     sex: enumOrNull(['MAN', 'WOMAN'] as const, m.sex),
     age: age == null ? null : Math.trunc(age),
     heightCm: num(m.heightCm),
     weightKg: num(m.weightKg),
     activity: enumOrNull(ACTIVITY_LEVELS, m.activity),
-    goal: enumOrNull(GOALS, m.goal),
+    goal: m.goal === 'GET_FIT' ? 'MAINTAIN' : enumOrNull(GOALS, m.goal),
+    level: enumOrNull(LEVELS, m.level),
+    trainingDays: weekdays(m.trainingDays),
+    trainCount: count == null ? null : Math.trunc(count),
     daysPerWeek: days == null ? null : Math.trunc(days),
     place: enumOrNull(PLACES, m.place),
     units: enumOrNull(UNITS, m.units) ?? 'METRIC',
@@ -183,8 +245,12 @@ export interface NutritionTargets {
   fatG: number;
   /** Calories the body burns at rest. */
   bmr: number;
-  /** Calories burned on a normal day, activity included (the "maintenance" level). */
+  /** Calories burned on a normal day, daily life and planned lifting included (the "maintenance" level). */
   maintenance: number;
+  /** Of which planned lifting, averaged over the week. */
+  liftingKcal: number;
+  /** The target was raised to the safety minimum (1,200 / 1,500 kcal). */
+  atMinimum: boolean;
 }
 
 /** One training day in the week. `dayIndex` runs 0 (Monday) to 6 (Sunday). */
@@ -196,81 +262,99 @@ export interface TrainingWeek {
   days: PlannedDay[];
   setsAndReps: string;
   minutesPerSession: number;
+  /** Daily steps and the cardio plan, one line each (gym plans). */
+  extras: string[];
+  /** The full generated week (gym plans): sessions, warm-ups, cardio. Null for home plans. */
+  generated: WeekPlan | null;
 }
 
 const roundTo = (x: number, step: number) => roundInt(x / step) * step;
+
+const ENGINE_ACTIVITY: Record<ActivityLevel, EngineActivity> = { SEDENTARY: 'sedentary', LIGHT: 'light', MODERATE: 'moderate', VERY: 'high' };
+
+/** The generated gym plan for a profile, from the program generator. */
+export function gymPlan(p: UserProfile): ReturnType<typeof buildPlan> | null {
+  const days = chosenDays(p);
+  if (!days || p.age == null || p.goal == null) return null;
+  return buildPlan({
+    level: ENGINE_LEVEL[p.level ?? 'BEGINNER'],
+    available: days as Weekday[],
+    goal: ENGINE_GOAL[p.goal],
+    age: p.age,
+  });
+}
+
+/** Planned lifting minutes a week: the generated sessions at the gym, the simple estimate at home. */
+function liftingMinutes(p: UserProfile): number {
+  if (p.place === 'HOME') return (chosenDays(p)?.length ?? 0) * homeTraining(p).minutesPerSession;
+  return gymPlan(p)?.week.liftingMinutesPerWeek ?? 0;
+}
+
+const exerciseName = (id: string) => CATALOG[id]?.name ?? id;
+const DAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
+/** "10,000 steps a day" and the cardio, in words. */
+function extrasOf(week: WeekPlan): string[] {
+  const lines = [`${formatKcal(week.stepsPerDay)} steps a day, every day`];
+  const after = week.days.flatMap((d) => d.cardio.filter((x) => x.when === 'after_lifting'));
+  const rest = week.days.flatMap((d) => d.cardio.filter((x) => x.when === 'rest_day'));
+  if (after.length === 0 && rest.length === 0) return lines;
+  const parts: string[] = [];
+  if (after.length > 0) parts.push(`${after[0].minutes} min after lifting (incline walk or stairs)`);
+  if (rest.length > 0) parts.push(`${rest.map((x) => x.minutes).join(' / ')} min on ${rest.length === 1 ? DAY_NAMES[rest[0].weekday] : 'rest days'}`);
+  lines.push(`Cardio, ${week.cardioMinPerWeek} min a week: ${parts.join(', ')}`);
+  return lines;
+}
 
 /**
  * Turns a profile into a calorie target and a weekly training plan.
  * Pure functions: the same answers always give the same plan.
  */
 export const PlanCalculator = {
+  /** Goal engine: Mifflin-St Jeor, weekly rate per goal, lifting calories, safety floors. */
   nutrition(p: UserProfile): NutritionTargets {
-    const weight = p.weightKg!, height = p.heightCm!, age = p.age!;
-    // Mifflin-St Jeor equation, the most accurate common formula for resting calories.
-    const sexOffset = p.sex === 'WOMAN' ? -161 : 5;
-    const bmr = 10 * weight + 6.25 * height - 5 * age + sexOffset;
-    const maintenance = bmr * ACTIVITY[p.activity!].multiplier;
-
-    // A moderate 20% deficit or 10% surplus: steady progress without extreme dieting.
-    const minimum = p.sex === 'WOMAN' ? 1200 : 1500;
-    const raw = p.goal === 'LOSE_FAT' ? Math.max(maintenance * 0.8, minimum)
-      : p.goal === 'BUILD_MUSCLE' ? maintenance * 1.1 : maintenance;
-    const calories = roundTo(raw, 10);
-
-    // Protein per kg of body weight; above a BMI of 27 the weight at BMI 27 is used instead.
-    const meters = height / 100;
-    const referenceWeight = Math.min(weight, 27 * meters * meters);
-    const perKg = p.goal === 'LOSE_FAT' ? 2.0 : p.goal === 'BUILD_MUSCLE' ? 1.8 : 1.6;
-    const protein = roundInt(referenceWeight * perKg);
-    const fat = roundInt((calories * 0.25) / 9);
-    const carbs = Math.max(roundInt((calories - protein * 4 - fat * 9) / 4), 50);
-
-    return { calories, proteinG: protein, carbsG: carbs, fatG: fat, bmr: roundTo(bmr, 10), maintenance: roundTo(maintenance, 10) };
+    const exerciseKcalPerDay = liftingKcalPerDay(p.weightKg!, liftingMinutes(p));
+    const t = computeTargets({
+      sex: p.sex === 'WOMAN' ? 'female' : 'male',
+      age: p.age!,
+      weightKg: p.weightKg!,
+      heightCm: p.heightCm!,
+      activity: ENGINE_ACTIVITY[p.activity!],
+      goal: ENGINE_GOAL[p.goal!],
+      exerciseKcalPerDay,
+    });
+    return {
+      calories: roundTo(t.calories, 10),
+      proteinG: t.macros.proteinG,
+      carbsG: t.macros.carbsG,
+      fatG: t.macros.fatG,
+      bmr: roundTo(t.bmr, 10),
+      maintenance: roundTo(t.tdee, 10),
+      liftingKcal: exerciseKcalPerDay,
+      atMinimum: t.notices.includes('calorie_floor'),
+    };
   },
 
+  /** Gym: the program generator. Home: the Android app's simple plan (the generator is gym-only for now). */
   training(p: UserProfile): TrainingWeek {
-    const days = Math.min(Math.max(p.daysPerWeek!, MIN_DAYS), MAX_DAYS);
-    const home = p.place === 'HOME';
-    // Rest days are spread out so each muscle gets time to recover.
-    const schedule = ({ 2: [0, 3], 3: [0, 2, 4], 4: [0, 1, 3, 4], 5: [0, 1, 2, 4, 5] } as Record<number, number[]>)[days] ?? [0, 1, 2, 3, 4, 5];
-
-    const fullBody: [string, string] = ['Full body', home ? 'Squats, push-ups, rows and core' : 'Squat, bench press, row and core'];
-    const upper: [string, string] = ['Upper body', 'Chest, back, shoulders and arms'];
-    const lower: [string, string] = ['Lower body', 'Legs, glutes and core'];
-    const push: [string, string] = ['Push', 'Chest, shoulders and triceps'];
-    const pull: [string, string] = ['Pull', 'Back and biceps'];
-    const legs: [string, string] = ['Legs', 'Thighs, glutes and calves'];
-
-    let splitName: string, explanation: string, sessions: [string, string][];
-    if (days <= 3) {
-      splitName = 'Full body';
-      explanation = "Each session trains your whole body. It's the best start for beginners: every muscle gets worked several times a week.";
-      sessions = Array(days).fill(fullBody);
-    } else if (days === 4) {
-      splitName = 'Upper / Lower';
-      explanation = 'You alternate upper-body and lower-body days, so one half rests while the other trains.';
-      sessions = [upper, lower, upper, lower];
-    } else if (days === 5) {
-      splitName = 'Upper / Lower + Push / Pull / Legs';
-      explanation = 'Two half-body days, then three focused days. Every muscle is trained twice a week.';
-      sessions = [upper, lower, push, pull, legs];
-    } else {
-      splitName = 'Push / Pull / Legs';
-      explanation = 'Pushing muscles, pulling muscles, then legs, twice a week. Great once you have a routine.';
-      sessions = [push, pull, legs, push, pull, legs];
-    }
-
-    const setsAndReps = p.goal === 'BUILD_MUSCLE' ? '3 to 4 sets of 8 to 12 reps, resting about 90 seconds'
-      : p.goal === 'LOSE_FAT' ? '3 sets of 12 to 15 reps, with short rests of about 45 seconds'
-        : '2 to 3 sets of 10 to 15 reps, resting about 60 seconds';
-
+    if (p.place === 'HOME') return homeTraining(p);
+    const plan = gymPlan(p);
+    if (!plan) return homeTraining(p);
+    const { week } = plan;
+    const sessions = week.days.filter((d) => d.session);
+    const options = splitOptions(sessions.length);
+    const split = options.find((o) => o.split === plan.state.schedule.program.split) ?? options[0];
     return {
-      splitName,
-      splitExplanation: explanation,
-      days: schedule.map((dayIndex, i) => ({ dayIndex, title: sessions[i][0], focus: sessions[i][1] })),
-      setsAndReps,
-      minutesPerSession: days <= 3 ? 50 : 45,
+      splitName: split.label,
+      splitExplanation: split.description,
+      days: sessions.map((d) => {
+        const ex = d.session!.exercises.map((x) => exerciseName(x.exerciseId));
+        return { dayIndex: d.weekday, title: d.session!.name, focus: `${ex.slice(0, 4).join(', ')}${ex.length > 4 ? ` + ${ex.length - 4} more` : ''}` };
+      }),
+      setsAndReps: '2 sets of 6 to 10 reps, each to failure (the last rep you can do with good form). When both sets reach 10, add weight',
+      minutesPerSession: roundInt(week.liftingMinutesPerWeek / Math.max(sessions.length, 1)),
+      extras: extrasOf(week),
+      generated: week,
     };
   },
 
@@ -286,22 +370,74 @@ export const PlanCalculator = {
   },
 };
 
+/** The Android app's simple plan, kept for home training. */
+function homeTraining(p: UserProfile): TrainingWeek {
+  const schedule = chosenDays(p) ?? DEFAULT_DAYS[3];
+  const days = schedule.length;
+
+  const fullBody: [string, string] = ['Full body', 'Squats, push-ups, rows and core'];
+  const upper: [string, string] = ['Upper body', 'Chest, back, shoulders and arms'];
+  const lower: [string, string] = ['Lower body', 'Legs, glutes and core'];
+  const push: [string, string] = ['Push', 'Chest, shoulders and triceps'];
+  const pull: [string, string] = ['Pull', 'Back and biceps'];
+  const legs: [string, string] = ['Legs', 'Thighs, glutes and calves'];
+
+  let splitName: string, explanation: string, sessions: [string, string][];
+  if (days <= 3) {
+    splitName = 'Full body';
+    explanation = "Each session trains your whole body. It's the best start for beginners: every muscle gets worked several times a week.";
+    sessions = Array(days).fill(fullBody);
+  } else if (days === 4) {
+    splitName = 'Upper / Lower';
+    explanation = 'You alternate upper-body and lower-body days, so one half rests while the other trains.';
+    sessions = [upper, lower, upper, lower];
+  } else if (days === 5) {
+    splitName = 'Upper / Lower + Push / Pull / Legs';
+    explanation = 'Two half-body days, then three focused days. Every muscle is trained twice a week.';
+    sessions = [upper, lower, push, pull, legs];
+  } else {
+    splitName = 'Push / Pull / Legs';
+    explanation = 'Pushing muscles, pulling muscles, then legs, twice a week. Great once you have a routine.';
+    sessions = [push, pull, legs, push, pull, legs];
+  }
+
+  const muscle = p.goal === 'BUILD_MUSCLE' || p.goal === 'GAIN_WEIGHT';
+  const setsAndReps = muscle ? '3 to 4 sets of 8 to 12 reps, resting about 90 seconds'
+    : p.goal === 'LOSE_FAT' ? '3 sets of 12 to 15 reps, with short rests of about 45 seconds'
+      : '2 to 3 sets of 10 to 15 reps, resting about 60 seconds';
+
+  return {
+    splitName,
+    splitExplanation: explanation,
+    days: schedule.map((dayIndex, i) => ({ dayIndex, title: sessions[i][0], focus: sessions[i][1] })),
+    setsAndReps,
+    minutesPerSession: days <= 3 ? 50 : 45,
+    extras: [],
+    generated: null,
+  };
+}
+
 /** Thousands separators, like Kotlin's NumberFormat.getIntegerInstance(). */
 export function formatKcal(value: number): string {
   return Math.trunc(value).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 }
 
 export function calorieReason(t: NutritionTargets, goal: Goal): string {
-  const normal = `Your body uses about ${formatKcal(t.maintenance)} kcal on a normal day.`;
+  const lifting = t.liftingKcal > 0 ? `, your training included` : '';
+  const normal = `Your body uses about ${formatKcal(t.maintenance)} kcal on a normal day${lifting}.`;
+  if (t.atMinimum) return `${normal} We keep your target at a safe minimum, so you progress gently and stay energised.`;
   switch (goal) {
     case 'LOSE_FAT':
-      // When 20% under maintenance would drop below a safe minimum, the minimum is used instead.
-      return t.calories <= t.maintenance * 0.81
-        ? `${normal} Eating a little less than that means steady fat loss without going hungry.`
-        : `${normal} We keep your target at a safe minimum, so you lose fat gently and stay energised.`;
+      return `${normal} Eating a little less than that means losing about 0.5% of your weight a week, without going hungry.`;
     case 'BUILD_MUSCLE':
-      return `${normal} Eating a bit more than that gives your muscles the extra energy they need to grow.`;
-    case 'GET_FIT':
+      return `${normal} A small surplus gives your muscles what they need to grow, with little fat gain.`;
+    case 'GAIN_WEIGHT':
+      return `${normal} Eating more than that adds about 0.5% of your weight a week, mostly muscle if you train hard.`;
+    case 'RECOMPOSITION':
+      return t.calories < t.maintenance
+        ? `${normal} A small deficit lets you lose fat while your training builds muscle.`
+        : `${normal} Eating about that much lets your training build muscle while fat slowly goes down.`;
+    case 'MAINTAIN':
       return `${normal} Eating about that much keeps your weight steady while you get fitter.`;
   }
 }

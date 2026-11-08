@@ -12,7 +12,7 @@ import { c } from '../../theme';
 import { Appear, Screen, T } from '../../components/core';
 import { OnboardingScaffold } from '../../components/onboarding';
 import { CalorieCard, WeekCard } from '../../components/plan';
-import { GoalsForm } from '../onboarding/YourGoalsScreen';
+import { GoalsForm, goalsComplete } from '../onboarding/YourGoalsScreen';
 
 export function EditGoalsScreen() {
   const saved = useStore(profileStore);
@@ -27,10 +27,12 @@ function EditGoalsContent({ original }: { original: UserProfile }) {
   const nav = useNav();
   const [edited, setEdited] = useState(original);
   const [saving, setSaving] = useState(false);
-  const changed = edited.goal !== original.goal || edited.daysPerWeek !== original.daysPerWeek || edited.place !== original.place;
+  const fields = (p: UserProfile) => JSON.stringify([p.goal, p.level, p.trainingDays, p.trainCount, p.place]);
+  const changed = fields(edited) !== fields(original) && goalsComplete(edited);
   const before = useMemo(() => PlanCalculator.nutrition(original), [original]);
-  const after = useMemo(() => PlanCalculator.nutrition(edited), [edited]);
-  const week = useMemo(() => PlanCalculator.training(edited), [edited]);
+  // While the form is incomplete (e.g. fewer than 2 days tapped) there is nothing to preview.
+  const after = useMemo(() => (goalsComplete(edited) ? PlanCalculator.nutrition(edited) : null), [edited]);
+  const week = useMemo(() => (goalsComplete(edited) ? PlanCalculator.training(edited) : null), [edited]);
 
   return (
     <OnboardingScaffold
@@ -47,21 +49,16 @@ function EditGoalsContent({ original }: { original: UserProfile }) {
         goBack(nav);
       }}
     >
-      <GoalsForm
-        goal={edited.goal}
-        days={edited.daysPerWeek}
-        place={edited.place}
-        onGoal={(goal) => setEdited({ ...edited, goal })}
-        onDays={(daysPerWeek) => setEdited({ ...edited, daysPerWeek })}
-        onPlace={(place) => setEdited({ ...edited, place })}
-        showErrors={false}
-        firstIndex={0}
-      />
-      <Appear index={9}><CalorieCard targets={after} goal={edited.goal!} /></Appear>
-      {after.calories !== before.calories && (
-        <Appear><View><T color={c.onSurfaceVariant}>Before: {formatKcal(before.calories)} kcal a day</T></View></Appear>
+      <GoalsForm value={edited} onChange={setEdited} showErrors firstIndex={0} />
+      {after && week && (
+        <>
+          <Appear index={18}><CalorieCard targets={after} goal={edited.goal!} /></Appear>
+          {after.calories !== before.calories && (
+            <Appear><View><T color={c.onSurfaceVariant}>Before: {formatKcal(before.calories)} kcal a day</T></View></Appear>
+          )}
+          <Appear index={19}><WeekCard week={week} /></Appear>
+        </>
       )}
-      <Appear index={10}><WeekCard week={week} /></Appear>
     </OnboardingScaffold>
   );
 }

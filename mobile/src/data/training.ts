@@ -3,7 +3,8 @@
  * Ported from Exercises.kt and Training.kt; stored shapes are identical so data written
  * by the Android app reads back here and vice versa.
  */
-import { Convert, roundInt, Units, UNIT } from './profile';
+import { CATALOG, type Muscle as CatalogMuscle } from '../lib/program-generator/catalog';
+import { Convert, gymPlan, PlanCalculator, roundInt, Units, UNIT, UserProfile } from './profile';
 
 export type Muscle = 'CHEST' | 'BACK' | 'SHOULDERS' | 'ARMS' | 'LEGS' | 'GLUTES' | 'CORE' | 'CARDIO' | 'OTHER';
 export const MUSCLES: Muscle[] = ['CHEST', 'BACK', 'SHOULDERS', 'ARMS', 'LEGS', 'GLUTES', 'CORE', 'CARDIO', 'OTHER'];
@@ -102,6 +103,15 @@ export const EXERCISES: Exercise[] = [
 
 const byId = new Map(EXERCISES.map((x) => [x.id, x]));
 
+/** The program generator's exercises (free-exercise-db ids), in this library's shape. */
+const MUSCLE_OF: Record<CatalogMuscle, Muscle> = {
+  chest: 'CHEST', back: 'BACK', shoulders: 'SHOULDERS', biceps: 'ARMS', triceps: 'ARMS',
+  quads: 'LEGS', hamstrings: 'LEGS', calves: 'LEGS', glutes: 'GLUTES', abs: 'CORE',
+};
+Object.values(CATALOG).forEach((x) => {
+  if (!byId.has(x.id)) byId.set(x.id, e(x.id, x.name, MUSCLE_OF[x.primary[0]] ?? 'OTHER', x.equipment.toUpperCase() as Equipment));
+});
+
 export const ExerciseLibrary = {
   find: (id: string) => byId.get(id),
   custom(name: string): Exercise {
@@ -182,6 +192,33 @@ export const routineToMap = (r: Routine) => ({
   name: r.name,
   exercises: r.exercises.map((x) => ({ exerciseId: x.exerciseId, name: x.name, sets: x.sets, reps: x.reps })),
 });
+
+/**
+ * The starter routines. Gym: one routine per session of the generated program, with its
+ * exercises, sets and the top of the rep range as target. Home: the simple starter lists.
+ */
+export function starterRoutines(profile: UserProfile): Routine[] {
+  const plan = profile.place === 'HOME' ? null : gymPlan(profile);
+  if (plan) {
+    return plan.state.schedule.cycle.map((day) => ({
+      id: uuid(),
+      name: day.name,
+      exercises: day.exercises.map((x) => ({
+        exerciseId: x.exerciseId, name: ExerciseLibrary.find(x.exerciseId)?.name ?? x.exerciseId, sets: x.sets, reps: x.repMax,
+      })),
+    }));
+  }
+  const week = PlanCalculator.training(profile);
+  const reps = profile.goal === 'BUILD_MUSCLE' || profile.goal === 'GAIN_WEIGHT' ? 10 : 12;
+  const titles = [...new Set(week.days.map((d) => d.title))];
+  return titles.map((title) => ({
+    id: uuid(),
+    name: title,
+    exercises: ExerciseLibrary.starterExercises(title, profile.place === 'HOME')
+      .flatMap((id) => { const x = ExerciseLibrary.find(id); return x ? [x] : []; })
+      .map((x) => ({ exerciseId: x.id, name: x.name, sets: 3, reps })),
+  }));
+}
 
 // ---------------------------------------------------------------- Live workout
 

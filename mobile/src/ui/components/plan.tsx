@@ -91,6 +91,7 @@ export function WeekCard({ week }: { week: TrainingWeek }) {
         </View>
       ))}
       <HelpNote text={`Each exercise: ${week.setsAndReps}.`} background={c.surfaceContainerHigh} />
+      {week.extras.map((line) => <T key={line} color={c.onSurfaceVariant}>{line}</T>)}
     </PlanCard>
   );
 }
