@@ -11,7 +11,7 @@ import {
 import { Days, FeedPost, gapLabel, postFromMap } from '../social';
 import {
   activeFromJson, activeToJson, ActiveWorkout, beatenBy, countRecords, ExerciseLibrary, LoggedExercise, recordsByExercise,
-  recordsFrom, starterRoutines, WorkoutMath, workoutFromDoc,
+  nextRoutine, recordsFrom, starterRoutines, WorkoutMath, workoutFromDoc,
 } from '../training';
 
 const man: UserProfile = {
@@ -93,6 +93,23 @@ describe('PlanCalculator: training from the program generator', () => {
     const routines = starterRoutines(man);
     expect(routines.map((r) => r.name)).toEqual(['Full body A', 'Full body B']);
     expect(routines[0].exercises[0]).toMatchObject({ name: 'Hack Squat', sets: 2, reps: 10 });
+  });
+
+  test('a 6-day plan lists each routine once, in order', () => {
+    const six = starterRoutines(withDays({ ...man, level: 'INTERMEDIATE' }, [0, 1, 2, 3, 4, 5], null));
+    expect(six.map((r) => r.name)).toEqual(['Chest & back', 'Shoulders & arms', 'Legs']);
+  });
+
+  test('up next: the routine after the last one done, wrapping around', () => {
+    const routines = starterRoutines(withDays({ ...man, level: 'INTERMEDIATE' }, [0, 1, 2, 3, 4, 5], null));
+    const program = { id: 'p', name: 'Plan', routines, createdAt: 0 };
+    const done = (routineId: string | null, title = 'x') =>
+      ({ id: 'w', title, routineId, startedAt: 0, finishedAt: 0, durationSec: 0, volumeKg: 0, records: 0, exercises: [] });
+    expect(nextRoutine(program, [])?.name).toBe('Chest & back');
+    expect(nextRoutine(program, [done(routines[0].id)])?.name).toBe('Shoulders & arms');
+    expect(nextRoutine(program, [done(routines[2].id), done(routines[1].id)])?.name).toBe('Chest & back');
+    expect(nextRoutine(program, [done(null, 'Legs')])?.name).toBe('Chest & back');
+    expect(nextRoutine(program, [done('other-program')])?.name).toBe('Chest & back');
   });
 
   test('editing goals regenerates a different plan', () => {

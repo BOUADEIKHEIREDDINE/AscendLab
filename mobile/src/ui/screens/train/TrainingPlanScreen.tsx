@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { FlatList, View } from 'react-native';
 import { profileStore } from '../../../data/profileRepo';
 import { activeProgramOf, activeStore, historyLive, TrainRepository, trainLive } from '../../../data/trainRepo';
-import { doneSets, Routine, setCount, WorkoutMath } from '../../../data/training';
+import { doneSets, nextRoutine, Routine, setCount, WorkoutMath } from '../../../data/training';
 import { useStore } from '../../../lib/store';
 import { useNav } from '../../../navigation/types';
 import { c, Gutter } from '../../theme';
@@ -24,6 +24,7 @@ export function TrainingPlanScreen() {
   const [deleting, setDeleting] = useState<Routine | null>(null);
   const [rebuilding, setRebuilding] = useState(false);
   const recent = (history ?? []).slice(0, 5);
+  const upNext = nextRoutine(program, history);
 
   function start(routine: Routine | null) {
     haptics.confirm();
@@ -111,6 +112,7 @@ export function TrainingPlanScreen() {
           <View>
             <RoutineRow
               routine={item}
+              next={item.id === upNext?.id}
               onStart={() => start(item)}
               onEdit={() => program && nav.navigate('RoutineEditor', { programId: program.id, routineId: item.id })}
               onDelete={() => setDeleting(item)}
@@ -175,17 +177,26 @@ export function TrainingPlanScreen() {
   );
 }
 
-function RoutineRow({ routine, onStart, onEdit, onDelete }: { routine: Routine; onStart: () => void; onEdit: () => void; onDelete: () => void }) {
+function RoutineRow({ routine, next, onStart, onEdit, onDelete }: {
+  routine: Routine; next: boolean; onStart: () => void; onEdit: () => void; onDelete: () => void;
+}) {
   const [menu, setMenu] = useState(false);
   return (
     <PressableScale onPress={onEdit} style={{ flexDirection: 'row', alignItems: 'center', paddingLeft: Gutter, paddingRight: 8, paddingVertical: 12 }}>
       <View style={{ flex: 1 }}>
-        <T v="titleMedium">{routine.name}</T>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <T v="titleMedium">{routine.name}</T>
+          {next && (
+            <View style={{ backgroundColor: c.primary, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 }}>
+              <T v="labelSmall" color={c.onPrimary}>Up next</T>
+            </View>
+          )}
+        </View>
         <T v="bodySmall" color={c.onSurfaceVariant} lines={2}>
           {routine.exercises.length === 0 ? 'No exercises yet' : routine.exercises.map((x) => x.name).join(', ')}
         </T>
       </View>
-      <Button kind="tonal" label="Start" onPress={onStart} enabled={routine.exercises.length > 0} style={{ marginLeft: 12 }} compact />
+      <Button kind={next ? 'filled' : 'tonal'} label="Start" onPress={onStart} enabled={routine.exercises.length > 0} style={{ marginLeft: 12 }} compact />
       <IconButton name="more-vert" label="More" color={c.onSurfaceVariant} onPress={() => setMenu(true)} />
       <ActionMenu visible={menu} onDismiss={() => setMenu(false)} items={[
         { label: 'Edit', icon: 'edit', onPress: onEdit },

@@ -201,7 +201,9 @@ export const routineToMap = (r: Routine) => ({
 export function starterRoutines(profile: UserProfile): Routine[] {
   const plan = profile.place === 'HOME' ? null : gymPlan(profile);
   if (plan) {
-    return plan.state.schedule.cycle.map((day) => ({
+    // A 6-day plan repeats each session; like a Hevy folder, each routine is listed once, in order.
+    const unique = plan.state.schedule.cycle.filter((d, i, all) => all.findIndex((x) => x.name === d.name) === i);
+    return unique.map((day) => ({
       id: uuid(),
       name: day.name,
       exercises: day.exercises.map((x) => ({
@@ -313,6 +315,8 @@ export interface LoggedExercise { exerciseId: string; name: string; sets: Logged
 export interface WorkoutRecord {
   id: string;
   title: string;
+  /** The routine it was started from, if any. */
+  routineId?: string | null;
   startedAt: number;
   finishedAt: number;
   durationSec: number;
@@ -335,6 +339,7 @@ export function workoutFromDoc(id: string, d: Record<string, unknown>): WorkoutR
   return {
     id,
     title: asStr(d.title, 'Workout'),
+    routineId: typeof d.routineId === 'string' ? d.routineId : null,
     startedAt: asNum(d.startedAt, 0),
     finishedAt: asNum(d.finishedAt, 0),
     durationSec: Math.trunc(asNum(d.durationSec, 0)),
@@ -416,6 +421,19 @@ export function recordsByExercise(history: WorkoutRecord[]): Map<string, Exercis
   const out = new Map<string, ExerciseRecords>();
   sessions.forEach((v, k) => out.set(k, recordsFrom(v)));
   return out;
+}
+
+/**
+ * The routine to do next: the one after the last workout done from this program (by routine,
+ * else by name), wrapping around; the first one before any workout. Sessions follow the
+ * program's order, not the calendar, so a missed day just moves to the next training day.
+ */
+export function nextRoutine(program: Program | null, history: WorkoutRecord[] | null | undefined): Routine | null {
+  if (!program || program.routines.length === 0) return null;
+  const last = (history ?? []).find((w) => program.routines.some((r) => r.id === w.routineId || (!w.routineId && r.name === w.title)));
+  if (!last) return program.routines[0];
+  const i = program.routines.findIndex((r) => r.id === last.routineId || (!last.routineId && r.name === last.title));
+  return program.routines[(i + 1) % program.routines.length];
 }
 
 /** Most recent sets of each exercise, from history (newest first). Powers the "Previous" column. */
