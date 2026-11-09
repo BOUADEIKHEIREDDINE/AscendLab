@@ -10,6 +10,8 @@ import { c } from '../theme';
 import { T } from './core';
 
 const FRAME_MS = 1000;
+/** Full width on a phone; capped on wide screens (web, tablets). */
+const BOX = { width: '100%', maxWidth: 480, alignSelf: 'center' } as const;
 
 function useReduceMotion(): boolean {
   const [reduce, setReduce] = useState(false);
@@ -38,7 +40,7 @@ export function ExerciseAnimation({ images, name }: { images: string[]; name: st
   if (images.length === 0) return null;
   if (failed) {
     return (
-      <View style={{ aspectRatio: 4 / 3, borderRadius: 12, backgroundColor: c.surfaceContainer, alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+      <View style={{ ...BOX, aspectRatio: 4 / 3, borderRadius: 12, backgroundColor: c.surfaceContainer, alignItems: 'center', justifyContent: 'center', padding: 16 }}>
         <T color={c.onSurfaceVariant} center>Photos need an internet connection.</T>
       </View>
     );
@@ -50,7 +52,7 @@ export function ExerciseAnimation({ images, name }: { images: string[]; name: st
 
   if (reduce && images.length > 1) {
     return (
-      <View style={{ flexDirection: 'row', gap: 8 }} accessible accessibilityLabel={`${name}: start and end position`}>
+      <View style={{ ...BOX, maxWidth: 720, flexDirection: 'row', gap: 8 }} accessible accessibilityLabel={`${name}: start and end position`}>
         {images.slice(0, 2).map((uri, i) => (
           <View key={i} style={{ flex: 1, aspectRatio: 4 / 3, borderRadius: 12, overflow: 'hidden', backgroundColor: '#fff' }}>
             {photo(uri, true, i)}
@@ -61,7 +63,7 @@ export function ExerciseAnimation({ images, name }: { images: string[]; name: st
   }
   // Every photo stays mounted so the flip never waits for a download; only the current one shows.
   return (
-    <View style={{ aspectRatio: 4 / 3, borderRadius: 12, overflow: 'hidden', backgroundColor: '#fff' }}
+    <View style={{ ...BOX, aspectRatio: 4 / 3, borderRadius: 12, overflow: 'hidden', backgroundColor: '#fff' }}
       accessible accessibilityRole="image" accessibilityLabel={`${name}: start and end position`}>
       {images.map((uri, i) => photo(uri, i === frame, i))}
     </View>
