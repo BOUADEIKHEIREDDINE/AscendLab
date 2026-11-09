@@ -22,6 +22,7 @@ import { StoryScreen } from '../ui/screens/home/StoryScreen';
 import { TrainingPlanScreen } from '../ui/screens/train/TrainingPlanScreen';
 import { ProgramsScreen } from '../ui/screens/train/ProgramsScreen';
 import { RoutineEditorScreen } from '../ui/screens/train/RoutineEditorScreen';
+import { RoutineDetailScreen } from '../ui/screens/train/RoutineDetailScreen';
 import { WorkoutSessionScreen } from '../ui/screens/train/WorkoutSessionScreen';
 import {
   CalendarScreen, ExerciseDetailScreen, ExerciseLibraryScreen, StatisticsScreen, WorkoutDetailScreen,
@@ -49,6 +50,7 @@ const TAB_PAGES: Record<keyof TabPages, ComponentType> = {
   TrainingPlan: TrainingPlanScreen,
   Programs: ProgramsScreen,
   RoutineEditor: RoutineEditorScreen,
+  RoutineDetail: RoutineDetailScreen,
   WorkoutDetail: WorkoutDetailScreen,
   ExerciseDetail: ExerciseDetailScreen,
   Statistics: StatisticsScreen,

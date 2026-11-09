@@ -130,6 +130,7 @@ export function TrainingPlanScreen() {
               routine={item}
               next={item.id === upNext?.id}
               onStart={() => start(item)}
+              onOpen={() => program && nav.navigate('RoutineDetail', { programId: program.id, routineId: item.id })}
               onEdit={() => program && nav.navigate('RoutineEditor', { programId: program.id, routineId: item.id })}
               onDelete={() => setDeleting(item)}
             />
@@ -249,12 +250,12 @@ export function TrainingPlanScreen() {
   );
 }
 
-function RoutineRow({ routine, next, onStart, onEdit, onDelete }: {
-  routine: Routine; next: boolean; onStart: () => void; onEdit: () => void; onDelete: () => void;
+function RoutineRow({ routine, next, onStart, onOpen, onEdit, onDelete }: {
+  routine: Routine; next: boolean; onStart: () => void; onOpen: () => void; onEdit: () => void; onDelete: () => void;
 }) {
   const [menu, setMenu] = useState(false);
   return (
-    <PressableScale onPress={onEdit} style={{ flexDirection: 'row', alignItems: 'center', paddingLeft: Gutter, paddingRight: 8, paddingVertical: 12 }}>
+    <PressableScale onPress={onOpen} style={{ flexDirection: 'row', alignItems: 'center', paddingLeft: Gutter, paddingRight: 8, paddingVertical: 12 }}>
       <View style={{ flex: 1 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
           <T v="titleMedium">{routine.name}</T>

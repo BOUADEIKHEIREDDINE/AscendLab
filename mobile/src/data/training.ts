@@ -640,3 +640,9 @@ export function replacementSetCount(old: ActiveExercise): number {
   const working = old.sets.filter((s) => s.type !== 'WARMUP');
   return Math.max(working.filter((s) => !s.done).length, 1);
 }
+
+/** Last time's working sets (warm-ups skipped), one per planned set; null where there was none. */
+export function previousForSets(last: LoggedSet[] | undefined, count: number): (LoggedSet | null)[] {
+  const working = (last ?? []).filter((s) => s.type !== 'WARMUP');
+  return Array.from({ length: count }, (_, i) => working[i] ?? null);
+}

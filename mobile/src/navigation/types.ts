@@ -18,6 +18,7 @@ export type TabPages = {
   TrainingPlan: undefined;
   Programs: undefined;
   RoutineEditor: { programId: string; routineId: string | null };
+  RoutineDetail: { programId: string; routineId: string };
   WorkoutDetail: { workoutId: string };
   ExerciseDetail: { exerciseId: string; name: string };
   Statistics: undefined;

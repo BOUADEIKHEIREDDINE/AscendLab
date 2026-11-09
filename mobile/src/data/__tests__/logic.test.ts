@@ -13,7 +13,7 @@ import {
   activeFromJson, activeToJson, ActiveWorkout, beatenBy, countRecords, ExerciseLibrary, LoggedExercise, recordsByExercise,
   nextRoutine, recordsFrom, routineExerciseFromMap, routineToMap, starterRoutines, WorkoutMath, workoutFromDoc,
   newSet, noticeText, programNotices, replaceEverywhere, swapsAfterReplace, volumeSessions, workoutReplace, applyWorkoutChanges,
-  keptReplaces, replacementSetCount,
+  keptReplaces, replacementSetCount, previousForSets,
 } from '../training';
 
 const man: UserProfile = {
@@ -453,5 +453,17 @@ describe('review fixes', () => {
     expect(splitChoice({ ...six, heightCm: null })).toBeNull();
     expect(splitChoice({ ...six, place: 'HOME' })).toBeNull();
     expect(splitChoice(withDays(man, [0, 1, 3, 4], null))!.options.length).toBe(1);
+  });
+});
+
+describe('routine view', () => {
+  test('pairs each planned set with the last working sets, skipping warm-ups', () => {
+    const last = [
+      { weightKg: 20, reps: 12, type: 'WARMUP' as const },
+      { weightKg: 60, reps: 9, type: 'NORMAL' as const },
+      { weightKg: 60, reps: 8, type: 'FAILURE' as const },
+    ];
+    expect(previousForSets(last, 3)).toEqual([last[1], last[2], null]);
+    expect(previousForSets(undefined, 2)).toEqual([null, null]);
   });
 });
