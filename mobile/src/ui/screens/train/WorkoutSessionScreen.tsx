@@ -6,7 +6,7 @@ import { ProfileRepository, profileStore } from '../../../data/profileRepo';
 import { activeProgramOf, activeStore, TrainRepository, trainLive } from '../../../data/trainRepo';
 import { afterFindWeightSet } from '../../../data/progress';
 import {
-  ActiveExercise, ActiveWorkout, applyWorkoutChanges, beatenBy, clock, doneSets, ExerciseLibrary, ExerciseRecords, LoggedSet, newSet,
+  ActiveExercise, ActiveWorkout, applyWorkoutChanges, beatenBy, clock, doneSets, ExerciseLibrary, lastSets, ExerciseRecords, LoggedSet, newSet,
   noticeText, programNotices, replacementSetCount, recordsByExercise, recordsFrom, SET_TYPE, SET_TYPES, SetEntry, SetType, swapsAfterReplace, WorkoutMath,
   workoutReplace, WorkoutRecord,
 } from '../../../data/training';
@@ -53,11 +53,7 @@ export function WorkoutSessionScreen() {
     return () => clearTimeout(t);
   }, [prBanner, banner]);
 
-  const previous = useMemo(() => {
-    const map = new Map<string, LoggedSet[]>();
-    history.forEach((w) => w.exercises.forEach((x) => { if (!map.has(x.exerciseId)) map.set(x.exerciseId, x.sets); }));
-    return map;
-  }, [history]);
+  const previous = useMemo(() => lastSets(history), [history]);
   const records = useMemo(() => recordsByExercise(history), [history]);
 
   // The rest timer ran out: buzz and clear it.
@@ -103,8 +99,8 @@ export function WorkoutSessionScreen() {
             <ExerciseBlock
               ex={item}
               index={index}
-              previous={previous.get(item.exerciseId)}
-              records={records.get(item.exerciseId)}
+              previous={previous.get(ExerciseLibrary.key(item.exerciseId))}
+              records={records.get(ExerciseLibrary.key(item.exerciseId))}
               units={units}
               onOpen={() => nav.navigate('ExerciseDetail', { exerciseId: item.exerciseId, name: item.name })}
               onRecord={(label) => { haptics.heavy(); setPrBanner(`New record: ${label} · ${item.name}`); }}

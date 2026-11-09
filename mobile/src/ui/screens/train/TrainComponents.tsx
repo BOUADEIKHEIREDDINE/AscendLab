@@ -1,8 +1,10 @@
 /** Pieces shared by the Train pages: exercise picker, alternatives sheet, stepper, set badge, name dialog. */
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { FlatList, Modal, Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Exercise, EQUIPMENT_LABEL, ExerciseLibrary, MUSCLE_LABEL, Muscle, MUSCLES, SetType } from '../../../data/training';
+import { historyLive } from '../../../data/trainRepo';
+import { doneKeys, Exercise, EQUIPMENT_LABEL, ExerciseLibrary, MUSCLE_LABEL, Muscle, MUSCLES, SetType } from '../../../data/training';
+import { useStore } from '../../../lib/store';
 import { c, colors } from '../../theme';
 import { haptics } from '../../haptics';
 import { Button, Chip, Hairline, Icon, IconButton, PrimaryButton, T, TextField } from '../../components/core';
@@ -29,8 +31,11 @@ export function ExercisePicker({ visible, onDismiss, onPick, muscle: initialMusc
     if (visible) setMuscle(initialMuscle ?? null);
   }
   const [picked, setPicked] = useState<Exercise[]>([]);
-  const results = ExerciseLibrary.search(query, muscle);
-  const canCreate = query.trim() !== '' && !ExerciseLibrary.search('', null).some((x) => x.name.toLowerCase() === query.trim().toLowerCase());
+  const history = useStore(historyLive);
+  const done = useMemo(() => doneKeys(history), [history]);
+  // Hidden pickers stay mounted under screens that re-render every second: search only when open.
+  const results = useMemo(() => (visible ? ExerciseLibrary.search(query, muscle, done) : []), [visible, query, muscle, done]);
+  const canCreate = query.trim() !== '' && !ExerciseLibrary.hasName(query);
   const has = (x: Exercise) => picked.some((p) => p.id === x.id);
   const toggle = (x: Exercise) => {
     if (single) { onPick([x]); setQuery(''); return; }

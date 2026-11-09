@@ -61,4 +61,12 @@ describe('volumeNotices', () => {
     const after = [session([['Butterfly', 9]], 2)];
     expect(volumeNotices(before, after, 4)).toContainEqual({ kind: 'week_above', muscle: 'chest', sets: 18, limit: 16 });
   });
+
+  it('counts exercises outside the catalog through a muscle lookup', () => {
+    const before = [session([['Butterfly', 4]])];
+    const after = [session([['Guillotine', 4]])];
+    expect(volumeNotices(before, after, 3)).toEqual([{ kind: 'week_below_minimum', muscle: 'chest', sets: 0, limit: 4 }]);
+    const lookup = (id: string) => (id === 'Guillotine' ? { primary: ['chest' as const], secondary: [] } : undefined);
+    expect(volumeNotices(before, after, 3, lookup)).toEqual([]);
+  });
 });

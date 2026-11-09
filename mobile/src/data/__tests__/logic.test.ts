@@ -179,7 +179,7 @@ describe('Workout records', () => {
 
   test('a heavier set beats the record; the first session only sets a baseline', () => {
     const before = recordsByExercise([{ id: 'w', title: 'Push', startedAt: 0, finishedAt: 0, durationSec: 0, volumeKg: 0, records: 0, exercises: [bench([[80, 8]])] }]);
-    expect(beatenBy(before.get('bench_press')!, { weightKg: 85, reps: 5, type: 'NORMAL' })).toContain('Heaviest weight');
+    expect(beatenBy(before.get(ExerciseLibrary.key('bench_press'))!, { weightKg: 85, reps: 5, type: 'NORMAL' })).toContain('Heaviest weight');
     expect(countRecords([bench([[85, 5], [90, 3]])], before)).toBe(2);
     expect(countRecords([bench([[85, 5]])], new Map())).toBe(0);
   });
@@ -208,7 +208,9 @@ describe('Workout records', () => {
 
   test('custom exercises and search', () => {
     expect(ExerciseLibrary.custom('  Sled Push ').id).toBe('custom:sled_push');
-    expect(ExerciseLibrary.search('dumbbell press', null).map((x) => x.id)).toEqual(['db_bench_press', 'incline_db_press', 'db_shoulder_press']);
+    const dbPress = ExerciseLibrary.search('dumbbell press', null).map((x) => x.id);
+    expect(dbPress).toEqual(expect.arrayContaining(['Dumbbell_Bench_Press', 'Incline_Dumbbell_Press', 'Dumbbell_Shoulder_Press']));
+    expect(dbPress).not.toContain('db_bench_press'); // linked to Dumbbell_Bench_Press, listed once
     expect(ExerciseLibrary.search('', 'CARDIO')).toHaveLength(4);
   });
 });
