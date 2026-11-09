@@ -5,14 +5,15 @@ import { TrainRepository, trainLive } from '../../../data/trainRepo';
 import { ProfileRepository, profileStore } from '../../../data/profileRepo';
 import { engineLevel } from '../../../data/profile';
 import {
-  ADDED_SETS, addAfter, keptReplaces, noticeText, Program, programNotices, replaceEverywhere, Routine, RoutineExercise, swapsAfterReplace, uuid,
+  ADDED_SETS, addAfter, EQUIPMENT_LABEL, ExerciseLibrary, keptReplaces, MUSCLE_LABEL, noticeText, Program, programNotices, replaceEverywhere,
+  Routine, RoutineExercise, swapsAfterReplace, uuid,
 } from '../../../data/training';
 import type { Slot } from '../../../lib/program-generator/program';
 import { useStore } from '../../../lib/store';
 import { goBack, useNav, useParams } from '../../../navigation/types';
-import { c, Gutter } from '../../theme';
-import { Button, Hairline, IconButton, PageHeader, PrimaryButton, Screen, T, TextField } from '../../components/core';
-import { toast } from '../../components/overlays';
+import { c, Gutter, radius } from '../../theme';
+import { Button, IconButton, PageHeader, PrimaryButton, Screen, T, TextField } from '../../components/core';
+import { ActionMenu, toast } from '../../components/overlays';
 import { AlternativesSheet, ExercisePicker, Stepper, VolumeNoticeNote } from './TrainComponents';
 
 export function RoutineEditorScreen() {
@@ -78,24 +79,23 @@ function RoutineForm({ program, original, onDone }: { program: Program | null; o
     <>
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingHorizontal: Gutter, paddingVertical: 8, gap: 12 }}>
         <TextField label="Routine name" placeholder="Push day" value={name} onChangeText={(t) => setName(t.slice(0, 40))} autoCapitalize="sentences" />
-        <T v="bodySmall" color={c.onSurfaceVariant}>In {program?.name ?? 'this program'}</T>
+        <T v="bodySmall" color={c.onSurfaceVariant}>
+          In {program?.name ?? 'this program'} · {exercises.length} exercise{exercises.length === 1 ? '' : 's'} · {exercises.reduce((n, x) => n + x.sets, 0)} sets
+        </T>
         {exercises.map((x, i) => (
-          <View key={`${x.exerciseId}-${i}`}>
-            <Hairline />
-            <View style={{ paddingVertical: 4 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <T v="titleMedium" color={c.primary} style={{ flex: 1 }}>{x.name}</T>
-                <IconButton name="swap-horiz" label={`Alternatives for ${x.name}`} onPress={() => setAlternativesFor(i)} />
-                <IconButton name="keyboard-arrow-up" label="Move up" disabled={i === 0} onPress={() => move(i, i - 1)} />
-                <IconButton name="keyboard-arrow-down" label="Move down" disabled={i === exercises.length - 1} onPress={() => move(i, i + 1)} />
-                <IconButton name="close" label={`Remove ${x.name}`} onPress={() => setExercises(exercises.filter((_, j) => j !== i))} />
-              </View>
-              <View style={{ flexDirection: 'row', gap: 16, flexWrap: 'wrap' }}>
-                <Stepper label="Sets" value={x.sets} onChange={(v) => set(i, { sets: v })} min={1} max={10} />
-                <Stepper label="Reps" value={x.reps} onChange={(v) => set(i, { reps: v })} min={1} max={50} />
-              </View>
-            </View>
-          </View>
+          <ExerciseCard
+            key={`${x.exerciseId}-${i}`}
+            ex={x}
+            number={i + 1}
+            first={i === 0}
+            last={i === exercises.length - 1}
+            onSwap={() => setAlternativesFor(i)}
+            onSets={(v) => set(i, { sets: v })}
+            onReps={(v) => set(i, { reps: v })}
+            onMoveUp={() => move(i, i - 1)}
+            onMoveDown={() => move(i, i + 1)}
+            onRemove={() => setExercises(exercises.filter((_, j) => j !== i))}
+          />
         ))}
         <Button label="Add exercises" icon="add" onPress={() => setPicking(true)} style={{ height: 52 }} />
         <VolumeNoticeNote lines={notices} />
@@ -149,5 +149,42 @@ function RoutineForm({ program, original, onDone }: { program: Program | null; o
         }}
       />
     </>
+  );
+}
+
+/** One exercise of the routine: number, name, muscle and equipment, Swap, then sets and reps. */
+function ExerciseCard({ ex, number, first, last, onSwap, onSets, onReps, onMoveUp, onMoveDown, onRemove }: {
+  ex: RoutineExercise; number: number; first: boolean; last: boolean;
+  onSwap: () => void; onSets: (v: number) => void; onReps: (v: number) => void;
+  onMoveUp: () => void; onMoveDown: () => void; onRemove: () => void;
+}) {
+  const [menu, setMenu] = useState(false);
+  const info = ExerciseLibrary.find(ex.exerciseId);
+  const subtitle = info ? `${MUSCLE_LABEL[info.muscle]} · ${EQUIPMENT_LABEL[info.equipment]}` : 'Custom exercise';
+  return (
+    <View style={{ backgroundColor: c.surfaceContainer, borderRadius: radius.md, padding: 16, gap: 12 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+        <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: c.primaryContainer, alignItems: 'center', justifyContent: 'center' }}>
+          <T v="titleSmall" color={c.primary}>{number}</T>
+        </View>
+        <View style={{ flex: 1 }}>
+          <T v="titleMedium" lines={2}>{ex.name}</T>
+          <T v="bodySmall" color={c.onSurfaceVariant}>{subtitle}</T>
+        </View>
+        <IconButton name="more-vert" label={`More for ${ex.name}`} color={c.onSurfaceVariant} onPress={() => setMenu(true)} />
+      </View>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', backgroundColor: c.background, borderRadius: radius.sm, paddingHorizontal: 8 }}>
+          <Stepper label="Sets" value={ex.sets} onChange={onSets} min={1} max={10} />
+          <Stepper label="Reps" value={ex.reps} onChange={onReps} min={1} max={50} />
+        </View>
+        <Button kind="tonal" label="Swap" icon="swap-horiz" onPress={onSwap} compact />
+      </View>
+      <ActionMenu visible={menu} onDismiss={() => setMenu(false)} title={ex.name} items={[
+        ...(first ? [] : [{ label: 'Move up', icon: 'keyboard-arrow-up' as const, onPress: onMoveUp }]),
+        ...(last ? [] : [{ label: 'Move down', icon: 'keyboard-arrow-down' as const, onPress: onMoveDown }]),
+        { label: 'Remove from routine', icon: 'delete-outline' as const, danger: true, onPress: onRemove },
+      ]} />
+    </View>
   );
 }
