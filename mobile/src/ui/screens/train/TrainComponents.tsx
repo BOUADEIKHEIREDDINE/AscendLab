@@ -1,5 +1,5 @@
 /** Pieces shared by the Train pages: exercise picker, alternatives sheet, stepper, set badge, name dialog. */
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { FlatList, Modal, Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Exercise, EQUIPMENT_LABEL, ExerciseLibrary, MUSCLE_LABEL, Muscle, MUSCLES, SetType } from '../../../data/training';
@@ -22,7 +22,12 @@ export function ExercisePicker({ visible, onDismiss, onPick, muscle: initialMusc
 }) {
   const [query, setQuery] = useState('');
   const [muscle, setMuscle] = useState<Muscle | null>(initialMuscle ?? null);
-  useEffect(() => { if (visible) setMuscle(initialMuscle ?? null); }, [visible, initialMuscle]);
+  // Each time it opens, start from the requested muscle filter.
+  const [wasVisible, setWasVisible] = useState(visible);
+  if (visible !== wasVisible) {
+    setWasVisible(visible);
+    if (visible) setMuscle(initialMuscle ?? null);
+  }
   const [picked, setPicked] = useState<Exercise[]>([]);
   const results = ExerciseLibrary.search(query, muscle);
   const canCreate = query.trim() !== '' && !ExerciseLibrary.search('', null).some((x) => x.name.toLowerCase() === query.trim().toLowerCase());
