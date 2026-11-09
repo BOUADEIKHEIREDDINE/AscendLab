@@ -126,3 +126,12 @@ describe('linked ids share one history', () => {
     expect(setsFor(history, 'squat')).toEqual([]);
   });
 });
+
+describe('generatorMuscles', () => {
+  it('uses the generator catalog, then the database labels', () => {
+    expect(ExerciseLibrary.generatorMuscles('Butterfly')).toEqual({ primary: ['chest'], secondary: [] });
+    expect(ExerciseLibrary.generatorMuscles('Barbell_Guillotine_Bench_Press')!.primary).toEqual(['chest']);
+    expect(ExerciseLibrary.generatorMuscles('bench_press')!.primary).toEqual(['chest']);
+    expect(ExerciseLibrary.generatorMuscles('custom:my_lift')).toBeUndefined();
+  });
+});

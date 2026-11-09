@@ -4,7 +4,7 @@
  * by the Android app reads back here and vice versa.
  */
 import { CATALOG, type Muscle as CatalogMuscle } from '../lib/program-generator/catalog';
-import { DB_EXERCISES, dbFind, equipmentOfDb, groupOfDbMuscle, photoUrls } from './exerciseDb';
+import { DB_EXERCISES, dbFind, equipmentOfDb, generatorMusclesOfDb, groupOfDbMuscle, photoUrls } from './exerciseDb';
 import { isSlot, isSlotOption, SETS, slotOf, type Level as EngineLevel, type ProgramDay, type Slot } from '../lib/program-generator/program';
 import { volumeNotices, type VolumeNotice, type VolumeSession } from '../lib/program-generator/volume-notice';
 import { Convert, gymPlan, planDays, PlanCalculator, roundInt, Units, UNIT, UserProfile } from './profile';
@@ -161,6 +161,14 @@ export const ExerciseLibrary = {
       .map((x) => [rank(x), x] as const)
       .sort((a, b) => a[0] - b[0] || a[1].name.localeCompare(b[1].name))
       .map(([, x]) => x);
+  },
+  /** Muscles in the generator's terms, for the sets notice: the generator's catalog first, then the database's labels. */
+  generatorMuscles(id: string): { primary: CatalogMuscle[]; secondary: CatalogMuscle[] } | undefined {
+    const key = ExerciseLibrary.key(id);
+    const known = CATALOG[id] ?? CATALOG[key];
+    if (known) return { primary: known.primary, secondary: known.secondary };
+    const x = dbFind(key);
+    return x ? generatorMusclesOfDb(x) : undefined;
   },
   /** Photos, steps and muscles; null when the exercise isn't in free-exercise-db. */
   howTo(id: string): HowTo | null {
@@ -639,7 +647,7 @@ export function programNotices(before: Routine[], after: Routine[], profile: Use
   const cycle = plan.state.schedule.cycle;
   const was = volumeSessions(before, cycle, days);
   const now = volumeSessions(after, cycle, days);
-  return was && now ? volumeNotices(was, now, days) : [];
+  return was && now ? volumeNotices(was, now, days, ExerciseLibrary.generatorMuscles) : [];
 }
 
 const halves = (x: number) => String(Math.round(x * 2) / 2);
