@@ -632,7 +632,11 @@ export function keptReplaces<R extends { slot: Slot; exerciseId: string }>(repla
   return replaces.filter((r) => exercises.some((x) => x.slot === r.slot && x.exerciseId === r.exerciseId));
 }
 
-/** Working sets for an exercise that replaces `old` mid-workout: as many as it had (Replace keeps sets). */
+/**
+ * Working sets for an exercise that replaces `old` mid-workout. Replace keeps the set count: the
+ * sets still to do (ticked ones stay with the old exercise), or all of them when none are ticked.
+ */
 export function replacementSetCount(old: ActiveExercise): number {
-  return Math.max(old.sets.filter((s) => s.type !== 'WARMUP').length, 1);
+  const working = old.sets.filter((s) => s.type !== 'WARMUP');
+  return Math.max(working.filter((s) => !s.done).length, 1);
 }

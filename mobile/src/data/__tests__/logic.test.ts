@@ -443,6 +443,8 @@ describe('review fixes', () => {
     const abs = { exerciseId: 'Cable_Crunch', name: 'Cable Crunch', targetReps: 10, sets: [newSet({ type: 'WARMUP' }), newSet(), newSet(), newSet()] };
     expect(replacementSetCount(abs)).toBe(3);
     expect(replacementSetCount({ ...abs, sets: [] })).toBe(1);
+    // After a ticked set, the new exercise only gets the sets that were left (2 + 1 done = 3 in total).
+    expect(replacementSetCount({ ...abs, sets: [newSet({ done: true }), newSet(), newSet()] })).toBe(2);
   });
 
   test('change split is only offered when a rebuild can run, on 5-6 days', () => {
