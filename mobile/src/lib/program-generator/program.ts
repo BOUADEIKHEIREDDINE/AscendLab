@@ -87,14 +87,14 @@ export type Program = { split: Split; days: ProgramDay[]; notices: ProgramNotice
 
 export type SplitOption = { split: Split; label: string; description: string };
 
-const SETS = 2;
+export const SETS = 2;
 /** Slots with a different set count (user decision: 3 sets of abs). */
 const SLOT_SETS: Partial<Record<Slot, number>> = { abs: 3 };
 const REP_MIN = 6;
 const REP_MAX = 10;
 const REST_SEC = { isolation: 150, upperCompound: 180, lowerCompound: 240 };
 /** A set counts fully for its primary muscles and half for its secondary ones (Pelland 2026). */
-const SECONDARY_SET_WEIGHT = 0.5;
+export const SECONDARY_SET_WEIGHT = 0.5;
 const MAX_ALTERNATIVES = 3;
 const BEGINNER_MANY_DAYS = 5;
 /** Session time model: ~45 s per set plus ~2 min to set up each exercise. */
