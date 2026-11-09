@@ -7,7 +7,7 @@ import { CATALOG } from '../lib/program-generator/catalog';
 import type { ProgramDay } from '../lib/program-generator/program';
 import { belowRange, canAddFindWeightSet, defaultIncrementKg, findWeight, nextLoadKg } from '../lib/program-generator/progression';
 import { CARDIO_TIP, FIRST_EXERCISE_WARM_UP_SET, WARM_UP_DRILLS } from '../lib/program-generator/warm-up';
-import type { LoggedSet, WorkoutRecord } from './training';
+import { ExerciseLibrary, type LoggedSet, type WorkoutRecord } from './training';
 
 /** What the generator planned for an exercise (or the defaults for one added by hand). */
 export interface PlannedTarget { sets: number; repMin: number; repMax: number; restSec: number }
@@ -46,9 +46,10 @@ const kg = (v: number) => `${Math.round(v * 10) / 10} kg`;
 export function sessionsByExercise(history: WorkoutRecord[]): Map<string, LoggedSet[][]> {
   const map = new Map<string, LoggedSet[][]>();
   history.forEach((w) => w.exercises.forEach((x) => {
-    const list = map.get(x.exerciseId) ?? [];
+    const key = ExerciseLibrary.key(x.exerciseId);
+    const list = map.get(key) ?? [];
     list.push(x.sets);
-    map.set(x.exerciseId, list);
+    map.set(key, list);
   }));
   return map;
 }

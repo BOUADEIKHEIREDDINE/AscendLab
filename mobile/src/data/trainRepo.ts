@@ -16,7 +16,7 @@ import { DEFAULT_TARGET, exercisePlan, ExercisePlan, restSecFor, sessionsByExerc
 import { ProfileRepository, profileStore } from './profileRepo';
 import { SocialRepository } from './socialRepo';
 import {
-  ActiveWorkout, activeFromJson, activeToJson, countRecords, LoggedExercise, newSet,
+  ActiveWorkout, activeFromJson, ExerciseLibrary, activeToJson, countRecords, LoggedExercise, newSet,
   lastSets, Program, recordsByExercise, Routine, routineFromMap, routineToMap, starterRoutines, WorkoutMath, WorkoutRecord, workoutFromDoc,
 } from './training';
 
@@ -207,7 +207,7 @@ export const TrainRepository = {
       exercises: (routine?.exercises ?? []).map((re, i) => {
         const planned = (day?.exercises ?? cycle.flatMap((d) => d.exercises)).find((x) => x.exerciseId === re.exerciseId);
         const restSec = planned?.restSec ?? restSecFor(re.exerciseId);
-        const plan = restSec == null ? null : exercisePlan(re.exerciseId, sessions.get(re.exerciseId) ?? [], {
+        const plan = restSec == null ? null : exercisePlan(re.exerciseId, sessions.get(ExerciseLibrary.key(re.exerciseId)) ?? [], {
           sets: Math.max(re.sets, 1),
           repMin: planned?.repMin ?? DEFAULT_TARGET.repMin,
           repMax: planned?.repMax ?? DEFAULT_TARGET.repMax,
@@ -218,7 +218,7 @@ export const TrainRepository = {
           const sets = plan.warmUpKg != null ? [newSet({ type: 'WARMUP' }), ...working] : working;
           return { exerciseId: re.exerciseId, name: re.name, sets, targetReps: plan.repMax, plan, ...(re.slot ? { slot: re.slot } : {}) };
         }
-        const last = previous.get(re.exerciseId);
+        const last = previous.get(ExerciseLibrary.key(re.exerciseId));
         const sets = last && last.length > 0
           ? last.map((s) => newSet({ type: s.type }))
           : Array.from({ length: Math.max(re.sets, 1) }, () => newSet());

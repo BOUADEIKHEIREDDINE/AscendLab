@@ -1,5 +1,8 @@
 import { DB_EXERCISES, DB_SOURCE_COMMIT } from '../exerciseDb';
-import { doneKeys, EXERCISES, ExerciseLibrary, type WorkoutRecord } from '../training';
+import { sessionsByExercise } from '../progress';
+import {
+  countRecords, doneKeys, EXERCISES, ExerciseLibrary, lastSets, recordsByExercise, setsFor, type LoggedSet, type WorkoutRecord,
+} from '../training';
 
 const BENCH = 'Barbell_Bench_Press_-_Medium_Grip';
 
@@ -90,5 +93,36 @@ describe('doneKeys', () => {
     const w = (ids: string[]) => ({ exercises: ids.map((exerciseId) => ({ exerciseId, name: exerciseId, sets: [] })) }) as unknown as WorkoutRecord;
     expect([...doneKeys([w(['bench_press', 'custom:x']), w(['knee_push_up'])])].sort()).toEqual([BENCH, 'custom:x', 'knee_push_up']);
     expect(doneKeys(null).size).toBe(0);
+  });
+});
+
+describe('linked ids share one history', () => {
+  const set = (weightKg: number, reps = 8): LoggedSet => ({ weightKg, reps, type: 'NORMAL' });
+  const workout = (id: string, finishedAt: number, exerciseId: string, sets: LoggedSet[]): WorkoutRecord => ({
+    id, title: id, startedAt: finishedAt - 1, finishedAt, durationSec: 1, volumeKg: 0, records: 0,
+    exercises: [{ exerciseId, name: exerciseId, sets }],
+  });
+  // History is newest first: a routine still using the hand-list id, after a session logged under the database id.
+  const history = [workout('new', 2, 'bench_press', [set(80)]), workout('old', 1, BENCH, [set(70)])];
+  const key = ExerciseLibrary.key;
+
+  it('PREVIOUS is the newest session of either id', () => {
+    expect(lastSets(history).get(key(BENCH))).toEqual([set(80)]);
+  });
+
+  it('records and plans count both ids', () => {
+    expect(recordsByExercise(history).get(key(BENCH))!.heaviestKg).toBe(80);
+    expect(sessionsByExercise(history).get(key(BENCH))).toHaveLength(2);
+  });
+
+  it('a new record must beat both ids', () => {
+    const before = recordsByExercise(history);
+    expect(countRecords([{ exerciseId: BENCH, name: 'b', sets: [set(75)] }], before)).toBe(0);
+    expect(countRecords([{ exerciseId: 'bench_press', name: 'b', sets: [set(85)] }], before)).toBe(1);
+  });
+
+  it('the exercise page lists sessions of both ids, newest first', () => {
+    expect(setsFor(history, 'bench_press').map(([w]) => w.id)).toEqual(['new', 'old']);
+    expect(setsFor(history, 'squat')).toEqual([]);
   });
 });

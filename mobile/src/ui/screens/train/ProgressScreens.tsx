@@ -6,7 +6,7 @@ import { profileStore } from '../../../data/profileRepo';
 import { historyLive, TrainRepository } from '../../../data/trainRepo';
 import {
   countsForRecords, doneKeys, EQUIPMENT_LABEL, ExerciseLibrary, LoggedSet, MUSCLE_LABEL, Muscle, MUSCLES, oneRepMax, recordsFrom,
-  setCount, setVolume, WorkoutMath, WorkoutRecord,
+  setCount, setsFor, setVolume, WorkoutMath, WorkoutRecord,
 } from '../../../data/training';
 import { useNow, useStore } from '../../../lib/store';
 import { goBack, useNav, useParams } from '../../../navigation/types';
@@ -134,10 +134,7 @@ export function ExerciseDetailScreen() {
   const [tab, setTab] = useState(0);
 
   // Oldest first, only sessions that include this exercise.
-  const sessions = useMemo(() => (history ?? []).flatMap((w) => {
-    const x = w.exercises.find((e) => e.exerciseId === exerciseId);
-    return x ? [[w, x.sets] as [WorkoutRecord, LoggedSet[]]] : [];
-  }).reverse(), [history, exerciseId]);
+  const sessions = useMemo(() => setsFor(history ?? [], exerciseId).reverse(), [history, exerciseId]);
   const records = useMemo(() => recordsFrom(sessions.map((s) => s[1])), [sessions]);
 
   return (
@@ -395,7 +392,10 @@ export function ExerciseLibraryScreen() {
   const [muscle, setMuscle] = useState<Muscle | null>(null);
   const sessionsById = useMemo(() => {
     const map = new Map<string, number>();
-    (history ?? []).forEach((w) => w.exercises.forEach((x) => map.set(x.exerciseId, (map.get(x.exerciseId) ?? 0) + 1)));
+    (history ?? []).forEach((w) => w.exercises.forEach((x) => {
+      const key = ExerciseLibrary.key(x.exerciseId);
+      map.set(key, (map.get(key) ?? 0) + 1);
+    }));
     return map;
   }, [history]);
   const done = useMemo(() => doneKeys(history), [history]);
@@ -425,7 +425,7 @@ export function ExerciseLibraryScreen() {
                 <T v="bodyLarge">{item.name}</T>
                 <T v="bodySmall" color={c.onSurfaceVariant}>{MUSCLE_LABEL[item.muscle]} · {EQUIPMENT_LABEL[item.equipment]}</T>
               </View>
-              {sessionsById.has(item.id) && <T v="labelLarge" color={c.primary}>{sessionsById.get(item.id)}×</T>}
+              {sessionsById.has(ExerciseLibrary.key(item.id)) && <T v="labelLarge" color={c.primary}>{sessionsById.get(ExerciseLibrary.key(item.id))}×</T>}
             </PressableScale>
             <Hairline inset={Gutter} />
           </View>

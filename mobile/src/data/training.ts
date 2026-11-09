@@ -465,11 +465,12 @@ export function beatenBy(r: ExerciseRecords, set: LoggedSet): string[] {
 export function countRecords(logged: LoggedExercise[], before: Map<string, ExerciseRecords>): number {
   let count = 0;
   logged.forEach((x) => {
-    let rec = before.get(x.exerciseId) ?? emptyRecords();
+    const key = ExerciseLibrary.key(x.exerciseId);
+    let rec = before.get(key) ?? emptyRecords();
     x.sets.forEach((set) => {
       if (beatenBy(rec, set).length > 0) {
         // The first time an exercise is logged sets the baseline, not a record.
-        if (before.has(x.exerciseId)) count++;
+        if (before.has(key)) count++;
         rec = {
           heaviestKg: Math.max(rec.heaviestKg, set.weightKg),
           best1RmKg: Math.max(rec.best1RmKg, oneRepMax(set)),
@@ -487,9 +488,10 @@ export function countRecords(logged: LoggedExercise[], before: Map<string, Exerc
 export function recordsByExercise(history: WorkoutRecord[]): Map<string, ExerciseRecords> {
   const sessions = new Map<string, LoggedSet[][]>();
   history.forEach((w) => w.exercises.forEach((x) => {
-    const list = sessions.get(x.exerciseId) ?? [];
+    const key = ExerciseLibrary.key(x.exerciseId);
+    const list = sessions.get(key) ?? [];
     list.push(x.sets);
-    sessions.set(x.exerciseId, list);
+    sessions.set(key, list);
   }));
   const out = new Map<string, ExerciseRecords>();
   sessions.forEach((v, k) => out.set(k, recordsFrom(v)));
@@ -515,10 +517,23 @@ export function doneKeys(history: WorkoutRecord[] | null | undefined): Set<strin
   return new Set((history ?? []).flatMap((w) => w.exercises.map((x) => ExerciseLibrary.key(x.exerciseId))));
 }
 
+/** Last time's sets per exercise, keyed by `ExerciseLibrary.key`. */
 export function lastSets(history: WorkoutRecord[] | null | undefined): Map<string, LoggedSet[]> {
   const map = new Map<string, LoggedSet[]>();
-  (history ?? []).forEach((w) => w.exercises.forEach((x) => { if (!map.has(x.exerciseId)) map.set(x.exerciseId, x.sets); }));
+  (history ?? []).forEach((w) => w.exercises.forEach((x) => {
+    const key = ExerciseLibrary.key(x.exerciseId);
+    if (!map.has(key)) map.set(key, x.sets);
+  }));
   return map;
+}
+
+/** The sessions that include an exercise (under any linked id), in history order (newest first). */
+export function setsFor(history: WorkoutRecord[], exerciseId: string): [WorkoutRecord, LoggedSet[]][] {
+  const key = ExerciseLibrary.key(exerciseId);
+  return history.flatMap((w) => {
+    const x = w.exercises.find((e) => ExerciseLibrary.key(e.exerciseId) === key);
+    return x ? [[w, x.sets] as [WorkoutRecord, LoggedSet[]]] : [];
+  });
 }
 
 /** What the feed shows about a finished workout. */

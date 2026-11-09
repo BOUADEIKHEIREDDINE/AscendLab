@@ -8,7 +8,7 @@ import { Convert, formatNumber } from '../../../data/profile';
 import { profileStore } from '../../../data/profileRepo';
 import { DEFAULT_TARGET, restSecFor } from '../../../data/progress';
 import { activeStore, historyLive, TrainRepository, trainLive } from '../../../data/trainRepo';
-import { lastSets, LoggedSet, previousForSets, RoutineExercise } from '../../../data/training';
+import { ExerciseLibrary, lastSets, LoggedSet, previousForSets, RoutineExercise } from '../../../data/training';
 import { useStore } from '../../../lib/store';
 import { goBack, useNav, useParams } from '../../../navigation/types';
 import { c, Gutter } from '../../theme';
@@ -63,7 +63,7 @@ export function RoutineDetailScreen() {
             onPress={() => { haptics.confirm(); if (active) setConfirmReplace(true); else start(); }} />
         </View>
         {routine.exercises.map((x, i) => (
-          <ExerciseView key={`${x.exerciseId}-${i}`} ex={x} last={previous.get(x.exerciseId)} units={units}
+          <ExerciseView key={`${x.exerciseId}-${i}`} ex={x} last={previous.get(ExerciseLibrary.key(x.exerciseId))} units={units}
             onOpen={() => nav.navigate('ExerciseDetail', { exerciseId: x.exerciseId, name: x.name })} />
         ))}
         <Hairline />

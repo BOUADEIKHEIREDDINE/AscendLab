@@ -179,7 +179,7 @@ describe('Workout records', () => {
 
   test('a heavier set beats the record; the first session only sets a baseline', () => {
     const before = recordsByExercise([{ id: 'w', title: 'Push', startedAt: 0, finishedAt: 0, durationSec: 0, volumeKg: 0, records: 0, exercises: [bench([[80, 8]])] }]);
-    expect(beatenBy(before.get('bench_press')!, { weightKg: 85, reps: 5, type: 'NORMAL' })).toContain('Heaviest weight');
+    expect(beatenBy(before.get(ExerciseLibrary.key('bench_press'))!, { weightKg: 85, reps: 5, type: 'NORMAL' })).toContain('Heaviest weight');
     expect(countRecords([bench([[85, 5], [90, 3]])], before)).toBe(2);
     expect(countRecords([bench([[85, 5]])], new Map())).toBe(0);
   });
