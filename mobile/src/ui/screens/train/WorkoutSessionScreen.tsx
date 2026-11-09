@@ -7,7 +7,7 @@ import { activeProgramOf, activeStore, TrainRepository, trainLive } from '../../
 import { afterFindWeightSet } from '../../../data/progress';
 import {
   ActiveExercise, ActiveWorkout, applyWorkoutChanges, beatenBy, clock, doneSets, ExerciseLibrary, ExerciseRecords, LoggedSet, newSet,
-  noticeText, programNotices, recordsByExercise, recordsFrom, SET_TYPE, SET_TYPES, SetEntry, SetType, swapsAfterReplace, WorkoutMath,
+  noticeText, programNotices, replacementSetCount, recordsByExercise, recordsFrom, SET_TYPE, SET_TYPES, SetEntry, SetType, swapsAfterReplace, WorkoutMath,
   workoutReplace, WorkoutRecord,
 } from '../../../data/training';
 import { useStore } from '../../../lib/store';
@@ -165,10 +165,11 @@ export function WorkoutSessionScreen() {
             TrainRepository.update((cur) => {
               const old = cur.exercises[i];
               if (!old) return cur;
-              const working = old.sets.filter((s) => s.type !== 'WARMUP').length;
-              const sets = Array.from({ length: plan?.sets ?? Math.max(working, 1) }, () => newSet());
+              // Replace keeps the row's set count; an add gets the plan's sets for the new exercise.
+              const count = mode === 'replace' ? replacementSetCount(old) : plan?.sets ?? replacementSetCount(old);
+              const sets = Array.from({ length: count }, () => newSet());
               const next: ActiveExercise = {
-                exerciseId, name, sets, targetReps: plan?.repMax ?? old.targetReps, plan,
+                exerciseId, name, sets, targetReps: plan?.repMax ?? old.targetReps, plan: plan ? { ...plan, sets: count } : plan,
                 tag: mode === 'replace' ? 'swapped' : 'added',
                 ...(mode === 'replace' && old.slot ? { slot: old.slot } : {}),
               };

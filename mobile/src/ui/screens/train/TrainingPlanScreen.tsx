@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { FlatList, View } from 'react-native';
 import { ProfileRepository, profileStore } from '../../../data/profileRepo';
-import { gymPlan, planDays } from '../../../data/profile';
-import { splitOptions, type Split } from '../../../lib/program-generator/program';
+import { splitChoice } from '../../../data/profile';
+import type { Split } from '../../../lib/program-generator/program';
 import { activeProgramOf, activeStore, historyLive, TrainRepository, trainLive } from '../../../data/trainRepo';
 import { doneSets, nextRoutine, Routine, setCount, WorkoutMath } from '../../../data/training';
 import { useStore } from '../../../lib/store';
@@ -23,10 +23,9 @@ export function TrainingPlanScreen() {
   const [splitMenu, setSplitMenu] = useState(false);
   const [pendingSplit, setPendingSplit] = useState<{ split: Split; label: string } | null>(null);
   // The split of the generated gym plan; "Change split" only when the days allow more than one (5–6).
-  const plan = profile && profile.place !== 'HOME' ? gymPlan(profile) : null;
-  const days = profile ? planDays(profile) : null;
-  const splits = plan && days != null ? splitOptions(days) : [];
-  const currentSplit = plan?.state.schedule.program.split ?? null;
+  const choice = splitChoice(profile);
+  const splits = choice?.options ?? [];
+  const currentSplit = choice?.current ?? null;
   const splitLabel = splits.find((o) => o.split === currentSplit)?.label ?? null;
   const program = activeProgramOf(state);
   const [programMenu, setProgramMenu] = useState(false);

@@ -626,3 +626,13 @@ export function applyWorkoutChanges(routine: Routine, routines: Routine[], chang
   }
   return { routines: list, changedNames: [...changed] };
 }
+
+/** Draft replaces still visible in the draft: a row removed or replaced again drops its replace. */
+export function keptReplaces<R extends { slot: Slot; exerciseId: string }>(replaces: R[], exercises: RoutineExercise[]): R[] {
+  return replaces.filter((r) => exercises.some((x) => x.slot === r.slot && x.exerciseId === r.exerciseId));
+}
+
+/** Working sets for an exercise that replaces `old` mid-workout: as many as it had (Replace keeps sets). */
+export function replacementSetCount(old: ActiveExercise): number {
+  return Math.max(old.sets.filter((s) => s.type !== 'WARMUP').length, 1);
+}

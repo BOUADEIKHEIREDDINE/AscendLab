@@ -10,7 +10,7 @@ import { computeTargets } from '../lib/goal-engine/targets';
 import type { Goal as EngineGoal } from '../lib/goal-engine/targets';
 import type { ActivityLevel as EngineActivity } from '../lib/goal-engine/energy';
 import { buildPlan, type WeekPlan } from '../lib/program-generator/plan';
-import { slotOf, splitOptions, type Level as EngineLevel, type Slot, type Split } from '../lib/program-generator/program';
+import { slotOf, splitOptions, type Level as EngineLevel, type Slot, type Split, type SplitOption } from '../lib/program-generator/program';
 import { chooseTrainingDays, type Weekday } from '../lib/program-generator/schedule';
 import { CATALOG } from '../lib/program-generator/catalog';
 
@@ -306,6 +306,18 @@ export function engineLevel(p: UserProfile): EngineLevel {
 /** How many days a week the profile trains, or null when fewer than 2 are picked. */
 export function planDays(p: UserProfile): number | null {
   return chosenDays(p)?.length ?? null;
+}
+
+/**
+ * The plan's split and the splits its days allow, or null when there's nothing to change: a home
+ * plan, or a profile a rebuild can't use yet (so a split change never saves without rebuilding).
+ */
+export function splitChoice(p: UserProfile | null): { current: Split; options: SplitOption[] } | null {
+  if (!hasEverythingForPlan(p) || p.place === 'HOME') return null;
+  const plan = gymPlan(p);
+  const days = planDays(p);
+  if (!plan || days == null) return null;
+  return { current: plan.state.schedule.program.split, options: splitOptions(days) };
 }
 
 /** The generated gym plan for a profile, from the program generator. */

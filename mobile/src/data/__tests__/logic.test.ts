@@ -5,7 +5,7 @@
  */
 import { Timestamp } from 'firebase/firestore';
 import {
-  BodyChecks, chosenDays, Convert, emptyProfile, gymPlan, PlanCalculator, profileFromMap, profileToMap, UserProfile, withDays,
+  BodyChecks, chosenDays, Convert, emptyProfile, gymPlan, PlanCalculator, splitChoice, profileFromMap, profileToMap, UserProfile, withDays,
 } from '../profile';
 
 import { Days, FeedPost, gapLabel, postFromMap } from '../social';
@@ -13,6 +13,7 @@ import {
   activeFromJson, activeToJson, ActiveWorkout, beatenBy, countRecords, ExerciseLibrary, LoggedExercise, recordsByExercise,
   nextRoutine, recordsFrom, routineExerciseFromMap, routineToMap, starterRoutines, WorkoutMath, workoutFromDoc,
   newSet, noticeText, programNotices, replaceEverywhere, swapsAfterReplace, volumeSessions, workoutReplace, applyWorkoutChanges,
+  keptReplaces, replacementSetCount,
 } from '../training';
 
 const man: UserProfile = {
@@ -423,5 +424,32 @@ describe('workout changes', () => {
     expect(changedNames).toEqual(['Mine']);
     expect(routines[0].exercises[0]).toMatchObject({ exerciseId: 'push_up', sets: 3 });
     expect(routines[1].exercises[0].exerciseId).toBe('bench_press');
+  });
+});
+
+describe('review fixes', () => {
+  test('a replace whose row was removed or replaced again is not kept', () => {
+    const replaces = [
+      { slot: 'chestPress' as const, exerciseId: 'Dumbbell_Bench_Press', name: 'Dumbbell Bench Press' },
+      { slot: 'row' as const, exerciseId: 'Leverage_Iso_Row', name: 'Leverage Iso Row' },
+    ];
+    const exercises = [{ exerciseId: 'Seated_One-arm_Cable_Pulley_Rows', name: 'x', sets: 2, reps: 10, slot: 'row' as const }];
+    expect(keptReplaces(replaces, exercises)).toEqual([]);
+    expect(keptReplaces(replaces, [{ exerciseId: 'Leverage_Iso_Row', name: 'x', sets: 2, reps: 10, slot: 'row' as const }]))
+      .toEqual([replaces[1]]);
+  });
+
+  test('a workout replace keeps the number of working sets', () => {
+    const abs = { exerciseId: 'Cable_Crunch', name: 'Cable Crunch', targetReps: 10, sets: [newSet({ type: 'WARMUP' }), newSet(), newSet(), newSet()] };
+    expect(replacementSetCount(abs)).toBe(3);
+    expect(replacementSetCount({ ...abs, sets: [] })).toBe(1);
+  });
+
+  test('change split is only offered when a rebuild can run, on 5-6 days', () => {
+    const six = withDays({ ...man, level: 'INTERMEDIATE' }, [0, 1, 2, 3, 4, 5], null);
+    expect(splitChoice(six)!.options.length).toBe(2);
+    expect(splitChoice({ ...six, heightCm: null })).toBeNull();
+    expect(splitChoice({ ...six, place: 'HOME' })).toBeNull();
+    expect(splitChoice(withDays(man, [0, 1, 3, 4], null))!.options.length).toBe(1);
   });
 });

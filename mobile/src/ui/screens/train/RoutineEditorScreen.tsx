@@ -5,7 +5,7 @@ import { TrainRepository, trainLive } from '../../../data/trainRepo';
 import { ProfileRepository, profileStore } from '../../../data/profileRepo';
 import { engineLevel } from '../../../data/profile';
 import {
-  ADDED_SETS, addAfter, noticeText, Program, programNotices, replaceEverywhere, Routine, RoutineExercise, swapsAfterReplace, uuid,
+  ADDED_SETS, addAfter, keptReplaces, noticeText, Program, programNotices, replaceEverywhere, Routine, RoutineExercise, swapsAfterReplace, uuid,
 } from '../../../data/training';
 import type { Slot } from '../../../lib/program-generator/program';
 import { useStore } from '../../../lib/store';
@@ -55,7 +55,7 @@ function RoutineForm({ program, original, onDone }: { program: Program | null; o
     const base = program?.routines ?? [];
     let routines = base.some((r) => r.id === id) ? base.map((r) => (r.id === id ? draft : r)) : [...base, draft];
     const changed = new Set<string>();
-    for (const r of replaces) {
+    for (const r of keptReplaces(replaces, exercises)) {
       const result = replaceEverywhere(routines, r.slot, r.exerciseId, r.name);
       routines = result.routines;
       result.changedNames.forEach((n) => changed.add(n));
@@ -106,13 +106,14 @@ function RoutineForm({ program, original, onDone }: { program: Program | null; o
         style={{ marginHorizontal: Gutter, marginVertical: 12 }}
         onPress={() => {
           if (!program) return;
-          if (replaces.length === 0) {
+          const kept = keptReplaces(replaces, exercises);
+          if (kept.length === 0) {
             TrainRepository.saveRoutine(program, { id: original?.id ?? uuid(), name: name.trim(), exercises });
           } else {
             const { routines, changedNames } = withDraft(name.trim());
             TrainRepository.saveRoutines(program, routines);
             if (profile) {
-              const swaps = replaces.reduce((acc, r) => swapsAfterReplace(acc, r.slot, r.exerciseId, engineLevel(profile)), profile.swaps);
+              const swaps = kept.reduce((acc, r) => swapsAfterReplace(acc, r.slot, r.exerciseId, engineLevel(profile)), profile.swaps);
               ProfileRepository.save({ ...profile, swaps }).catch(() => undefined);
             }
             toast(changedNames.length > 0 ? `Saved to your program. Also changed in ${changedNames.join(', ')}` : 'Saved to your program');
