@@ -314,6 +314,24 @@ function optionsFor(slot: Slot, level: Level): string[] {
   return level === 'beginner' ? options.filter((id) => CATALOG[id].equipment !== 'barbell') : options;
 }
 
+/** The slot an exercise fills, or null for exercises outside the generator's lists. */
+export function slotOf(exerciseId: string): Slot | null {
+  for (const slot of Object.keys(SLOT_OPTIONS) as Slot[]) {
+    if (SLOT_OPTIONS[slot].includes(exerciseId)) return slot;
+  }
+  return null;
+}
+
+/** The other exercises a level can swap to in a slot, in the generator's order. */
+export function slotAlternatives(slot: Slot, level: Level, currentId: string): string[] {
+  return optionsFor(slot, level).filter((id) => id !== currentId).slice(0, MAX_ALTERNATIVES);
+}
+
+/** Whether the exercise is one of the slot's own options for this level. */
+export function isSlotOption(slot: Slot, level: Level, exerciseId: string): boolean {
+  return optionsFor(slot, level).includes(exerciseId);
+}
+
 function restSec(exerciseId: string): number {
   const { mechanic, region } = CATALOG[exerciseId];
   if (mechanic === 'isolation') return REST_SEC.isolation;
@@ -327,7 +345,7 @@ function planExercise(slot: Slot, level: Level, swaps: ProgramInput['swaps']): P
   return {
     slot,
     exerciseId,
-    alternatives: options.filter((id) => id !== exerciseId).slice(0, MAX_ALTERNATIVES),
+    alternatives: slotAlternatives(slot, level, exerciseId),
     sets: SLOT_SETS[slot] ?? SETS,
     repMin: REP_MIN,
     repMax: REP_MAX,

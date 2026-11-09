@@ -2,7 +2,10 @@ import { CATALOG } from '../catalog';
 import {
   estimatedMinutes,
   generateProgram,
+  isSlotOption,
   sessionSets,
+  slotAlternatives,
+  slotOf,
   splitOptions,
   weeklySets,
   type Level,
@@ -417,5 +420,41 @@ describe('volume helpers', () => {
     const bench = day.exercises.find((e) => e.exerciseId === 'Barbell_Bench_Press_-_Medium_Grip');
     expect(bench).toBeDefined();
     expect(sessionSets({ ...day, exercises: [bench!] })).toMatchObject({ chest: 2, shoulders: 1, triceps: 1 });
+  });
+});
+
+describe('alternatives', () => {
+  it('finds the slot of a generator exercise', () => {
+    expect(slotOf('Dumbbell_Bench_Press')).toBe('chestPress');
+  });
+
+  it('gives no slot to an exercise outside the generator', () => {
+    expect(slotOf('bench_press')).toBeNull();
+  });
+
+  it.each(everyInput)('maps every planned exercise and alternative back to its slot (%o)', (input) => {
+    for (const ex of generateProgram(input).days.flatMap((d) => d.exercises)) {
+      for (const id of [ex.exerciseId, ...ex.alternatives]) expect(slotOf(id)).toBe(ex.slot);
+    }
+  });
+
+  it('lists the other options for the slot, in order', () => {
+    expect(slotAlternatives('chestPress', 'advanced', 'Barbell_Bench_Press_-_Medium_Grip')).toEqual([
+      'Machine_Bench_Press',
+      'Dumbbell_Bench_Press',
+      'Leverage_Chest_Press',
+    ]);
+  });
+
+  it('gives beginners no barbell alternatives', () => {
+    const ids = slotAlternatives('chestPress', 'beginner', 'Machine_Bench_Press');
+    expect(ids.length).toBeGreaterThan(0);
+    for (const id of ids) expect(CATALOG[id].equipment).not.toBe('barbell');
+  });
+
+  it('knows which exercises a level can use in a slot', () => {
+    expect(isSlotOption('chestPress', 'beginner', 'Barbell_Bench_Press_-_Medium_Grip')).toBe(false);
+    expect(isSlotOption('chestPress', 'advanced', 'Barbell_Bench_Press_-_Medium_Grip')).toBe(true);
+    expect(isSlotOption('chestPress', 'advanced', 'Pullups')).toBe(false);
   });
 });
