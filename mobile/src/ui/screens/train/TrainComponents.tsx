@@ -151,6 +151,16 @@ export function AlternativesSheet({ visible, onDismiss, current, level, onChoose
   );
 }
 
+/** The sets notice: an apricot note with one line per notice. Informs, never blocks. */
+export function VolumeNoticeNote({ lines }: { lines: string[] }) {
+  if (lines.length === 0) return null;
+  return (
+    <View style={{ borderLeftWidth: 3, borderLeftColor: colors.apricot, backgroundColor: c.surfaceContainerHigh, borderRadius: 12, padding: 12, gap: 4 }}>
+      {lines.map((line) => <T key={line} v="bodySmall">{line}</T>)}
+    </View>
+  );
+}
+
 function ExerciseRow({ title, subtitle, selected, onPress, create }: { title: string; subtitle: string; selected: boolean; onPress: () => void; create?: boolean }) {
   return (
     <View>
