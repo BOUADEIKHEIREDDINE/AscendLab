@@ -172,6 +172,13 @@ export const TrainRepository = {
     background(updateDoc(doc(userDoc(uid), 'programs', program.id), { routines: routines.map(routineToMap) }));
   },
 
+  /** Replaces all of `program`'s routines at once (a swap saved everywhere). */
+  saveRoutines(program: Program, routines: Routine[]): void {
+    const uid = currentUid();
+    if (!uid) return;
+    background(updateDoc(doc(userDoc(uid), 'programs', program.id), { routines: routines.map(routineToMap) }));
+  },
+
   deleteRoutine(program: Program, routineId: string): void {
     const uid = currentUid();
     if (!uid) return;

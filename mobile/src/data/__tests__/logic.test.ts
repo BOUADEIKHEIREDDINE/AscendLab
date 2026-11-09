@@ -12,6 +12,7 @@ import { Days, FeedPost, gapLabel, postFromMap } from '../social';
 import {
   activeFromJson, activeToJson, ActiveWorkout, beatenBy, countRecords, ExerciseLibrary, LoggedExercise, recordsByExercise,
   nextRoutine, recordsFrom, routineExerciseFromMap, routineToMap, starterRoutines, WorkoutMath, workoutFromDoc,
+  newSet, noticeText, programNotices, replaceEverywhere, swapsAfterReplace, volumeSessions, workoutReplace,
 } from '../training';
 
 const man: UserProfile = {
@@ -291,5 +292,72 @@ describe('split, swaps and routine slots', () => {
     const routine = { id: 'r', name: 'R', exercises: [{ exerciseId: 'Pullups', name: 'Pullups', sets: 2, reps: 10, slot: 'verticalPull' as const }] };
     expect(routineToMap(routine).exercises[0]).toMatchObject({ slot: 'verticalPull' });
     expect(routineToMap({ ...routine, exercises: [{ ...routine.exercises[0], slot: undefined }] }).exercises[0]).not.toHaveProperty('slot');
+  });
+});
+
+describe('program edits', () => {
+  const four = withDays({ ...man, level: 'INTERMEDIATE' }, [0, 1, 3, 4], null);
+  const six = withDays({ ...man, level: 'INTERMEDIATE' }, [0, 1, 2, 3, 4, 5], null);
+
+  test('a replace changes every routine with the same slot and keeps their sets', () => {
+    const routines = starterRoutines(four);
+    const { routines: next, changedNames } = replaceEverywhere(routines, 'chestPress', 'Dumbbell_Bench_Press', 'Dumbbell Bench Press');
+    expect(changedNames).toEqual(['Upper A', 'Upper B']);
+    const chest = next.flatMap((r) => r.exercises).filter((x) => x.slot === 'chestPress');
+    for (const x of chest) expect(x).toMatchObject({ exerciseId: 'Dumbbell_Bench_Press', name: 'Dumbbell Bench Press', sets: 2 });
+  });
+
+  test('a replace with one of the slot options is saved as a swap', () => {
+    expect(swapsAfterReplace({}, 'chestPress', 'Dumbbell_Bench_Press', 'intermediate')).toEqual({ chestPress: 'Dumbbell_Bench_Press' });
+  });
+
+  test('a replace with a library exercise clears the saved swap', () => {
+    expect(swapsAfterReplace({ chestPress: 'Machine_Bench_Press', row: 'Leverage_Iso_Row' }, 'chestPress', 'bench_press', 'intermediate'))
+      .toEqual({ row: 'Leverage_Iso_Row' });
+  });
+
+  test('a 6-day plan does each routine twice a week', () => {
+    const sessions = volumeSessions(starterRoutines(six), gymPlan(six)!.state.schedule.cycle, 6);
+    expect(sessions!.map((s) => s.timesPerWeek)).toEqual([2, 2, 2]);
+  });
+
+  test('3-day full body does A and B 1.5 times a week each', () => {
+    const sessions = volumeSessions(starterRoutines(man), gymPlan(man)!.state.schedule.cycle, 3);
+    expect(sessions!.map((s) => s.timesPerWeek)).toEqual([1.5, 1.5]);
+  });
+
+  test('a renamed routine turns the weekly count off', () => {
+    const routines = starterRoutines(four);
+    routines[0] = { ...routines[0], name: 'My push day' };
+    expect(volumeSessions(routines, gymPlan(four)!.state.schedule.cycle, 4)).toBeNull();
+  });
+
+  test('an unchanged program gives no notices', () => {
+    const routines = starterRoutines(four);
+    expect(programNotices(routines, routines, four)).toEqual([]);
+  });
+
+  test('notices read in plain words', () => {
+    expect(noticeText({ kind: 'week_above', muscle: 'chest', sets: 14, limit: 12 }))
+      .toBe('Chest now gets 14 sets a week, above the 12 your plan aims for. Fine to keep.');
+    expect(noticeText({ kind: 'week_below_minimum', muscle: 'back', sets: 3, limit: 4 }))
+      .toBe('Back drops to 3 sets a week, below the 4 needed to keep growing.');
+    expect(noticeText({ kind: 'session_above', muscle: 'chest', sets: 10, limit: 8, session: 0 }))
+      .toBe('Chest gets 10 sets in one workout. Past about 8, extra sets add little.');
+    expect(noticeText({ kind: 'week_above', muscle: 'triceps', sets: 12.25, limit: 12 })).toContain('12.5 sets');
+  });
+
+  test('a workout replace keeps ticked sets with the old exercise', () => {
+    const old = { exerciseId: 'A', name: 'A', targetReps: 10, sets: [newSet({ done: true, reps: '8' }), newSet()] };
+    const next = { exerciseId: 'B', name: 'B', targetReps: 10, sets: [newSet(), newSet()] };
+    const result = workoutReplace([old], 0, next);
+    expect(result.map((x) => x.exerciseId)).toEqual(['A', 'B']);
+    expect(result[0].sets).toEqual([newSet({ done: true, reps: '8' })]);
+  });
+
+  test('a workout replace with nothing ticked swaps in place', () => {
+    const old = { exerciseId: 'A', name: 'A', targetReps: 10, sets: [newSet()] };
+    const next = { exerciseId: 'B', name: 'B', targetReps: 10, sets: [newSet()] };
+    expect(workoutReplace([old], 0, next).map((x) => x.exerciseId)).toEqual(['B']);
   });
 });

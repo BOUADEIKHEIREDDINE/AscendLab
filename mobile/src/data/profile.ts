@@ -294,6 +294,11 @@ const roundTo = (x: number, step: number) => roundInt(x / step) * step;
 
 const ENGINE_ACTIVITY: Record<ActivityLevel, EngineActivity> = { SEDENTARY: 'sedentary', LIGHT: 'light', MODERATE: 'moderate', VERY: 'high' };
 
+/** The profile's level in the program generator's terms (missing = beginner). */
+export function engineLevel(p: UserProfile): EngineLevel {
+  return ENGINE_LEVEL[p.level ?? 'BEGINNER'];
+}
+
 /** How many days a week the profile trains, or null when fewer than 2 are picked. */
 export function planDays(p: UserProfile): number | null {
   return chosenDays(p)?.length ?? null;

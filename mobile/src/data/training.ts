@@ -4,8 +4,9 @@
  * by the Android app reads back here and vice versa.
  */
 import { CATALOG, type Muscle as CatalogMuscle } from '../lib/program-generator/catalog';
-import { slotOf, type Slot } from '../lib/program-generator/program';
-import { Convert, gymPlan, PlanCalculator, roundInt, Units, UNIT, UserProfile } from './profile';
+import { isSlotOption, SETS, slotOf, type Level as EngineLevel, type ProgramDay, type Slot } from '../lib/program-generator/program';
+import { volumeNotices, type VolumeNotice, type VolumeSession } from '../lib/program-generator/volume-notice';
+import { Convert, gymPlan, planDays, PlanCalculator, roundInt, Units, UNIT, UserProfile } from './profile';
 import type { ExercisePlan } from './progress';
 
 export type Muscle = 'CHEST' | 'BACK' | 'SHOULDERS' | 'ARMS' | 'LEGS' | 'GLUTES' | 'CORE' | 'CARDIO' | 'OTHER';
@@ -502,4 +503,81 @@ export function clock(sec: number): string {
   const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), r = s % 60;
   const pad = (n: number) => String(n).padStart(2, '0');
   return h > 0 ? `${h}:${pad(m)}:${pad(r)}` : `${m}:${pad(r)}`;
+}
+
+// ---------------------------------------------------------------- Program edits
+
+/** Sets for an exercise added next to another one: the plan's usual count. */
+export const ADDED_SETS = SETS;
+
+/** Puts `exerciseId` in every row filling `slot`, keeping each row's sets and reps. */
+export function replaceEverywhere(routines: Routine[], slot: Slot, exerciseId: string, name: string): { routines: Routine[]; changedNames: string[] } {
+  const changedNames: string[] = [];
+  const next = routines.map((r) => {
+    if (!r.exercises.some((x) => x.slot === slot)) return r;
+    changedNames.push(r.name);
+    return { ...r, exercises: r.exercises.map((x) => (x.slot === slot ? { ...x, exerciseId, name } : x)) };
+  });
+  return { routines: next, changedNames };
+}
+
+/** Saved swaps after a replace: a slot option is remembered, a library pick clears the slot. */
+export function swapsAfterReplace(swaps: UserProfile['swaps'], slot: Slot, exerciseId: string, level: EngineLevel): UserProfile['swaps'] {
+  const { [slot]: _old, ...rest } = swaps;
+  return isSlotOption(slot, level, exerciseId) ? { ...rest, [slot]: exerciseId } : rest;
+}
+
+export function addAfter(exercises: RoutineExercise[], index: number, ex: RoutineExercise): RoutineExercise[] {
+  return [...exercises.slice(0, index + 1), ex, ...exercises.slice(index + 1)];
+}
+
+/**
+ * Routines as sessions for the sets count, each weighted by how often the generated cycle does it
+ * in a week. Null when a routine isn't in the cycle (user-made or renamed): no weekly notices then.
+ */
+export function volumeSessions(routines: Routine[], cycle: ProgramDay[], daysPerWeek: number): VolumeSession[] | null {
+  if (cycle.length === 0) return null;
+  const sessions: VolumeSession[] = [];
+  for (const r of routines) {
+    const count = cycle.filter((d) => d.name === r.name).length;
+    if (count === 0) return null;
+    sessions.push({
+      exercises: r.exercises.map((x) => ({ exerciseId: x.exerciseId, sets: x.sets })),
+      timesPerWeek: (count * daysPerWeek) / cycle.length,
+    });
+  }
+  return sessions;
+}
+
+/** Notices for changing a generated gym program from `before` to `after` (same routine order). */
+export function programNotices(before: Routine[], after: Routine[], profile: UserProfile): VolumeNotice[] {
+  if (profile.place === 'HOME') return [];
+  const plan = gymPlan(profile);
+  const days = planDays(profile);
+  if (!plan || days == null) return [];
+  const cycle = plan.state.schedule.cycle;
+  const was = volumeSessions(before, cycle, days);
+  const now = volumeSessions(after, cycle, days);
+  return was && now ? volumeNotices(was, now, days) : [];
+}
+
+const halves = (x: number) => String(Math.round(x * 2) / 2);
+const capital = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+
+export function noticeText(n: VolumeNotice): string {
+  const muscle = capital(n.muscle);
+  switch (n.kind) {
+    case 'week_above': return `${muscle} now gets ${halves(n.sets)} sets a week, above the ${n.limit} your plan aims for. Fine to keep.`;
+    case 'week_below_minimum': return `${muscle} drops to ${halves(n.sets)} sets a week, below the ${n.limit} needed to keep growing.`;
+    case 'session_above': return `${muscle} gets ${halves(n.sets)} sets in one workout. Past about ${n.limit}, extra sets add little.`;
+  }
+}
+
+/** Replaces an exercise mid-workout: ticked sets stay with the old one, so they still get saved. */
+export function workoutReplace(exercises: ActiveExercise[], index: number, next: ActiveExercise): ActiveExercise[] {
+  const old = exercises[index];
+  if (!old) return exercises;
+  const done = old.sets.filter((s) => s.done);
+  if (done.length === 0) return exercises.map((x, i) => (i === index ? next : x));
+  return [...exercises.slice(0, index), { ...old, sets: done }, next, ...exercises.slice(index + 1)];
 }
