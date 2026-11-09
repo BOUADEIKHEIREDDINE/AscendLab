@@ -11,8 +11,8 @@ import {
 import type { Slot } from '../../../lib/program-generator/program';
 import { useStore } from '../../../lib/store';
 import { goBack, useNav, useParams } from '../../../navigation/types';
-import { c, Gutter, radius } from '../../theme';
-import { Button, IconButton, PageHeader, PrimaryButton, Screen, T, TextField } from '../../components/core';
+import { c, Gutter } from '../../theme';
+import { Button, Hairline, IconButton, PageHeader, PrimaryButton, Screen, T, TextField } from '../../components/core';
 import { ActionMenu, toast } from '../../components/overlays';
 import { AlternativesSheet, ExercisePicker, Stepper, VolumeNoticeNote } from './TrainComponents';
 
@@ -77,16 +77,18 @@ function RoutineForm({ program, original, onDone }: { program: Program | null; o
 
   return (
     <>
-      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingHorizontal: Gutter, paddingVertical: 8, gap: 12 }}>
-        <TextField label="Routine name" placeholder="Push day" value={name} onChangeText={(t) => setName(t.slice(0, 40))} autoCapitalize="sentences" />
-        <T v="bodySmall" color={c.onSurfaceVariant}>
-          In {program?.name ?? 'this program'} · {exercises.length} exercise{exercises.length === 1 ? '' : 's'} · {exercises.reduce((n, x) => n + x.sets, 0)} sets
-        </T>
+      {/* Laid out like the live workout: full-width sections split by hairlines, names in mint, ⋮ menus. */}
+      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 8 }}>
+        <View style={{ paddingHorizontal: Gutter, paddingTop: 8, paddingBottom: 12, gap: 8 }}>
+          <TextField label="Routine name" placeholder="Push day" value={name} onChangeText={(t) => setName(t.slice(0, 40))} autoCapitalize="sentences" />
+          <T v="bodySmall" color={c.onSurfaceVariant}>
+            In {program?.name ?? 'this program'} · {exercises.length} exercise{exercises.length === 1 ? '' : 's'} · {exercises.reduce((n, x) => n + x.sets, 0)} sets
+          </T>
+        </View>
         {exercises.map((x, i) => (
-          <ExerciseCard
+          <ExerciseSection
             key={`${x.exerciseId}-${i}`}
             ex={x}
-            number={i + 1}
             first={i === 0}
             last={i === exercises.length - 1}
             onSwap={() => setAlternativesFor(i)}
@@ -97,8 +99,11 @@ function RoutineForm({ program, original, onDone }: { program: Program | null; o
             onRemove={() => setExercises(exercises.filter((_, j) => j !== i))}
           />
         ))}
-        <Button label="Add exercises" icon="add" onPress={() => setPicking(true)} style={{ height: 52 }} />
-        <VolumeNoticeNote lines={notices} />
+        <Hairline />
+        <View style={{ paddingHorizontal: Gutter, paddingVertical: 16, gap: 12 }}>
+          <Button label="Add exercises" icon="add" onPress={() => setPicking(true)} style={{ height: 52 }} />
+          <VolumeNoticeNote lines={notices} />
+        </View>
       </ScrollView>
       <PrimaryButton
         label="Save routine"
@@ -152,38 +157,39 @@ function RoutineForm({ program, original, onDone }: { program: Program | null; o
   );
 }
 
-/** One exercise of the routine: number, name, muscle and equipment, Swap, then sets and reps. */
-function ExerciseCard({ ex, number, first, last, onSwap, onSets, onReps, onMoveUp, onMoveDown, onRemove }: {
-  ex: RoutineExercise; number: number; first: boolean; last: boolean;
+/**
+ * One exercise, styled like an exercise in the live workout: mint name with a ⋮ menu (Alternatives,
+ * move, remove), a grey line with muscle and equipment, then the sets and reps.
+ */
+function ExerciseSection({ ex, first, last, onSwap, onSets, onReps, onMoveUp, onMoveDown, onRemove }: {
+  ex: RoutineExercise; first: boolean; last: boolean;
   onSwap: () => void; onSets: (v: number) => void; onReps: (v: number) => void;
   onMoveUp: () => void; onMoveDown: () => void; onRemove: () => void;
 }) {
   const [menu, setMenu] = useState(false);
   const info = ExerciseLibrary.find(ex.exerciseId);
-  const subtitle = info ? `${MUSCLE_LABEL[info.muscle]} · ${EQUIPMENT_LABEL[info.equipment]}` : 'Custom exercise';
+  const kind = info ? `${MUSCLE_LABEL[info.muscle]} · ${EQUIPMENT_LABEL[info.equipment]}` : 'Custom exercise';
   return (
-    <View style={{ backgroundColor: c.surfaceContainer, borderRadius: radius.md, padding: 16, gap: 12 }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-        <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: c.primaryContainer, alignItems: 'center', justifyContent: 'center' }}>
-          <T v="titleSmall" color={c.primary}>{number}</T>
+    <View>
+      <Hairline />
+      <View style={{ paddingVertical: 12 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', paddingLeft: Gutter, paddingRight: 4 }}>
+          <T v="titleMedium" color={c.primary} lines={2} style={{ flex: 1 }}>{ex.name}</T>
+          <IconButton name="more-vert" label="More" onPress={() => setMenu(true)} />
         </View>
-        <View style={{ flex: 1 }}>
-          <T v="titleMedium" lines={2}>{ex.name}</T>
-          <T v="bodySmall" color={c.onSurfaceVariant}>{subtitle}</T>
-        </View>
-        <IconButton name="more-vert" label={`More for ${ex.name}`} color={c.onSurfaceVariant} onPress={() => setMenu(true)} />
-      </View>
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', backgroundColor: c.background, borderRadius: radius.sm, paddingHorizontal: 8 }}>
+        <T v="bodySmall" color={c.onSurfaceVariant} style={{ paddingHorizontal: Gutter }}>
+          {kind}
+        </T>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 16, paddingLeft: Gutter - 4, paddingRight: Gutter, paddingTop: 4 }}>
           <Stepper label="Sets" value={ex.sets} onChange={onSets} min={1} max={10} />
           <Stepper label="Reps" value={ex.reps} onChange={onReps} min={1} max={50} />
         </View>
-        <Button kind="tonal" label="Swap" icon="swap-horiz" onPress={onSwap} compact />
       </View>
-      <ActionMenu visible={menu} onDismiss={() => setMenu(false)} title={ex.name} items={[
+      <ActionMenu visible={menu} onDismiss={() => setMenu(false)} items={[
+        { label: 'Alternatives', icon: 'swap-horiz' as const, onPress: onSwap },
         ...(first ? [] : [{ label: 'Move up', icon: 'keyboard-arrow-up' as const, onPress: onMoveUp }]),
         ...(last ? [] : [{ label: 'Move down', icon: 'keyboard-arrow-down' as const, onPress: onMoveDown }]),
-        { label: 'Remove from routine', icon: 'delete-outline' as const, danger: true, onPress: onRemove },
+        { label: 'Remove exercise', icon: 'delete-outline' as const, danger: true, onPress: onRemove },
       ]} />
     </View>
   );
