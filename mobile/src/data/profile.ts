@@ -140,7 +140,8 @@ export function profileToMap(p: UserProfile): Record<string, unknown> {
     sex: p.sex, age: p.age, heightCm: p.heightCm, weightKg: p.weightKg, activity: p.activity, goal: p.goal,
     level: p.level, trainingDays: p.trainingDays, trainCount: p.trainCount,
     daysPerWeek: p.daysPerWeek, place: p.place, units: p.units, onboardingComplete: p.onboardingComplete,
-    split: p.split, swaps: p.swaps,
+    // A list, not a map: saves merge nested maps key by key, which would keep a cleared swap.
+    split: p.split, swaps: Object.entries(p.swaps).map(([slot, exerciseId]) => ({ slot, exerciseId })),
   };
 }
 
@@ -181,11 +182,14 @@ export function profileFromMap(m: Record<string, unknown>): UserProfile {
 
 const SPLITS: readonly Split[] = ['full_body', 'upper_lower', 'arnold_upper_lower', 'ppl_upper_lower', 'arnold', 'ppl', 'lower_body_focus'];
 
-/** Keeps only swaps with a known slot and an exercise id. */
+/** Keeps only swaps with a known slot and an exercise id (stored as a list; a map is read too). */
 function swapsFrom(v: unknown): Partial<Record<Slot, string>> {
   if (!v || typeof v !== 'object') return {};
+  const entries: [unknown, unknown][] = Array.isArray(v)
+    ? v.filter((x) => x && typeof x === 'object').map((x) => [(x as Record<string, unknown>).slot, (x as Record<string, unknown>).exerciseId])
+    : Object.entries(v as Record<string, unknown>);
   const swaps: Partial<Record<Slot, string>> = {};
-  for (const [slot, id] of Object.entries(v as Record<string, unknown>)) {
+  for (const [slot, id] of entries) {
     if (typeof id !== 'string') continue;
     const known = slotOf(id);
     if (known === slot) swaps[known] = id;

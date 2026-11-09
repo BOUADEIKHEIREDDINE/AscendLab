@@ -252,6 +252,12 @@ describe('split, swaps and routine slots', () => {
     expect(back.swaps).toEqual({ chestPress: 'Dumbbell_Bench_Press' });
   });
 
+  test('swaps are stored as a list, so a merged save removes a cleared swap', () => {
+    const stored = profileToMap({ ...man, swaps: { chestPress: 'Dumbbell_Bench_Press' } });
+    expect(stored.swaps).toEqual([{ slot: 'chestPress', exerciseId: 'Dumbbell_Bench_Press' }]);
+    expect(profileToMap({ ...man, swaps: {} }).swaps).toEqual([]);
+  });
+
   test('a stored profile drops an unknown split and bad swaps', () => {
     const back = profileFromMap({ ...profileToMap(man), split: 'nope', swaps: { chestPress: 'Dumbbell_Bench_Press', nope: 'x', row: 3 } });
     expect(back.split).toBeNull();
