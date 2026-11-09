@@ -314,6 +314,11 @@ function optionsFor(slot: Slot, level: Level): string[] {
   return level === 'beginner' ? options.filter((id) => CATALOG[id].equipment !== 'barbell') : options;
 }
 
+/** Whether a value is one of the generator's slot names. */
+export function isSlot(v: unknown): v is Slot {
+  return typeof v === 'string' && Object.prototype.hasOwnProperty.call(SLOT_OPTIONS, v);
+}
+
 /** The slot an exercise fills, or null for exercises outside the generator's lists. */
 export function slotOf(exerciseId: string): Slot | null {
   for (const slot of Object.keys(SLOT_OPTIONS) as Slot[]) {

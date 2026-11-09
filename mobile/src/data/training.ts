@@ -4,7 +4,7 @@
  * by the Android app reads back here and vice versa.
  */
 import { CATALOG, type Muscle as CatalogMuscle } from '../lib/program-generator/catalog';
-import { isSlotOption, SETS, slotOf, type Level as EngineLevel, type ProgramDay, type Slot } from '../lib/program-generator/program';
+import { isSlot, isSlotOption, SETS, slotOf, type Level as EngineLevel, type ProgramDay, type Slot } from '../lib/program-generator/program';
 import { volumeNotices, type VolumeNotice, type VolumeSession } from '../lib/program-generator/volume-notice';
 import { Convert, gymPlan, planDays, PlanCalculator, roundInt, Units, UNIT, UserProfile } from './profile';
 import type { ExercisePlan } from './progress';
@@ -178,9 +178,10 @@ const asStr = (v: unknown, fallback: string) => (typeof v === 'string' ? v : fal
 
 export function routineExerciseFromMap(m: Record<string, unknown>): RoutineExercise {
   const exerciseId = asStr(m.exerciseId, '');
-  // Routines saved before slots existed get theirs back from the exercise (one slot per exercise).
-  const stored = typeof m.slot === 'string' && slotOf(exerciseId) === m.slot ? (m.slot as Slot) : null;
-  const slot = stored ?? slotOf(exerciseId);
+  // Routines saved before slots existed have no slot field: they get theirs back from the exercise
+  // (one slot per exercise). A stored null means "no slot" (e.g. an exercise added next to another).
+  // A library pick that replaced a generated exercise keeps that slot, so any slot name is kept.
+  const slot = !('slot' in m) ? slotOf(exerciseId) : isSlot(m.slot) ? m.slot : null;
   return {
     exerciseId,
     name: asStr(m.name, 'Exercise'),
@@ -202,8 +203,8 @@ export function routineFromMap(m: Record<string, unknown>): Routine {
 export const routineToMap = (r: Routine) => ({
   id: r.id,
   name: r.name,
-  // Firestore rejects undefined, so the slot is only written when there is one.
-  exercises: r.exercises.map((x) => ({ exerciseId: x.exerciseId, name: x.name, sets: x.sets, reps: x.reps, ...(x.slot ? { slot: x.slot } : {}) })),
+  // Null, not undefined (Firestore rejects undefined): "no slot", so loading doesn't recover one.
+  exercises: r.exercises.map((x) => ({ exerciseId: x.exerciseId, name: x.name, sets: x.sets, reps: x.reps, slot: x.slot ?? null })),
 });
 
 /**

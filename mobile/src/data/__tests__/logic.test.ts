@@ -291,7 +291,19 @@ describe('split, swaps and routine slots', () => {
   test('a stored routine keeps its slot', () => {
     const routine = { id: 'r', name: 'R', exercises: [{ exerciseId: 'Pullups', name: 'Pullups', sets: 2, reps: 10, slot: 'verticalPull' as const }] };
     expect(routineToMap(routine).exercises[0]).toMatchObject({ slot: 'verticalPull' });
-    expect(routineToMap({ ...routine, exercises: [{ ...routine.exercises[0], slot: undefined }] }).exercises[0]).not.toHaveProperty('slot');
+  });
+
+  test('a library pick in a slot keeps the slot after saving and loading', () => {
+    const picked = { id: 'r', name: 'R', exercises: [{ exerciseId: 'bench_press', name: 'Bench Press', sets: 2, reps: 10, slot: 'chestPress' as const }] };
+    const stored = routineToMap(picked).exercises[0] as Record<string, unknown>;
+    expect(routineExerciseFromMap(stored).slot).toBe('chestPress');
+    expect(routineExerciseFromMap({ ...stored, slot: 'nope' }).slot).toBeUndefined();
+  });
+
+  test('an added exercise stays without a slot after saving and loading', () => {
+    const added = { id: 'r', name: 'R', exercises: [{ exerciseId: 'Dumbbell_Bench_Press', name: 'Dumbbell Bench Press', sets: 2, reps: 10 }] };
+    const stored = routineToMap(added).exercises[0] as Record<string, unknown>;
+    expect(routineExerciseFromMap(stored).slot).toBeUndefined();
   });
 });
 
