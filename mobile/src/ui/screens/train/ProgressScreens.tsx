@@ -5,7 +5,7 @@ import { Units } from '../../../data/profile';
 import { profileStore } from '../../../data/profileRepo';
 import { historyLive, TrainRepository } from '../../../data/trainRepo';
 import {
-  countsForRecords, doneKeys, EQUIPMENT_LABEL, ExerciseLibrary, LoggedSet, MUSCLE_LABEL, Muscle, MUSCLES, oneRepMax, recordsFrom,
+  countsForRecords, defaultExerciseTab, doneKeys, EQUIPMENT_LABEL, type HowTo, ExerciseLibrary, LoggedSet, MUSCLE_LABEL, Muscle, MUSCLES, oneRepMax, recordsFrom,
   setCount, setsFor, setVolume, WorkoutMath, WorkoutRecord,
 } from '../../../data/training';
 import { useNow, useStore } from '../../../lib/store';
@@ -16,6 +16,7 @@ import { formatDate } from '../../format';
 import { Chip, Hairline, Icon, IconButton, PageHeader, PressableScale, ProgressBar, Screen, SectionTitle, SkeletonCard, T, TextField } from '../../components/core';
 import { ActionMenu, Dialog } from '../../components/overlays';
 import { LineChart } from '../../components/charts';
+import { ExerciseAnimation } from '../../components/ExerciseAnimation';
 import { SetBadge } from './TrainComponents';
 
 const DAY_MS = 24 * 3600 * 1000;
@@ -131,35 +132,45 @@ export function ExerciseDetailScreen() {
   const units = useUnits();
   const exercise = ExerciseLibrary.find(exerciseId);
   const name = exercise?.name ?? (fallbackName || 'Exercise');
-  const [tab, setTab] = useState(0);
+  const howTo = ExerciseLibrary.howTo(exerciseId);
+  // Until the person picks a tab: How to for an exercise never logged, Summary otherwise.
+  const [picked, setPicked] = useState<number | null>(null);
 
   // Oldest first, only sessions that include this exercise.
   const sessions = useMemo(() => setsFor(history ?? [], exerciseId).reverse(), [history, exerciseId]);
   const records = useMemo(() => recordsFrom(sessions.map((s) => s[1])), [sessions]);
+  const tab = picked ?? (history != null && defaultExerciseTab(sessions.length > 0) === 'howto' ? 2 : 0);
+  const photos = howTo && howTo.images.length > 0
+    ? <View style={{ paddingHorizontal: Gutter, paddingTop: 12 }}><ExerciseAnimation images={howTo.images} name={name} /></View> : null;
+  const noSets = <T color={c.onSurfaceVariant} style={{ padding: Gutter }}>No sets logged yet. Do this exercise in a workout to see your progress here.</T>;
 
   return (
     <Screen>
       <PageHeader title={name} onBack={() => goBack(nav)} />
       {exercise && <T color={c.onSurfaceVariant} style={{ paddingHorizontal: Gutter }}>{MUSCLE_LABEL[exercise.muscle]} · {EQUIPMENT_LABEL[exercise.equipment]}</T>}
       <View style={{ flexDirection: 'row', marginTop: 8, borderBottomWidth: 0.5, borderBottomColor: c.outline }}>
-        {['Summary', 'History', 'Records'].map((t, i) => (
-          <Pressable key={t} onPress={() => { haptics.tick(); setTab(i); }} accessibilityRole="tab" accessibilityState={{ selected: tab === i }}
+        {['Summary', 'History', 'How to'].map((t, i) => (
+          <Pressable key={t} onPress={() => { haptics.tick(); setPicked(i); }} accessibilityRole="tab" accessibilityState={{ selected: tab === i }}
             style={{ flex: 1, alignItems: 'center', paddingVertical: 14 }}>
             <T v="titleSmall" color={tab === i ? c.primary : c.onSurfaceVariant}>{t}</T>
             {tab === i && <View style={{ position: 'absolute', bottom: 0, height: 3, width: 48, borderTopLeftRadius: 3, borderTopRightRadius: 3, backgroundColor: c.primary }} />}
           </Pressable>
         ))}
       </View>
-      {history == null ? <SkeletonCard />
-        : sessions.length === 0 ? <T color={c.onSurfaceVariant} style={{ padding: Gutter }}>No sets logged yet. Do this exercise in a workout to see your progress here.</T>
-          : tab === 0 ? <ExerciseSummary sessions={sessions} records={records} units={units} />
-            : tab === 1 ? <ExerciseHistory sessions={[...sessions].reverse()} units={units} onOpen={(id) => nav.navigate('WorkoutDetail', { workoutId: id })} />
-              : <ExerciseRecordsTab byReps={records.byReps} units={units} />}
+      {tab === 2 ? <ExerciseHowTo howTo={howTo} photos={photos} />
+        : history == null ? <SkeletonCard />
+          : tab === 0 ? (sessions.length === 0
+            ? <ScrollView contentContainerStyle={{ paddingBottom: 24 }}>{photos}{noSets}</ScrollView>
+            : <ExerciseSummary sessions={sessions} records={records} units={units} photos={photos} />)
+            : sessions.length === 0 ? noSets
+              : <ExerciseHistory sessions={[...sessions].reverse()} units={units} onOpen={(id) => nav.navigate('WorkoutDetail', { workoutId: id })} />}
     </Screen>
   );
 }
 
-function ExerciseSummary({ sessions, records, units }: { sessions: [WorkoutRecord, LoggedSet[]][]; records: ReturnType<typeof recordsFrom>; units: Units }) {
+function ExerciseSummary({ sessions, records, units, photos }: {
+  sessions: [WorkoutRecord, LoggedSet[]][]; records: ReturnType<typeof recordsFrom>; units: Units; photos: React.ReactNode;
+}) {
   const bodyweight = records.heaviestKg <= 0;
   const [metric, setMetric] = useState<Metric>(bodyweight ? 'REPS' : 'HEAVIEST');
   const points: [number, number][] = sessions.map(([w, sets]) => {
@@ -182,6 +193,7 @@ function ExerciseSummary({ sessions, records, units }: { sessions: [WorkoutRecor
   ];
   return (
     <ScrollView contentContainerStyle={{ paddingBottom: 24 }}>
+      {photos}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: Gutter, paddingVertical: 12, gap: 8 }}>
         {(Object.keys(METRIC_LABEL) as Metric[]).filter((m) => !bodyweight || m === 'REPS').map((m) => (
           <Chip key={m} label={METRIC_LABEL[m]} selected={metric === m} onPress={() => setMetric(m)} />
@@ -203,6 +215,7 @@ function ExerciseSummary({ sessions, records, units }: { sessions: [WorkoutRecor
           <Hairline inset={Gutter + 30} />
         </View>
       ))}
+      {!bodyweight && <BestByReps byReps={records.byReps} units={units} />}
     </ScrollView>
   );
 }
@@ -228,11 +241,13 @@ function ExerciseHistory({ sessions, units, onOpen }: { sessions: [WorkoutRecord
   );
 }
 
-function ExerciseRecordsTab({ byReps, units }: { byReps: Record<number, number>; units: Units }) {
+/** The old Records tab, now at the bottom of Summary: heaviest weight for each number of reps. */
+function BestByReps({ byReps, units }: { byReps: Record<number, number>; units: Units }) {
   const rows = Object.entries(byReps).map(([r, w]) => [Number(r), w] as [number, number]).filter(([, w]) => w > 0).sort((a, b) => a[0] - b[0]);
   return (
-    <ScrollView contentContainerStyle={{ paddingBottom: 24 }}>
-      <T color={c.onSurfaceVariant} style={{ paddingHorizontal: Gutter, paddingVertical: 12 }}>Heaviest weight you've lifted for each number of reps.</T>
+    <View>
+      <SectionTitle text="Best weight by reps" />
+      <T color={c.onSurfaceVariant} style={{ paddingHorizontal: Gutter, paddingBottom: 8 }}>Heaviest weight you've lifted for each number of reps.</T>
       <View style={{ flexDirection: 'row', paddingHorizontal: Gutter, paddingVertical: 4 }}>
         <T v="labelSmall" color={c.onSurfaceVariant} style={{ flex: 1 }}>REPS</T>
         <T v="labelSmall" color={c.onSurfaceVariant}>BEST WEIGHT</T>
@@ -247,6 +262,39 @@ function ExerciseRecordsTab({ byReps, units }: { byReps: Record<number, number>;
           <Hairline inset={Gutter} />
         </View>
       ))}
+    </View>
+  );
+}
+
+function ExerciseHowTo({ howTo, photos }: { howTo: HowTo | null; photos: React.ReactNode }) {
+  if (!howTo) return <T color={c.onSurfaceVariant} style={{ padding: Gutter }}>No instructions for this exercise yet.</T>;
+  const facts: [string, string][] = [
+    ['Main muscles', howTo.primary.join(', ')],
+    ...(howTo.secondary.length > 0 ? [['Also works', howTo.secondary.join(', ')] as [string, string]] : []),
+    ['Equipment', howTo.equipment],
+    ['Level', howTo.level],
+  ];
+  return (
+    <ScrollView contentContainerStyle={{ paddingBottom: 24 }}>
+      {photos}
+      <SectionTitle text="Instructions" />
+      {howTo.instructions.map((step, i) => (
+        <View key={i} style={{ flexDirection: 'row', paddingHorizontal: Gutter, paddingVertical: 6 }}>
+          <T v="titleSmall" color={c.primary} style={{ width: 28 }}>{i + 1}</T>
+          <T v="bodyLarge" style={{ flex: 1 }}>{step}</T>
+        </View>
+      ))}
+      <SectionTitle text="Details" />
+      {facts.map(([label, value]) => (
+        <View key={label}>
+          <View style={{ flexDirection: 'row', paddingHorizontal: Gutter, paddingVertical: 12, gap: 16 }}>
+            <T v="bodyLarge" color={c.onSurfaceVariant} style={{ width: 120 }}>{label}</T>
+            <T v="bodyLarge" style={{ flex: 1 }}>{value}</T>
+          </View>
+          <Hairline inset={Gutter} />
+        </View>
+      ))}
+      <T v="bodySmall" color={c.onSurfaceVariant} style={{ paddingHorizontal: Gutter, paddingTop: 16 }}>Photos and instructions: free-exercise-db (public domain)</T>
     </ScrollView>
   );
 }

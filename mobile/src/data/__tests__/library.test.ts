@@ -1,7 +1,7 @@
 import { DB_EXERCISES, DB_SOURCE_COMMIT } from '../exerciseDb';
 import { sessionsByExercise } from '../progress';
 import {
-  countRecords, doneKeys, EXERCISES, ExerciseLibrary, lastSets, recordsByExercise, setsFor, type LoggedSet, type WorkoutRecord,
+  countRecords, defaultExerciseTab, doneKeys, EXERCISES, ExerciseLibrary, lastSets, recordsByExercise, setsFor, type LoggedSet, type WorkoutRecord,
 } from '../training';
 
 const BENCH = 'Barbell_Bench_Press_-_Medium_Grip';
@@ -133,5 +133,12 @@ describe('generatorMuscles', () => {
     expect(ExerciseLibrary.generatorMuscles('Barbell_Guillotine_Bench_Press')!.primary).toEqual(['chest']);
     expect(ExerciseLibrary.generatorMuscles('bench_press')!.primary).toEqual(['chest']);
     expect(ExerciseLibrary.generatorMuscles('custom:my_lift')).toBeUndefined();
+  });
+});
+
+describe('defaultExerciseTab', () => {
+  it('opens How to until the exercise has been logged', () => {
+    expect(defaultExerciseTab(false)).toBe('howto');
+    expect(defaultExerciseTab(true)).toBe('summary');
   });
 });

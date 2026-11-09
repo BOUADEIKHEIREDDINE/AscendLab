@@ -520,6 +520,9 @@ export function nextRoutine(program: Program | null, history: WorkoutRecord[] | 
 }
 
 /** Most recent sets of each exercise, from history (newest first). Powers the "Previous" column. */
+/** The exercise page opens on How to until the exercise has been logged, then on Summary. */
+export const defaultExerciseTab = (hasHistory: boolean): 'summary' | 'howto' => (hasHistory ? 'summary' : 'howto');
+
 /** Every exercise in the history, as `ExerciseLibrary.key`s: search lists these first. */
 export function doneKeys(history: WorkoutRecord[] | null | undefined): Set<string> {
   return new Set((history ?? []).flatMap((w) => w.exercises.map((x) => ExerciseLibrary.key(x.exerciseId))));
