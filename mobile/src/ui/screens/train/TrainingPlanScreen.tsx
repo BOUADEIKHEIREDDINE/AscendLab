@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FlatList, View } from 'react-native';
+import { FlatList, Platform, Pressable, View } from 'react-native';
 import { ProfileRepository, profileStore } from '../../../data/profileRepo';
 import { splitChoice } from '../../../data/profile';
 import type { Split } from '../../../lib/program-generator/program';
@@ -7,11 +7,11 @@ import { activeProgramOf, activeStore, historyLive, TrainRepository, trainLive }
 import { doneSets, nextRoutine, Routine, setCount, WorkoutMath } from '../../../data/training';
 import { useStore } from '../../../lib/store';
 import { useNav } from '../../../navigation/types';
-import { c, Gutter } from '../../theme';
+import { c, Gutter, radius } from '../../theme';
 import { haptics } from '../../haptics';
 import { relativeDay } from '../../format';
 import { Button, Hairline, Icon, IconButton, PressableScale, Screen, SectionTitle, SkeletonCard, T, TabHeader } from '../../components/core';
-import { ActionMenu, Dialog, toast } from '../../components/overlays';
+import { ActionMenu, BottomSheet, Dialog, toast } from '../../components/overlays';
 
 export function TrainingPlanScreen() {
   const nav = useNav();
@@ -148,16 +148,41 @@ export function TrainingPlanScreen() {
         ]}
       />
 
-      <ActionMenu
-        visible={splitMenu}
-        onDismiss={() => setSplitMenu(false)}
-        title="Split for your training days"
-        items={splits.map((o) => ({
-          label: `${o.label} — ${o.description}`,
-          checked: o.split === currentSplit,
-          onPress: () => { if (o.split !== currentSplit) setPendingSplit({ split: o.split, label: o.label }); },
-        }))}
-      />
+      {/* One outlined card per split, the current one highlighted, so the options read apart. */}
+      <BottomSheet visible={splitMenu} onDismiss={() => setSplitMenu(false)}>
+        <View style={{ paddingHorizontal: Gutter, paddingBottom: 8, gap: 12 }}>
+          <T v="titleLarge">Choose your split</T>
+          <T v="bodySmall" color={c.onSurfaceVariant}>Both fit your training days. Pick the one you prefer.</T>
+          {splits.map((o) => {
+            const current = o.split === currentSplit;
+            return (
+              <Pressable
+                key={o.split}
+                accessibilityRole="button"
+                accessibilityState={{ selected: current }}
+                onPress={() => {
+                  haptics.tick();
+                  setSplitMenu(false);
+                  // Opened after the sheet closes: stacked popups misbehave, mostly on iOS.
+                  if (!current) setTimeout(() => setPendingSplit({ split: o.split, label: o.label }), Platform.OS === 'ios' ? 350 : 0);
+                }}
+                style={({ pressed }) => ({
+                  flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16, borderRadius: radius.md, borderWidth: current ? 2 : 1,
+                  borderColor: current ? c.primary : c.outline,
+                  backgroundColor: current ? c.primaryContainer : pressed ? c.surfaceContainerHigh : 'transparent',
+                })}
+              >
+                <View style={{ flex: 1, gap: 4 }}>
+                  <T v="titleMedium">{o.label}</T>
+                  <T v="bodySmall" color={c.onSurfaceVariant}>{o.description}</T>
+                  {current && <T v="labelSmall" color={c.primary}>Your current split</T>}
+                </View>
+                {current ? <Icon name="check-circle" color={c.primary} /> : <Icon name="chevron-right" color={c.onSurfaceVariant} />}
+              </Pressable>
+            );
+          })}
+        </View>
+      </BottomSheet>
 
       <Dialog
         visible={pendingSplit != null}
