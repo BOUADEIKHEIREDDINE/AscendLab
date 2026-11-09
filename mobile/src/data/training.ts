@@ -4,6 +4,7 @@
  * by the Android app reads back here and vice versa.
  */
 import { CATALOG, type Muscle as CatalogMuscle } from '../lib/program-generator/catalog';
+import { DB_EXERCISES, dbFind, equipmentOfDb, groupOfDbMuscle, photoUrls } from './exerciseDb';
 import { isSlot, isSlotOption, SETS, slotOf, type Level as EngineLevel, type ProgramDay, type Slot } from '../lib/program-generator/program';
 import { volumeNotices, type VolumeNotice, type VolumeSession } from '../lib/program-generator/volume-notice';
 import { Convert, gymPlan, planDays, PlanCalculator, roundInt, Units, UNIT, UserProfile } from './profile';
@@ -22,81 +23,86 @@ export const EQUIPMENT_LABEL: Record<Equipment, string> = {
   BODYWEIGHT: 'Bodyweight', KETTLEBELL: 'Kettlebell', BAND: 'Band', OTHER: 'Other',
 };
 
-/** One movement. Custom exercises use an id starting with "custom:". */
-export interface Exercise { id: string; name: string; muscle: Muscle; equipment: Equipment }
+/**
+ * One movement. Custom exercises use an id starting with "custom:". `media` links an entry of the
+ * older hand list to the same exercise in free-exercise-db: its photos and instructions, and the
+ * id it shares history with.
+ */
+export interface Exercise { id: string; name: string; muscle: Muscle; equipment: Equipment; media?: string }
 
-const e = (id: string, name: string, muscle: Muscle, equipment: Equipment): Exercise => ({ id, name, muscle, equipment });
+const e = (id: string, name: string, muscle: Muscle, equipment: Equipment, media?: string): Exercise =>
+  (media ? { id, name, muscle, equipment, media } : { id, name, muscle, equipment });
 
 /** The built-in exercise library. Ids never change, since workouts and routines refer to them. */
 export const EXERCISES: Exercise[] = [
   // Chest
-  e('bench_press', 'Bench Press', 'CHEST', 'BARBELL'),
-  e('incline_bench_press', 'Incline Bench Press', 'CHEST', 'BARBELL'),
-  e('db_bench_press', 'Dumbbell Bench Press', 'CHEST', 'DUMBBELL'),
-  e('incline_db_press', 'Incline Dumbbell Press', 'CHEST', 'DUMBBELL'),
-  e('chest_fly_machine', 'Chest Fly (Machine)', 'CHEST', 'MACHINE'),
-  e('cable_crossover', 'Cable Crossover', 'CHEST', 'CABLE'),
-  e('chest_press_machine', 'Chest Press (Machine)', 'CHEST', 'MACHINE'),
-  e('push_up', 'Push-up', 'CHEST', 'BODYWEIGHT'),
+  e('bench_press', 'Bench Press', 'CHEST', 'BARBELL', 'Barbell_Bench_Press_-_Medium_Grip'),
+  e('incline_bench_press', 'Incline Bench Press', 'CHEST', 'BARBELL', 'Barbell_Incline_Bench_Press_-_Medium_Grip'),
+  e('db_bench_press', 'Dumbbell Bench Press', 'CHEST', 'DUMBBELL', 'Dumbbell_Bench_Press'),
+  e('incline_db_press', 'Incline Dumbbell Press', 'CHEST', 'DUMBBELL', 'Incline_Dumbbell_Press'),
+  e('chest_fly_machine', 'Chest Fly (Machine)', 'CHEST', 'MACHINE', 'Butterfly'),
+  e('cable_crossover', 'Cable Crossover', 'CHEST', 'CABLE', 'Cable_Crossover'),
+  e('chest_press_machine', 'Chest Press (Machine)', 'CHEST', 'MACHINE', 'Leverage_Chest_Press'),
+  e('push_up', 'Push-up', 'CHEST', 'BODYWEIGHT', 'Pushups'),
   e('knee_push_up', 'Knee Push-up', 'CHEST', 'BODYWEIGHT'),
-  e('dips', 'Dips', 'CHEST', 'BODYWEIGHT'),
+  e('dips', 'Dips', 'CHEST', 'BODYWEIGHT', 'Dips_-_Chest_Version'),
   // Back
-  e('deadlift', 'Deadlift', 'BACK', 'BARBELL'),
-  e('barbell_row', 'Barbell Row', 'BACK', 'BARBELL'),
-  e('db_row', 'Dumbbell Row', 'BACK', 'DUMBBELL'),
-  e('lat_pulldown', 'Lat Pulldown', 'BACK', 'CABLE'),
-  e('seated_cable_row', 'Seated Cable Row', 'BACK', 'CABLE'),
-  e('pull_up', 'Pull-up', 'BACK', 'BODYWEIGHT'),
-  e('chin_up', 'Chin-up', 'BACK', 'BODYWEIGHT'),
-  e('inverted_row', 'Inverted Row', 'BACK', 'BODYWEIGHT'),
+  e('deadlift', 'Deadlift', 'BACK', 'BARBELL', 'Barbell_Deadlift'),
+  e('barbell_row', 'Barbell Row', 'BACK', 'BARBELL', 'Bent_Over_Barbell_Row'),
+  e('db_row', 'Dumbbell Row', 'BACK', 'DUMBBELL', 'One-Arm_Dumbbell_Row'),
+  e('lat_pulldown', 'Lat Pulldown', 'BACK', 'CABLE', 'Wide-Grip_Lat_Pulldown'),
+  e('seated_cable_row', 'Seated Cable Row', 'BACK', 'CABLE', 'Seated_Cable_Rows'),
+  e('pull_up', 'Pull-up', 'BACK', 'BODYWEIGHT', 'Pullups'),
+  e('chin_up', 'Chin-up', 'BACK', 'BODYWEIGHT', 'Chin-Up'),
+  e('inverted_row', 'Inverted Row', 'BACK', 'BODYWEIGHT', 'Inverted_Row'),
   e('band_row', 'Band Row', 'BACK', 'BAND'),
-  e('back_extension', 'Back Extension', 'BACK', 'BODYWEIGHT'),
+  e('back_extension', 'Back Extension', 'BACK', 'BODYWEIGHT', 'Hyperextensions_Back_Extensions'),
   // Shoulders
-  e('overhead_press', 'Overhead Press', 'SHOULDERS', 'BARBELL'),
-  e('db_shoulder_press', 'Dumbbell Shoulder Press', 'SHOULDERS', 'DUMBBELL'),
-  e('lateral_raise', 'Lateral Raise', 'SHOULDERS', 'DUMBBELL'),
-  e('face_pull', 'Face Pull', 'SHOULDERS', 'CABLE'),
-  e('rear_delt_fly', 'Rear Delt Fly', 'SHOULDERS', 'DUMBBELL'),
+  e('overhead_press', 'Overhead Press', 'SHOULDERS', 'BARBELL', 'Standing_Military_Press'),
+  e('db_shoulder_press', 'Dumbbell Shoulder Press', 'SHOULDERS', 'DUMBBELL', 'Dumbbell_Shoulder_Press'),
+  e('lateral_raise', 'Lateral Raise', 'SHOULDERS', 'DUMBBELL', 'Side_Lateral_Raise'),
+  e('face_pull', 'Face Pull', 'SHOULDERS', 'CABLE', 'Face_Pull'),
+  e('rear_delt_fly', 'Rear Delt Fly', 'SHOULDERS', 'DUMBBELL', 'Reverse_Flyes'),
   e('pike_push_up', 'Pike Push-up', 'SHOULDERS', 'BODYWEIGHT'),
-  e('shoulder_press_machine', 'Shoulder Press (Machine)', 'SHOULDERS', 'MACHINE'),
+  e('shoulder_press_machine', 'Shoulder Press (Machine)', 'SHOULDERS', 'MACHINE', 'Machine_Shoulder_Military_Press'),
   // Arms
-  e('barbell_curl', 'Barbell Curl', 'ARMS', 'BARBELL'),
-  e('db_curl', 'Dumbbell Curl', 'ARMS', 'DUMBBELL'),
-  e('hammer_curl', 'Hammer Curl', 'ARMS', 'DUMBBELL'),
-  e('cable_curl', 'Cable Curl', 'ARMS', 'CABLE'),
-  e('triceps_pushdown', 'Triceps Pushdown', 'ARMS', 'CABLE'),
-  e('skull_crusher', 'Skull Crusher', 'ARMS', 'BARBELL'),
-  e('overhead_triceps_ext', 'Overhead Triceps Extension', 'ARMS', 'DUMBBELL'),
-  e('bench_dip', 'Bench Dip', 'ARMS', 'BODYWEIGHT'),
+  e('barbell_curl', 'Barbell Curl', 'ARMS', 'BARBELL', 'Barbell_Curl'),
+  e('db_curl', 'Dumbbell Curl', 'ARMS', 'DUMBBELL', 'Dumbbell_Bicep_Curl'),
+  e('hammer_curl', 'Hammer Curl', 'ARMS', 'DUMBBELL', 'Hammer_Curls'),
+  e('cable_curl', 'Cable Curl', 'ARMS', 'CABLE', 'Standing_Biceps_Cable_Curl'),
+  e('triceps_pushdown', 'Triceps Pushdown', 'ARMS', 'CABLE', 'Triceps_Pushdown'),
+  e('skull_crusher', 'Skull Crusher', 'ARMS', 'BARBELL', 'EZ-Bar_Skullcrusher'),
+  e('overhead_triceps_ext', 'Overhead Triceps Extension', 'ARMS', 'DUMBBELL', 'Standing_Dumbbell_Triceps_Extension'),
+  e('bench_dip', 'Bench Dip', 'ARMS', 'BODYWEIGHT', 'Bench_Dips'),
   // Legs
-  e('squat', 'Squat', 'LEGS', 'BARBELL'),
-  e('front_squat', 'Front Squat', 'LEGS', 'BARBELL'),
-  e('goblet_squat', 'Goblet Squat', 'LEGS', 'DUMBBELL'),
-  e('bodyweight_squat', 'Bodyweight Squat', 'LEGS', 'BODYWEIGHT'),
-  e('leg_press', 'Leg Press', 'LEGS', 'MACHINE'),
-  e('leg_extension', 'Leg Extension', 'LEGS', 'MACHINE'),
-  e('leg_curl', 'Leg Curl', 'LEGS', 'MACHINE'),
-  e('lunge', 'Lunge', 'LEGS', 'BODYWEIGHT'),
-  e('db_lunge', 'Dumbbell Lunge', 'LEGS', 'DUMBBELL'),
-  e('bulgarian_split_squat', 'Bulgarian Split Squat', 'LEGS', 'DUMBBELL'),
-  e('romanian_deadlift', 'Romanian Deadlift', 'LEGS', 'BARBELL'),
-  e('db_romanian_deadlift', 'Dumbbell Romanian Deadlift', 'LEGS', 'DUMBBELL'),
+  e('squat', 'Squat', 'LEGS', 'BARBELL', 'Barbell_Squat'),
+  e('front_squat', 'Front Squat', 'LEGS', 'BARBELL', 'Front_Barbell_Squat'),
+  e('goblet_squat', 'Goblet Squat', 'LEGS', 'DUMBBELL', 'Goblet_Squat'),
+  e('bodyweight_squat', 'Bodyweight Squat', 'LEGS', 'BODYWEIGHT', 'Bodyweight_Squat'),
+  e('leg_press', 'Leg Press', 'LEGS', 'MACHINE', 'Leg_Press'),
+  e('leg_extension', 'Leg Extension', 'LEGS', 'MACHINE', 'Leg_Extensions'),
+  e('leg_curl', 'Leg Curl', 'LEGS', 'MACHINE', 'Lying_Leg_Curls'),
+  e('lunge', 'Lunge', 'LEGS', 'BODYWEIGHT', 'Bodyweight_Walking_Lunge'),
+  e('db_lunge', 'Dumbbell Lunge', 'LEGS', 'DUMBBELL', 'Dumbbell_Lunges'),
+  e('bulgarian_split_squat', 'Bulgarian Split Squat', 'LEGS', 'DUMBBELL', 'Split_Squat_with_Dumbbells'),
+  e('romanian_deadlift', 'Romanian Deadlift', 'LEGS', 'BARBELL', 'Romanian_Deadlift'),
+  e('db_romanian_deadlift', 'Dumbbell Romanian Deadlift', 'LEGS', 'DUMBBELL', 'Stiff-Legged_Dumbbell_Deadlift'),
   e('calf_raise', 'Calf Raise', 'LEGS', 'BODYWEIGHT'),
-  e('standing_calf_raise_machine', 'Standing Calf Raise (Machine)', 'LEGS', 'MACHINE'),
+  e('standing_calf_raise_machine', 'Standing Calf Raise (Machine)', 'LEGS', 'MACHINE', 'Standing_Calf_Raises'),
   // Glutes
-  e('hip_thrust', 'Hip Thrust', 'GLUTES', 'BARBELL'),
-  e('glute_bridge', 'Glute Bridge', 'GLUTES', 'BODYWEIGHT'),
+  e('hip_thrust', 'Hip Thrust', 'GLUTES', 'BARBELL', 'Barbell_Hip_Thrust'),
+  e('glute_bridge', 'Glute Bridge', 'GLUTES', 'BODYWEIGHT', 'Butt_Lift_Bridge'),
   e('kettlebell_swing', 'Kettlebell Swing', 'GLUTES', 'KETTLEBELL'),
-  e('cable_kickback', 'Cable Kickback', 'GLUTES', 'CABLE'),
+  e('cable_kickback', 'Cable Kickback', 'GLUTES', 'CABLE', 'One-Legged_Cable_Kickback'),
   e('step_up', 'Step-up', 'GLUTES', 'BODYWEIGHT'),
   // Core
-  e('plank', 'Plank (seconds)', 'CORE', 'BODYWEIGHT'),
-  e('crunch', 'Crunch', 'CORE', 'BODYWEIGHT'),
-  e('hanging_leg_raise', 'Hanging Leg Raise', 'CORE', 'BODYWEIGHT'),
-  e('russian_twist', 'Russian Twist', 'CORE', 'BODYWEIGHT'),
-  e('cable_crunch', 'Cable Crunch', 'CORE', 'CABLE'),
-  e('dead_bug', 'Dead Bug', 'CORE', 'BODYWEIGHT'),
-  e('mountain_climber', 'Mountain Climber', 'CORE', 'BODYWEIGHT'),
+  e('plank', 'Plank (seconds)', 'CORE', 'BODYWEIGHT', 'Plank'),
+  e('crunch', 'Crunch', 'CORE', 'BODYWEIGHT', 'Crunches'),
+  e('hanging_leg_raise', 'Hanging Leg Raise', 'CORE', 'BODYWEIGHT', 'Hanging_Leg_Raise'),
+  e('russian_twist', 'Russian Twist', 'CORE', 'BODYWEIGHT', 'Russian_Twist'),
+  e('cable_crunch', 'Cable Crunch', 'CORE', 'CABLE', 'Cable_Crunch'),
+  e('dead_bug', 'Dead Bug', 'CORE', 'BODYWEIGHT', 'Dead_Bug'),
+  e('mountain_climber', 'Mountain Climber', 'CORE', 'BODYWEIGHT', 'Mountain_Climbers'),
   // Cardio
   e('burpee', 'Burpee', 'CARDIO', 'BODYWEIGHT'),
   e('jumping_jack', 'Jumping Jack', 'CARDIO', 'BODYWEIGHT'),
@@ -114,21 +120,60 @@ const MUSCLE_OF: Record<CatalogMuscle, Muscle> = {
 Object.values(CATALOG).forEach((x) => {
   if (!byId.has(x.id)) byId.set(x.id, e(x.id, x.name, MUSCLE_OF[x.primary[0]] ?? 'OTHER', x.equipment.toUpperCase() as Equipment));
 });
+// The rest of free-exercise-db's gym exercises.
+DB_EXERCISES.forEach((x) => {
+  if (!byId.has(x.id)) byId.set(x.id, e(x.id, x.name, groupOfDbMuscle(x.primaryMuscles[0] ?? ''), equipmentOfDb(x.equipment)));
+});
+/** What search and the picker list: one entry per real exercise, so linked hand-list entries are left out. */
+const SEARCHABLE = [...byId.values()].filter((x) => !x.media);
+
+const capital = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+
+/** How to do an exercise, from free-exercise-db. */
+export interface HowTo { images: string[]; instructions: string[]; primary: string[]; secondary: string[]; equipment: string; level: string }
 
 export const ExerciseLibrary = {
+  /** Any exercise by id: hand list (also the linked ones), generator, database. */
   find: (id: string) => byId.get(id),
   custom(name: string): Exercise {
     const trimmed = name.trim();
     return e('custom:' + trimmed.toLowerCase().replace(/[^a-z0-9]+/g, '_'), trimmed, 'OTHER', 'OTHER');
   },
+  /** The id history is grouped by: a linked hand-list id and its database id are the same exercise. */
+  key: (id: string): string => byId.get(id)?.media ?? id,
   /** Muscle group for any exercise id, including custom ones. */
   muscleOf: (id: string): Muscle => byId.get(id)?.muscle ?? 'OTHER',
   isBodyweight: (id: string) => byId.get(id)?.equipment === 'BODYWEIGHT',
-  /** Search used by the picker and the library page: every typed word must appear in the name. */
-  search(query: string, muscle: Muscle | null): Exercise[] {
-    const words = query.trim().toLowerCase().split(' ').filter(Boolean);
-    return EXERCISES.filter((x) => (muscle == null || x.muscle === muscle) &&
-      words.every((w) => x.name.toLowerCase().includes(w)));
+  /**
+   * Search used by the picker and the library page: every typed word must appear in the name.
+   * Exercises done before (`done` holds `key()`s) come first, then exact names, then names starting
+   * with the query, then the rest, each alphabetically.
+   */
+  search(query: string, muscle: Muscle | null, done?: ReadonlySet<string>): Exercise[] {
+    const q = query.trim().toLowerCase();
+    const words = q.split(' ').filter(Boolean);
+    const rank = (x: Exercise) => {
+      const name = x.name.toLowerCase();
+      return (done?.has(ExerciseLibrary.key(x.id)) ? 0 : 3) + (q === '' ? 0 : name === q ? 0 : name.startsWith(q) ? 1 : 2);
+    };
+    return SEARCHABLE
+      .filter((x) => (muscle == null || x.muscle === muscle) && words.every((w) => x.name.toLowerCase().includes(w)))
+      .map((x) => [rank(x), x] as const)
+      .sort((a, b) => a[0] - b[0] || a[1].name.localeCompare(b[1].name))
+      .map(([, x]) => x);
+  },
+  /** Photos, steps and muscles; null when the exercise isn't in free-exercise-db. */
+  howTo(id: string): HowTo | null {
+    const x = dbFind(ExerciseLibrary.key(id));
+    if (!x) return null;
+    return {
+      images: photoUrls(x),
+      instructions: x.instructions,
+      primary: x.primaryMuscles.map(capital),
+      secondary: x.secondaryMuscles.map(capital),
+      equipment: capital(x.equipment ?? 'none'),
+      level: capital(x.level),
+    };
   },
   /** Starter routines built from the person's AscendLab plan. */
   starterExercises(title: string, home: boolean): string[] {
@@ -465,6 +510,11 @@ export function nextRoutine(program: Program | null, history: WorkoutRecord[] | 
 }
 
 /** Most recent sets of each exercise, from history (newest first). Powers the "Previous" column. */
+/** Every exercise in the history, as `ExerciseLibrary.key`s: search lists these first. */
+export function doneKeys(history: WorkoutRecord[] | null | undefined): Set<string> {
+  return new Set((history ?? []).flatMap((w) => w.exercises.map((x) => ExerciseLibrary.key(x.exerciseId))));
+}
+
 export function lastSets(history: WorkoutRecord[] | null | undefined): Map<string, LoggedSet[]> {
   const map = new Map<string, LoggedSet[]>();
   (history ?? []).forEach((w) => w.exercises.forEach((x) => { if (!map.has(x.exerciseId)) map.set(x.exerciseId, x.sets); }));
@@ -578,7 +628,6 @@ export function programNotices(before: Routine[], after: Routine[], profile: Use
 }
 
 const halves = (x: number) => String(Math.round(x * 2) / 2);
-const capital = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 export function noticeText(n: VolumeNotice): string {
   const muscle = capital(n.muscle);

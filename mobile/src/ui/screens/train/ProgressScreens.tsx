@@ -5,7 +5,7 @@ import { Units } from '../../../data/profile';
 import { profileStore } from '../../../data/profileRepo';
 import { historyLive, TrainRepository } from '../../../data/trainRepo';
 import {
-  countsForRecords, EQUIPMENT_LABEL, ExerciseLibrary, LoggedSet, MUSCLE_LABEL, Muscle, MUSCLES, oneRepMax, recordsFrom,
+  countsForRecords, doneKeys, EQUIPMENT_LABEL, ExerciseLibrary, LoggedSet, MUSCLE_LABEL, Muscle, MUSCLES, oneRepMax, recordsFrom,
   setCount, setVolume, WorkoutMath, WorkoutRecord,
 } from '../../../data/training';
 import { useNow, useStore } from '../../../lib/store';
@@ -398,7 +398,8 @@ export function ExerciseLibraryScreen() {
     (history ?? []).forEach((w) => w.exercises.forEach((x) => map.set(x.exerciseId, (map.get(x.exerciseId) ?? 0) + 1)));
     return map;
   }, [history]);
-  const results = ExerciseLibrary.search(query, muscle);
+  const done = useMemo(() => doneKeys(history), [history]);
+  const results = ExerciseLibrary.search(query, muscle, done);
 
   return (
     <Screen keyboard>

@@ -208,7 +208,9 @@ describe('Workout records', () => {
 
   test('custom exercises and search', () => {
     expect(ExerciseLibrary.custom('  Sled Push ').id).toBe('custom:sled_push');
-    expect(ExerciseLibrary.search('dumbbell press', null).map((x) => x.id)).toEqual(['db_bench_press', 'incline_db_press', 'db_shoulder_press']);
+    const dbPress = ExerciseLibrary.search('dumbbell press', null).map((x) => x.id);
+    expect(dbPress).toEqual(expect.arrayContaining(['Dumbbell_Bench_Press', 'Incline_Dumbbell_Press', 'Dumbbell_Shoulder_Press']));
+    expect(dbPress).not.toContain('db_bench_press'); // linked to Dumbbell_Bench_Press, listed once
     expect(ExerciseLibrary.search('', 'CARDIO')).toHaveLength(4);
   });
 });
