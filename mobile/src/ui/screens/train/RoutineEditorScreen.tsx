@@ -5,16 +5,16 @@ import { TrainRepository, trainLive } from '../../../data/trainRepo';
 import { ProfileRepository, profileStore } from '../../../data/profileRepo';
 import { engineLevel } from '../../../data/profile';
 import {
-  ADDED_SETS, addAfter, EQUIPMENT_LABEL, ExerciseLibrary, keptReplaces, MUSCLE_LABEL, noticeText, Program, programNotices, replaceEverywhere,
-  Routine, RoutineExercise, swapsAfterReplace, uuid,
+  ADDED_SETS, addAfter, keptReplaces, noticeText, Program, programNotices, replaceEverywhere, Routine, RoutineExercise, swapsAfterReplace, uuid,
 } from '../../../data/training';
+import { DEFAULT_TARGET, restSecFor } from '../../../data/progress';
 import type { Slot } from '../../../lib/program-generator/program';
 import { useStore } from '../../../lib/store';
 import { goBack, useNav, useParams } from '../../../navigation/types';
 import { c, Gutter } from '../../theme';
 import { Button, Hairline, IconButton, PageHeader, PrimaryButton, Screen, T, TextField } from '../../components/core';
 import { ActionMenu, toast } from '../../components/overlays';
-import { AlternativesSheet, ExercisePicker, Stepper, VolumeNoticeNote } from './TrainComponents';
+import { AlternativesSheet, ExercisePicker, SetBadge, Stepper, VolumeNoticeNote } from './TrainComponents';
 
 export function RoutineEditorScreen() {
   const nav = useNav();
@@ -157,9 +157,14 @@ function RoutineForm({ program, original, onDone }: { program: Program | null; o
   );
 }
 
+/** "3 min", "2.5 min": the same wording as the live workout. */
+const restText = (sec: number) => (sec % 60 === 0 ? `${sec / 60} min` : `${Math.floor(sec / 60)}.5 min`);
+
 /**
- * One exercise, styled like an exercise in the live workout: mint name with a ⋮ menu (Alternatives,
- * move, remove), a grey line with muscle and equipment, then the sets and reps.
+ * One exercise, laid out like an exercise in the live workout: mint name and ⋮ menu (Alternatives,
+ * move, remove), the grey plan line, then a SET / REPS table with one row per set and "Add set".
+ * Exercises from the plan show its rep range (not a choice: 6–10 to failure); only exercises
+ * outside the plan get a reps setting.
  */
 function ExerciseSection({ ex, first, last, onSwap, onSets, onReps, onMoveUp, onMoveDown, onRemove }: {
   ex: RoutineExercise; first: boolean; last: boolean;
@@ -167,23 +172,44 @@ function ExerciseSection({ ex, first, last, onSwap, onSets, onReps, onMoveUp, on
   onMoveUp: () => void; onMoveDown: () => void; onRemove: () => void;
 }) {
   const [menu, setMenu] = useState(false);
-  const info = ExerciseLibrary.find(ex.exerciseId);
-  const kind = info ? `${MUSCLE_LABEL[info.muscle]} · ${EQUIPMENT_LABEL[info.equipment]}` : 'Custom exercise';
+  const rest = restSecFor(ex.exerciseId);
+  const planned = rest != null;
+  const target = planned ? `${DEFAULT_TARGET.repMin}–${DEFAULT_TARGET.repMax}` : String(ex.reps);
   return (
     <View>
       <Hairline />
       <View style={{ paddingVertical: 12 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', paddingLeft: Gutter, paddingRight: 4 }}>
-          <T v="titleMedium" color={c.primary} lines={2} style={{ flex: 1 }}>{ex.name}</T>
+          <View style={{ flex: 1, alignItems: 'flex-start' }}>
+            <T v="titleMedium" color={c.primary} lines={2} style={{ paddingVertical: 4 }}>{ex.name}</T>
+          </View>
           <IconButton name="more-vert" label="More" onPress={() => setMenu(true)} />
         </View>
-        <T v="bodySmall" color={c.onSurfaceVariant} style={{ paddingHorizontal: Gutter }}>
-          {kind}
-        </T>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 16, paddingLeft: Gutter - 4, paddingRight: Gutter, paddingTop: 4 }}>
-          <Stepper label="Sets" value={ex.sets} onChange={onSets} min={1} max={10} />
-          <Stepper label="Reps" value={ex.reps} onChange={onReps} min={1} max={50} />
+        <View style={{ paddingHorizontal: Gutter, paddingBottom: 4 }}>
+          <T v="bodySmall" color={c.onSurfaceVariant}>
+            {planned ? `${ex.sets} × ${target} reps to failure · rest ${restText(rest)}` : `${ex.sets} × ${ex.reps} reps`}
+          </T>
         </View>
+        <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: Gutter - 8, paddingVertical: 4 }}>
+          <Header text="SET" width={36} />
+          <Header text="REPS" flex={1} />
+          <View style={{ width: 44 }} />
+        </View>
+        {Array.from({ length: ex.sets }, (_, i) => (
+          <View key={i} style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: Gutter - 8, paddingVertical: 4 }}>
+            <View style={{ width: 36, alignItems: 'center', paddingVertical: 8 }}><SetBadge type="NORMAL" normalIndex={i + 1} /></View>
+            <View style={{ flex: 1, marginHorizontal: 4, height: 40, borderRadius: 8, backgroundColor: c.surfaceContainer, alignItems: 'center', justifyContent: 'center' }}>
+              <T v="titleSmall" color={c.onSurfaceVariant}>{target}</T>
+            </View>
+            <IconButton name="close" label={`Remove set ${i + 1}`} color={c.onSurfaceVariant} disabled={ex.sets <= 1} onPress={() => onSets(ex.sets - 1)} />
+          </View>
+        ))}
+        {!planned && (
+          <View style={{ paddingHorizontal: Gutter - 4 }}>
+            <Stepper label="Reps per set" value={ex.reps} onChange={onReps} min={1} max={50} />
+          </View>
+        )}
+        <Button kind="text" label="Add set" icon="add" style={{ marginHorizontal: 8 }} enabled={ex.sets < 10} onPress={() => onSets(ex.sets + 1)} />
       </View>
       <ActionMenu visible={menu} onDismiss={() => setMenu(false)} items={[
         { label: 'Alternatives', icon: 'swap-horiz' as const, onPress: onSwap },
@@ -193,4 +219,8 @@ function ExerciseSection({ ex, first, last, onSwap, onSets, onReps, onMoveUp, on
       ]} />
     </View>
   );
+}
+
+function Header({ text, width, flex }: { text: string; width?: number; flex?: number }) {
+  return <T v="labelSmall" color={c.onSurfaceVariant} center style={{ width, flex }}>{text}</T>;
 }
