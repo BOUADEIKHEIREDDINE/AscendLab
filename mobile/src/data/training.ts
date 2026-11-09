@@ -260,7 +260,16 @@ export interface ActiveExercise {
   targetReps: number | null;
   /** Today's target, suggested weight and advice (program generator exercises only). */
   plan?: ExercisePlan | null;
+  /** The routine row's movement slot, for its alternatives. */
+  slot?: Slot;
+  /** Changed during this workout: shown under the name. */
+  tag?: 'swapped' | 'added';
 }
+
+/** A swap or add made during a workout; at Finish the person chooses whether to keep it. */
+export type WorkoutChange =
+  | { kind: 'replace'; slot?: Slot; fromId: string; toId: string; toName: string }
+  | { kind: 'add'; afterId: string; toId: string; toName: string };
 
 export interface ActiveWorkout {
   title: string;
@@ -274,6 +283,8 @@ export interface ActiveWorkout {
   warmUp?: string[];
   /** Length of the current rest, for the countdown bar (exercises have their own rest). */
   restTotal?: number;
+  /** Swaps and adds made during this workout, in order. */
+  changes?: WorkoutChange[];
 }
 
 export const doneSets = (w: ActiveWorkout) => w.exercises.reduce((n, x) => n + x.sets.filter((s) => s.done).length, 0);
@@ -283,8 +294,9 @@ export function activeToJson(w: ActiveWorkout): string {
   return JSON.stringify({
     title: w.title, routineId: w.routineId, startedAt: w.startedAt, restEndsAt: w.restEndsAt, restSeconds: w.restSeconds,
     warmUp: w.warmUp,
+    changes: w.changes,
     exercises: w.exercises.map((x) => ({
-      exerciseId: x.exerciseId, name: x.name, targetReps: x.targetReps, plan: x.plan ?? undefined,
+      exerciseId: x.exerciseId, name: x.name, targetReps: x.targetReps, plan: x.plan ?? undefined, slot: x.slot, tag: x.tag,
       sets: x.sets.map((s) => ({ w: s.weight, r: s.reps, d: s.done, t: s.type })),
     })),
   });
@@ -300,11 +312,14 @@ export function activeFromJson(json: string): ActiveWorkout | null {
       restEndsAt: o.restEndsAt ?? null,
       restSeconds: typeof o.restSeconds === 'number' ? o.restSeconds : 90,
       ...(Array.isArray(o.warmUp) ? { warmUp: o.warmUp.map(String) } : {}),
+      ...(Array.isArray(o.changes) ? { changes: o.changes as WorkoutChange[] } : {}),
       exercises: (o.exercises as any[]).map((x) => ({
         exerciseId: String(x.exerciseId),
         name: String(x.name),
         targetReps: x.targetReps ?? null,
         ...(x.plan && typeof x.plan === 'object' ? { plan: x.plan as ExercisePlan } : {}),
+        ...(isSlot(x.slot) ? { slot: x.slot } : {}),
+        ...(x.tag === 'swapped' || x.tag === 'added' ? { tag: x.tag as 'swapped' | 'added' } : {}),
         sets: (x.sets as any[]).map((s) => ({ weight: String(s.w ?? ''), reps: String(s.r ?? ''), done: !!s.d, type: setTypeOf(s.t) })),
       })),
     };
@@ -581,4 +596,33 @@ export function workoutReplace(exercises: ActiveExercise[], index: number, next:
   const done = old.sets.filter((s) => s.done);
   if (done.length === 0) return exercises.map((x, i) => (i === index ? next : x));
   return [...exercises.slice(0, index), { ...old, sets: done }, next, ...exercises.slice(index + 1)];
+}
+
+/**
+ * "Save to my program" at Finish: a replace with a slot changes every routine with that slot; one
+ * without a slot, and every add, only change the routine the workout came from.
+ */
+export function applyWorkoutChanges(routine: Routine, routines: Routine[], changes: WorkoutChange[]): { routines: Routine[]; changedNames: string[] } {
+  let list = routines;
+  const changed = new Set<string>();
+  const editThis = (edit: (exercises: RoutineExercise[]) => RoutineExercise[]) => {
+    list = list.map((r) => (r.id === routine.id ? { ...r, exercises: edit(r.exercises) } : r));
+    changed.add(routine.name);
+  };
+  for (const ch of changes) {
+    if (ch.kind === 'replace' && ch.slot) {
+      const result = replaceEverywhere(list, ch.slot, ch.toId, ch.toName);
+      list = result.routines;
+      result.changedNames.forEach((n) => changed.add(n));
+    } else if (ch.kind === 'replace') {
+      editThis((xs) => xs.map((x) => (x.exerciseId === ch.fromId ? { ...x, exerciseId: ch.toId, name: ch.toName } : x)));
+    } else {
+      editThis((xs) => {
+        const at = xs.findIndex((x) => x.exerciseId === ch.afterId);
+        const reps = xs[at]?.reps ?? 10;
+        return addAfter(xs, at < 0 ? xs.length - 1 : at, { exerciseId: ch.toId, name: ch.toName, sets: ADDED_SETS, reps });
+      });
+    }
+  }
+  return { routines: list, changedNames: [...changed] };
 }

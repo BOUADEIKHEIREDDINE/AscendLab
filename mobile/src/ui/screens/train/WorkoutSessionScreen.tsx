@@ -1,21 +1,22 @@
 /** The live workout: a dedicated full-screen training mode without the tab bar. */
 import React, { useEffect, useMemo, useState } from 'react';
 import { Animated, FlatList, Platform, Pressable, TextInput, View } from 'react-native';
-import { Convert, formatNumber, UNIT, Units } from '../../../data/profile';
-import { profileStore } from '../../../data/profileRepo';
-import { activeStore, TrainRepository } from '../../../data/trainRepo';
+import { Convert, engineLevel, formatNumber, UNIT, Units } from '../../../data/profile';
+import { ProfileRepository, profileStore } from '../../../data/profileRepo';
+import { activeProgramOf, activeStore, TrainRepository, trainLive } from '../../../data/trainRepo';
 import { afterFindWeightSet } from '../../../data/progress';
 import {
-  ActiveExercise, ActiveWorkout, beatenBy, clock, doneSets, ExerciseLibrary, ExerciseRecords, LoggedSet, newSet,
-  recordsByExercise, recordsFrom, SET_TYPE, SET_TYPES, SetEntry, SetType, WorkoutMath, WorkoutRecord,
+  ActiveExercise, ActiveWorkout, applyWorkoutChanges, beatenBy, clock, doneSets, ExerciseLibrary, ExerciseRecords, LoggedSet, newSet,
+  noticeText, programNotices, recordsByExercise, recordsFrom, SET_TYPE, SET_TYPES, SetEntry, SetType, swapsAfterReplace, WorkoutMath,
+  workoutReplace, WorkoutRecord,
 } from '../../../data/training';
 import { useStore } from '../../../lib/store';
 import { goBack, useNav } from '../../../navigation/types';
 import { c, colors, Gutter, type } from '../../theme';
 import { haptics } from '../../haptics';
-import { Button, digits, Hairline, Icon, IconButton, ProgressBar, Screen, T, TextField, Toggle } from '../../components/core';
+import { Button, digits, Hairline, Icon, IconButton, PrimaryButton, ProgressBar, Screen, T, TextField, Toggle } from '../../components/core';
 import { ActionMenu, Dialog, toast } from '../../components/overlays';
-import { ExercisePicker, SetBadge } from './TrainComponents';
+import { AlternativesSheet, ExercisePicker, SetBadge, VolumeNoticeNote } from './TrainComponents';
 
 const toKg = (text: string, units: Units) => {
   const v = parseFloat(text) || 0;
@@ -29,7 +30,9 @@ function volumeKg(w: ActiveWorkout, units: Units): number {
 export function WorkoutSessionScreen() {
   const nav = useNav();
   const workout = useStore(activeStore);
-  const units = useStore(profileStore)?.units ?? 'METRIC';
+  const profile = useStore(profileStore);
+  const units = profile?.units ?? 'METRIC';
+  const [alternativesFor, setAlternativesFor] = useState<number | null>(null);
   const [history, setHistory] = useState<WorkoutRecord[]>([]);
   const [now, setNow] = useState(() => Date.now());
   const [picking, setPicking] = useState(false);
@@ -105,6 +108,7 @@ export function WorkoutSessionScreen() {
               units={units}
               onOpen={() => nav.navigate('ExerciseDetail', { exerciseId: item.exerciseId, name: item.name })}
               onRecord={(label) => { haptics.heavy(); setPrBanner(`New record: ${label} · ${item.name}`); }}
+              onAlternatives={() => setAlternativesFor(index)}
             />
             <Hairline />
           </View>
@@ -147,6 +151,43 @@ export function WorkoutSessionScreen() {
           setPicking(false);
         }}
       />
+
+      {alternativesFor != null && w.exercises[alternativesFor] && (
+        <AlternativesSheet
+          visible
+          onDismiss={() => setAlternativesFor(null)}
+          current={w.exercises[alternativesFor]}
+          level={profile ? engineLevel(profile) : 'beginner'}
+          onChoose={({ exerciseId, name, mode }) => {
+            const i = alternativesFor;
+            setAlternativesFor(null);
+            const plan = TrainRepository.planForAdded(exerciseId, history);
+            TrainRepository.update((cur) => {
+              const old = cur.exercises[i];
+              if (!old) return cur;
+              const working = old.sets.filter((s) => s.type !== 'WARMUP').length;
+              const sets = Array.from({ length: plan?.sets ?? Math.max(working, 1) }, () => newSet());
+              const next: ActiveExercise = {
+                exerciseId, name, sets, targetReps: plan?.repMax ?? old.targetReps, plan,
+                tag: mode === 'replace' ? 'swapped' : 'added',
+                ...(mode === 'replace' && old.slot ? { slot: old.slot } : {}),
+              };
+              if (mode === 'replace') {
+                return {
+                  ...cur,
+                  exercises: workoutReplace(cur.exercises, i, next),
+                  changes: [...(cur.changes ?? []), { kind: 'replace', fromId: old.exerciseId, toId: exerciseId, toName: name, ...(old.slot ? { slot: old.slot } : {}) }],
+                };
+              }
+              return {
+                ...cur,
+                exercises: [...cur.exercises.slice(0, i + 1), next, ...cur.exercises.slice(i + 1)],
+                changes: [...(cur.changes ?? []), { kind: 'add', afterId: old.exerciseId, toId: exerciseId, toName: name }],
+              };
+            });
+          }}
+        />
+      )}
 
       <Dialog
         visible={confirmDiscard}
@@ -200,9 +241,9 @@ function RestBar({ secondsLeft, total }: { secondsLeft: number; total: number })
   );
 }
 
-function ExerciseBlock({ ex, index, previous, records, units, onOpen, onRecord }: {
+function ExerciseBlock({ ex, index, previous, records, units, onOpen, onRecord, onAlternatives }: {
   ex: ActiveExercise; index: number; previous: LoggedSet[] | undefined; records: ExerciseRecords | undefined; units: Units;
-  onOpen: () => void; onRecord: (label: string) => void;
+  onOpen: () => void; onRecord: (label: string) => void; onAlternatives: () => void;
 }) {
   const [menu, setMenu] = useState(false);
   const plan = ex.plan ?? null;
@@ -226,6 +267,7 @@ function ExerciseBlock({ ex, index, previous, records, units, onOpen, onRecord }
           <Pressable onPress={onOpen} accessibilityRole="link" style={{ paddingVertical: 4 }}>
             <T v="titleMedium" color={c.primary}>{ex.name}</T>
           </Pressable>
+          {ex.tag && <T v="labelSmall" color={c.primary}>{ex.tag === 'swapped' ? 'swapped for this workout' : 'added'}</T>}
         </View>
         <IconButton name="more-vert" label="More" onPress={() => setMenu(true)} />
       </View>
@@ -323,6 +365,8 @@ function ExerciseBlock({ ex, index, previous, records, units, onOpen, onRecord }
         updateExercise((e) => ({ ...e, sets: [...e.sets, newSet({ weight: e.sets[e.sets.length - 1]?.weight ?? '' })] }));
       }} />
       <ActionMenu visible={menu} onDismiss={() => setMenu(false)} items={[{
+        label: 'Alternatives', icon: 'swap-horiz', onPress: onAlternatives,
+      }, {
         label: 'Remove exercise', icon: 'delete-outline', danger: true,
         onPress: () => TrainRepository.update((w) => ({ ...w, exercises: w.exercises.filter((_, i) => i !== index) })),
       }]} />
@@ -395,14 +439,32 @@ function FinishDialog({ w, units, now, onDismiss }: { w: ActiveWorkout; units: U
   const [error, setError] = useState<string | null>(null);
   const pending = w.exercises.reduce((n, x) => n + x.sets.filter((s) => !s.done).length, 0);
   const done = doneSets(w);
+  const profile = useStore(profileStore);
+  const program = activeProgramOf(useStore(trainLive));
+  const routine = program?.routines.find((r) => r.id === w.routineId) ?? null;
+  const changes = routine ? w.changes ?? [] : [];
+  const applied = program && routine && changes.length > 0 ? applyWorkoutChanges(routine, program.routines, changes) : null;
+  const notices = applied && program && profile ? programNotices(program.routines, applied.routines, profile).map(noticeText) : [];
 
-  async function save() {
+  async function save(keep: boolean) {
     setBusy(true);
     const failure = await TrainRepository.finish(caption, share);
     setBusy(false);
     setError(failure);
-    if (failure) haptics.reject();
-    else { haptics.confirm(); toast(share ? 'Workout saved and posted' : 'Workout saved'); }
+    if (failure) { haptics.reject(); return; }
+    haptics.confirm();
+    const saved = share ? 'Workout saved and posted' : 'Workout saved';
+    if (!keep || !applied || !program) { toast(saved); return; }
+    TrainRepository.saveRoutines(program, applied.routines);
+    if (profile) {
+      const swaps = changes.reduce(
+        (acc, ch) => (ch.kind === 'replace' && ch.slot ? swapsAfterReplace(acc, ch.slot, ch.toId, engineLevel(profile)) : acc),
+        profile.swaps,
+      );
+      ProfileRepository.save({ ...profile, swaps }).catch(() => undefined);
+    }
+    const others = applied.changedNames.filter((n) => n !== routine?.name);
+    toast(others.length > 0 ? `${saved}. Program changed, also in ${others.join(', ')}` : `${saved}. Saved to your program`);
   }
 
   return (
@@ -411,7 +473,7 @@ function FinishDialog({ w, units, now, onDismiss }: { w: ActiveWorkout; units: U
       onDismiss={() => { if (!busy) onDismiss(); }}
       title="Finish workout"
       dismiss={{ label: 'Keep training', onPress: onDismiss, enabled: !busy }}
-      confirm={{ label: done === 0 ? 'Tick a set first' : 'Save', enabled: !busy && done > 0, loading: busy, onPress: save }}
+      confirm={applied ? undefined : { label: done === 0 ? 'Tick a set first' : 'Save', enabled: !busy && done > 0, loading: busy, onPress: () => save(false) }}
     >
       <View style={{ flexDirection: 'row', paddingVertical: 8 }}>
         <Stat label="Duration" value={WorkoutMath.formatDuration(Math.trunc((now - w.startedAt) / 1000))} />
@@ -427,6 +489,19 @@ function FinishDialog({ w, units, now, onDismiss }: { w: ActiveWorkout; units: U
         </View>
         <Toggle value={share} onChange={setShare} label="Post to feed" />
       </View>
+      {applied && (
+        <View style={{ gap: 8 }}>
+          <T v="titleSmall">You changed this routine. Keep the changes for next time?</T>
+          {changes.map((ch, i) => (
+            <T key={i} v="bodySmall" color={c.onSurfaceVariant}>
+              {ch.kind === 'replace' ? `⇄ ${ExerciseLibrary.find(ch.fromId)?.name ?? ch.fromId} → ${ch.toName}` : `+ Added ${ch.toName}`}
+            </T>
+          ))}
+          <VolumeNoticeNote lines={notices} />
+          <PrimaryButton label={done === 0 ? 'Tick a set first' : 'Save to my program'} enabled={!busy && done > 0} onPress={() => save(true)} />
+          <Button label="Only this workout" enabled={!busy && done > 0} onPress={() => save(false)} />
+        </View>
+      )}
       {error && <T color={c.error}>{error}</T>}
     </Dialog>
   );

@@ -216,13 +216,13 @@ export const TrainRepository = {
         if (plan) {
           const working = Array.from({ length: plan.sets }, () => newSet());
           const sets = plan.warmUpKg != null ? [newSet({ type: 'WARMUP' }), ...working] : working;
-          return { exerciseId: re.exerciseId, name: re.name, sets, targetReps: plan.repMax, plan };
+          return { exerciseId: re.exerciseId, name: re.name, sets, targetReps: plan.repMax, plan, ...(re.slot ? { slot: re.slot } : {}) };
         }
         const last = previous.get(re.exerciseId);
         const sets = last && last.length > 0
           ? last.map((s) => newSet({ type: s.type }))
           : Array.from({ length: Math.max(re.sets, 1) }, () => newSet());
-        return { exerciseId: re.exerciseId, name: re.name, sets, targetReps: re.reps };
+        return { exerciseId: re.exerciseId, name: re.name, sets, targetReps: re.reps, ...(re.slot ? { slot: re.slot } : {}) };
       }),
       restEndsAt: null,
       restSeconds: restSecondsForGoal(),

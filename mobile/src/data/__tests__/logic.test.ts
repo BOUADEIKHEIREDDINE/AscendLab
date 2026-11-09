@@ -12,7 +12,7 @@ import { Days, FeedPost, gapLabel, postFromMap } from '../social';
 import {
   activeFromJson, activeToJson, ActiveWorkout, beatenBy, countRecords, ExerciseLibrary, LoggedExercise, recordsByExercise,
   nextRoutine, recordsFrom, routineExerciseFromMap, routineToMap, starterRoutines, WorkoutMath, workoutFromDoc,
-  newSet, noticeText, programNotices, replaceEverywhere, swapsAfterReplace, volumeSessions, workoutReplace,
+  newSet, noticeText, programNotices, replaceEverywhere, swapsAfterReplace, volumeSessions, workoutReplace, applyWorkoutChanges,
 } from '../training';
 
 const man: UserProfile = {
@@ -371,5 +371,51 @@ describe('program edits', () => {
     const old = { exerciseId: 'A', name: 'A', targetReps: 10, sets: [newSet()] };
     const next = { exerciseId: 'B', name: 'B', targetReps: 10, sets: [newSet()] };
     expect(workoutReplace([old], 0, next).map((x) => x.exerciseId)).toEqual(['B']);
+  });
+});
+
+describe('workout changes', () => {
+  const four = withDays({ ...man, level: 'INTERMEDIATE' }, [0, 1, 3, 4], null);
+
+  test('a running workout keeps its changes, tags and slots when stored', () => {
+    const w: ActiveWorkout = {
+      title: 'Upper A', routineId: 'r', startedAt: 1, restEndsAt: null, restSeconds: 90,
+      exercises: [{ exerciseId: 'Machine_Bench_Press', name: 'Machine Bench Press', targetReps: 10, sets: [newSet()], slot: 'chestPress', tag: 'swapped' }],
+      changes: [
+        { kind: 'replace', slot: 'chestPress', fromId: 'Barbell_Bench_Press_-_Medium_Grip', toId: 'Machine_Bench_Press', toName: 'Machine Bench Press' },
+        { kind: 'add', afterId: 'Machine_Bench_Press', toId: 'Dumbbell_Flyes', toName: 'Dumbbell Flyes' },
+      ],
+    };
+    const back = activeFromJson(activeToJson(w))!;
+    expect(back.changes).toEqual(w.changes);
+    expect(back.exercises[0]).toMatchObject({ slot: 'chestPress', tag: 'swapped' });
+  });
+
+  test('saving a slotted workout replace changes every routine, an add only this one', () => {
+    const routines = starterRoutines(four);
+    const upperA = routines.find((r) => r.name === 'Upper A')!;
+    const { routines: next, changedNames } = applyWorkoutChanges(upperA, routines, [
+      { kind: 'replace', slot: 'chestPress', fromId: 'Barbell_Bench_Press_-_Medium_Grip', toId: 'Machine_Bench_Press', toName: 'Machine Bench Press' },
+      { kind: 'add', afterId: 'Seated_Cable_Rows', toId: 'Dumbbell_Flyes', toName: 'Dumbbell Flyes' },
+    ]);
+    expect(changedNames.sort()).toEqual(['Upper A', 'Upper B']);
+    for (const r of next.filter((x) => x.name.startsWith('Upper'))) {
+      expect(r.exercises.find((x) => x.slot === 'chestPress')!.exerciseId).toBe('Machine_Bench_Press');
+    }
+    const a = next.find((r) => r.name === 'Upper A')!.exercises.map((x) => x.exerciseId);
+    expect(a[a.indexOf('Seated_Cable_Rows') + 1]).toBe('Dumbbell_Flyes');
+    expect(next.find((r) => r.name === 'Upper B')!.exercises.map((x) => x.exerciseId)).not.toContain('Dumbbell_Flyes');
+    expect(next.find((r) => r.name === 'Upper A')!.exercises.find((x) => x.exerciseId === 'Dumbbell_Flyes')).toMatchObject({ sets: 2 });
+  });
+
+  test('a workout replace without a slot only changes this routine', () => {
+    const mine = { id: 'm', name: 'Mine', exercises: [{ exerciseId: 'bench_press', name: 'Bench Press', sets: 3, reps: 10 }] };
+    const other = { id: 'o', name: 'Other', exercises: [{ exerciseId: 'bench_press', name: 'Bench Press', sets: 3, reps: 10 }] };
+    const { routines, changedNames } = applyWorkoutChanges(mine, [mine, other], [
+      { kind: 'replace', fromId: 'bench_press', toId: 'push_up', toName: 'Push Up' },
+    ]);
+    expect(changedNames).toEqual(['Mine']);
+    expect(routines[0].exercises[0]).toMatchObject({ exerciseId: 'push_up', sets: 3 });
+    expect(routines[1].exercises[0].exerciseId).toBe('bench_press');
   });
 });
