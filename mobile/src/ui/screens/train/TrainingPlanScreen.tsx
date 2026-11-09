@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { FlatList, View } from 'react-native';
-import { profileStore } from '../../../data/profileRepo';
+import { ProfileRepository, profileStore } from '../../../data/profileRepo';
+import { gymPlan, planDays } from '../../../data/profile';
+import { splitOptions, type Split } from '../../../lib/program-generator/program';
 import { activeProgramOf, activeStore, historyLive, TrainRepository, trainLive } from '../../../data/trainRepo';
 import { doneSets, nextRoutine, Routine, setCount, WorkoutMath } from '../../../data/training';
 import { useStore } from '../../../lib/store';
@@ -16,7 +18,16 @@ export function TrainingPlanScreen() {
   const state = useStore(trainLive);
   const active = useStore(activeStore);
   const history = useStore(historyLive);
-  const units = useStore(profileStore)?.units ?? 'METRIC';
+  const profile = useStore(profileStore);
+  const units = profile?.units ?? 'METRIC';
+  const [splitMenu, setSplitMenu] = useState(false);
+  const [pendingSplit, setPendingSplit] = useState<{ split: Split; label: string } | null>(null);
+  // The split of the generated gym plan; "Change split" only when the days allow more than one (5–6).
+  const plan = profile && profile.place !== 'HOME' ? gymPlan(profile) : null;
+  const days = profile ? planDays(profile) : null;
+  const splits = plan && days != null ? splitOptions(days) : [];
+  const currentSplit = plan?.state.schedule.program.split ?? null;
+  const splitLabel = splits.find((o) => o.split === currentSplit)?.label ?? null;
   const program = activeProgramOf(state);
   const [programMenu, setProgramMenu] = useState(false);
   const [pendingStart, setPendingStart] = useState<Routine | null>(null);
@@ -69,6 +80,12 @@ export function TrainingPlanScreen() {
           else nav.navigate('Programs');
         }} />
       </View>
+      {splitLabel && (
+        <View style={{ flexDirection: 'row', alignItems: 'center', paddingLeft: Gutter, paddingRight: 8 }}>
+          <T v="bodyMedium" color={c.onSurfaceVariant} style={{ flex: 1 }}>Your plan: {splitLabel}</T>
+          {splits.length > 1 && <Button kind="text" label="Change split" icon="swap-horiz" onPress={() => setSplitMenu(true)} compact />}
+        </View>
+      )}
       {state.error && <T color={c.error} style={{ paddingHorizontal: Gutter, paddingVertical: 8 }}>{state.error}</T>}
       {state.loading && state.programs.length === 0 && !state.error ? <><SkeletonCard /><SkeletonCard /></>
         : (!program || program.routines.length === 0) && (
@@ -132,6 +149,37 @@ export function TrainingPlanScreen() {
         ]}
       />
 
+      <ActionMenu
+        visible={splitMenu}
+        onDismiss={() => setSplitMenu(false)}
+        title="Split for your training days"
+        items={splits.map((o) => ({
+          label: `${o.label} — ${o.description}`,
+          checked: o.split === currentSplit,
+          onPress: () => { if (o.split !== currentSplit) setPendingSplit({ split: o.split, label: o.label }); },
+        }))}
+      />
+
+      <Dialog
+        visible={pendingSplit != null}
+        onDismiss={() => setPendingSplit(null)}
+        title={`Switch to ${pendingSplit?.label ?? ''}?`}
+        dismiss={{ label: 'Cancel', onPress: () => setPendingSplit(null) }}
+        confirm={{
+          label: 'Switch', onPress: () => {
+            const next = pendingSplit;
+            setPendingSplit(null);
+            if (!next || !profile) return;
+            // Saving updates the profile on the device at once, so the rebuild uses the new split.
+            ProfileRepository.save({ ...profile, split: next.split }).catch(() => undefined);
+            if (TrainRepository.rebuildFromPlan()) { haptics.confirm(); toast(`Switched to ${next.label}`); }
+            else toast('Finish your goals in Settings first');
+          },
+        }}
+      >
+        <T>Your routines are rebuilt for the new split. Your exercise swaps are kept; exercises you added or picked from the library are reset.</T>
+      </Dialog>
+
       <Dialog
         visible={confirmReplace}
         onDismiss={() => setConfirmReplace(false)}
@@ -161,7 +209,7 @@ export function TrainingPlanScreen() {
           },
         }}
       >
-        <T>We build a new program from your current goals, level and training days, and make it active. Your other programs and your history stay.</T>
+        <T>We build a new program from your current goals, level and training days, and make it active. Your other programs and your history stay. Your exercise swaps are kept; exercises you added or picked from the library are reset.</T>
       </Dialog>
 
       <Dialog
