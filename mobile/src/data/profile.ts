@@ -192,7 +192,7 @@ function swapsFrom(v: unknown): Partial<Record<Slot, string>> {
   for (const [slot, id] of entries) {
     if (typeof id !== 'string') continue;
     const known = slotOf(id);
-    if (known === slot) swaps[known] = id;
+    if (known != null && known === slot) swaps[known] = id;
   }
   return swaps;
 }
