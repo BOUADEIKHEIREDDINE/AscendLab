@@ -10,7 +10,7 @@ import { computeTargets } from '../lib/goal-engine/targets';
 import type { Goal as EngineGoal } from '../lib/goal-engine/targets';
 import type { ActivityLevel as EngineActivity } from '../lib/goal-engine/energy';
 import { buildPlan, type WeekPlan } from '../lib/program-generator/plan';
-import { splitOptions, type Level as EngineLevel } from '../lib/program-generator/program';
+import { slotOf, splitOptions, type Level as EngineLevel, type Slot, type Split } from '../lib/program-generator/program';
 import { chooseTrainingDays, type Weekday } from '../lib/program-generator/schedule';
 import { CATALOG } from '../lib/program-generator/catalog';
 
@@ -89,6 +89,10 @@ export interface UserProfile {
   place: TrainingPlace | null;
   units: Units;
   onboardingComplete: boolean;
+  /** Split picked with "Change split" (5–6 days); null = the generator's default. */
+  split: Split | null;
+  /** Exercise saved for a movement slot; the generator puts it everywhere the slot appears. */
+  swaps: Partial<Record<Slot, string>>;
 }
 
 export const MIN_DAYS = 2;
@@ -97,6 +101,7 @@ export const MAX_DAYS = 6;
 export const emptyProfile = (): UserProfile => ({
   sex: null, age: null, heightCm: null, weightKg: null, activity: null, goal: null,
   level: null, trainingDays: null, trainCount: null, daysPerWeek: null, place: null, units: 'METRIC', onboardingComplete: false,
+  split: null, swaps: {},
 });
 
 /** Spread-out days for a number of days, used for profiles saved before the weekday picker. */
@@ -135,6 +140,7 @@ export function profileToMap(p: UserProfile): Record<string, unknown> {
     sex: p.sex, age: p.age, heightCm: p.heightCm, weightKg: p.weightKg, activity: p.activity, goal: p.goal,
     level: p.level, trainingDays: p.trainingDays, trainCount: p.trainCount,
     daysPerWeek: p.daysPerWeek, place: p.place, units: p.units, onboardingComplete: p.onboardingComplete,
+    split: p.split, swaps: p.swaps,
   };
 }
 
@@ -168,7 +174,23 @@ export function profileFromMap(m: Record<string, unknown>): UserProfile {
     place: enumOrNull(PLACES, m.place),
     units: enumOrNull(UNITS, m.units) ?? 'METRIC',
     onboardingComplete: m.onboardingComplete === true,
+    split: enumOrNull(SPLITS, m.split),
+    swaps: swapsFrom(m.swaps),
   };
+}
+
+const SPLITS: readonly Split[] = ['full_body', 'upper_lower', 'arnold_upper_lower', 'ppl_upper_lower', 'arnold', 'ppl', 'lower_body_focus'];
+
+/** Keeps only swaps with a known slot and an exercise id. */
+function swapsFrom(v: unknown): Partial<Record<Slot, string>> {
+  if (!v || typeof v !== 'object') return {};
+  const swaps: Partial<Record<Slot, string>> = {};
+  for (const [slot, id] of Object.entries(v as Record<string, unknown>)) {
+    if (typeof id !== 'string') continue;
+    const known = slotOf(id);
+    if (known === slot) swaps[known] = id;
+  }
+  return swaps;
 }
 
 // ---------------------------------------------------------------- Conversions
@@ -272,13 +294,21 @@ const roundTo = (x: number, step: number) => roundInt(x / step) * step;
 
 const ENGINE_ACTIVITY: Record<ActivityLevel, EngineActivity> = { SEDENTARY: 'sedentary', LIGHT: 'light', MODERATE: 'moderate', VERY: 'high' };
 
+/** How many days a week the profile trains, or null when fewer than 2 are picked. */
+export function planDays(p: UserProfile): number | null {
+  return chosenDays(p)?.length ?? null;
+}
+
 /** The generated gym plan for a profile, from the program generator. */
 export function gymPlan(p: UserProfile): ReturnType<typeof buildPlan> | null {
   const days = chosenDays(p);
   if (!days || p.age == null || p.goal == null) return null;
+  const splitFits = p.split != null && splitOptions(days.length).some((o) => o.split === p.split);
   return buildPlan({
     level: ENGINE_LEVEL[p.level ?? 'BEGINNER'],
     available: days as Weekday[],
+    swaps: p.swaps,
+    ...(splitFits ? { split: p.split! } : {}),
     goal: ENGINE_GOAL[p.goal],
     age: p.age,
   });

@@ -4,6 +4,7 @@
  * by the Android app reads back here and vice versa.
  */
 import { CATALOG, type Muscle as CatalogMuscle } from '../lib/program-generator/catalog';
+import { slotOf, type Slot } from '../lib/program-generator/program';
 import { Convert, gymPlan, PlanCalculator, roundInt, Units, UNIT, UserProfile } from './profile';
 import type { ExercisePlan } from './progress';
 
@@ -159,7 +160,11 @@ export function uuid(): string {
 }
 
 /** An exercise inside a routine, with how many sets and reps to aim for. */
-export interface RoutineExercise { exerciseId: string; name: string; sets: number; reps: number }
+export interface RoutineExercise {
+  exerciseId: string; name: string; sets: number; reps: number;
+  /** The generator's movement slot this exercise fills; its alternatives come from there. */
+  slot?: Slot;
+}
 
 /** A saved session you can start again and again. */
 export interface Routine { id: string; name: string; exercises: RoutineExercise[] }
@@ -171,11 +176,16 @@ const asNum = (v: unknown, fallback: number) => (typeof v === 'number' ? v : fal
 const asStr = (v: unknown, fallback: string) => (typeof v === 'string' ? v : fallback);
 
 export function routineExerciseFromMap(m: Record<string, unknown>): RoutineExercise {
+  const exerciseId = asStr(m.exerciseId, '');
+  // Routines saved before slots existed get theirs back from the exercise (one slot per exercise).
+  const stored = typeof m.slot === 'string' && slotOf(exerciseId) === m.slot ? (m.slot as Slot) : null;
+  const slot = stored ?? slotOf(exerciseId);
   return {
-    exerciseId: asStr(m.exerciseId, ''),
+    exerciseId,
     name: asStr(m.name, 'Exercise'),
     sets: Math.trunc(asNum(m.sets, 3)),
     reps: Math.trunc(asNum(m.reps, 10)),
+    ...(slot ? { slot } : {}),
   };
 }
 
@@ -191,7 +201,8 @@ export function routineFromMap(m: Record<string, unknown>): Routine {
 export const routineToMap = (r: Routine) => ({
   id: r.id,
   name: r.name,
-  exercises: r.exercises.map((x) => ({ exerciseId: x.exerciseId, name: x.name, sets: x.sets, reps: x.reps })),
+  // Firestore rejects undefined, so the slot is only written when there is one.
+  exercises: r.exercises.map((x) => ({ exerciseId: x.exerciseId, name: x.name, sets: x.sets, reps: x.reps, ...(x.slot ? { slot: x.slot } : {}) })),
 });
 
 /**
@@ -207,7 +218,7 @@ export function starterRoutines(profile: UserProfile): Routine[] {
       id: uuid(),
       name: day.name,
       exercises: day.exercises.map((x) => ({
-        exerciseId: x.exerciseId, name: ExerciseLibrary.find(x.exerciseId)?.name ?? x.exerciseId, sets: x.sets, reps: x.repMax,
+        exerciseId: x.exerciseId, name: ExerciseLibrary.find(x.exerciseId)?.name ?? x.exerciseId, sets: x.sets, reps: x.repMax, slot: x.slot,
       })),
     }));
   }

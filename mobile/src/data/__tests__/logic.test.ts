@@ -5,13 +5,13 @@
  */
 import { Timestamp } from 'firebase/firestore';
 import {
-  BodyChecks, chosenDays, Convert, emptyProfile, PlanCalculator, profileFromMap, profileToMap, UserProfile, withDays,
+  BodyChecks, chosenDays, Convert, emptyProfile, gymPlan, PlanCalculator, profileFromMap, profileToMap, UserProfile, withDays,
 } from '../profile';
 
 import { Days, FeedPost, gapLabel, postFromMap } from '../social';
 import {
   activeFromJson, activeToJson, ActiveWorkout, beatenBy, countRecords, ExerciseLibrary, LoggedExercise, recordsByExercise,
-  nextRoutine, recordsFrom, starterRoutines, WorkoutMath, workoutFromDoc,
+  nextRoutine, recordsFrom, routineExerciseFromMap, routineToMap, starterRoutines, WorkoutMath, workoutFromDoc,
 } from '../training';
 
 const man: UserProfile = {
@@ -151,7 +151,7 @@ describe('BodyChecks (same results as the Android app)', () => {
   test('profile survives a save and load', () => {
     const p: UserProfile = {
       sex: 'WOMAN', age: 28, heightCm: 165, weightKg: 60, activity: 'LIGHT', goal: 'LOSE_FAT', level: 'BEGINNER',
-      trainingDays: [0, 2, 4], trainCount: null, daysPerWeek: 3, place: 'HOME', units: 'IMPERIAL', onboardingComplete: true,
+      trainingDays: [0, 2, 4], trainCount: null, daysPerWeek: 3, place: 'HOME', units: 'IMPERIAL', onboardingComplete: true, split: null, swaps: {},
     };
     expect(profileFromMap(profileToMap(p))).toEqual(p);
     expect(profileFromMap({ sex: 'ALIEN' })).toEqual(emptyProfile());
@@ -237,5 +237,59 @@ describe('Feed', () => {
     expect(Days.key(new Date(2026, 0, 5, 23, 59))).toBe('2026-01-05');
     expect(Days.parse('2026-01-05')).toBe(new Date(2026, 0, 5).getTime());
     expect(Days.parse('nope')).toBeNull();
+  });
+});
+
+describe('split, swaps and routine slots', () => {
+  const four = withDays({ ...man, level: 'INTERMEDIATE' }, [0, 1, 3, 4], null);
+  const six = withDays({ ...man, level: 'INTERMEDIATE' }, [0, 1, 2, 3, 4, 5], null);
+
+  test('a profile keeps its split and swaps when stored', () => {
+    const p: UserProfile = { ...man, split: 'ppl', swaps: { chestPress: 'Dumbbell_Bench_Press' } };
+    const back = profileFromMap(profileToMap(p));
+    expect(back.split).toBe('ppl');
+    expect(back.swaps).toEqual({ chestPress: 'Dumbbell_Bench_Press' });
+  });
+
+  test('a stored profile drops an unknown split and bad swaps', () => {
+    const back = profileFromMap({ ...profileToMap(man), split: 'nope', swaps: { chestPress: 'Dumbbell_Bench_Press', nope: 'x', row: 3 } });
+    expect(back.split).toBeNull();
+    expect(back.swaps).toEqual({ chestPress: 'Dumbbell_Bench_Press' });
+  });
+
+  test('an empty profile has no split and no swaps', () => {
+    expect(emptyProfile()).toMatchObject({ split: null, swaps: {} });
+  });
+
+  test('the plan uses a saved swap everywhere the slot appears', () => {
+    const cycle = gymPlan({ ...four, swaps: { chestPress: 'Dumbbell_Bench_Press' } })!.state.schedule.cycle;
+    const chest = cycle.flatMap((d) => d.exercises).filter((x) => x.slot === 'chestPress');
+    expect(chest.length).toBeGreaterThan(1);
+    for (const x of chest) expect(x.exerciseId).toBe('Dumbbell_Bench_Press');
+  });
+
+  test('the plan uses a saved split', () => {
+    const names = gymPlan({ ...six, split: 'ppl' })!.state.schedule.cycle.map((d) => d.name);
+    expect(names).toContain('Push');
+  });
+
+  test('the plan ignores a saved split that no longer fits the days', () => {
+    const names = gymPlan({ ...four, split: 'ppl' })!.state.schedule.cycle.map((d) => d.name);
+    expect(names).toContain('Upper A');
+  });
+
+  test('starter routines know the slot of every exercise', () => {
+    for (const r of starterRoutines(four)) for (const x of r.exercises) expect(x.slot).toBeDefined();
+  });
+
+  test('a routine saved before slots existed gets its slot back from the exercise', () => {
+    expect(routineExerciseFromMap({ exerciseId: 'Dumbbell_Bench_Press', name: 'x', sets: 2, reps: 10 }).slot).toBe('chestPress');
+    expect(routineExerciseFromMap({ exerciseId: 'bench_press', name: 'x', sets: 2, reps: 10 }).slot).toBeUndefined();
+  });
+
+  test('a stored routine keeps its slot', () => {
+    const routine = { id: 'r', name: 'R', exercises: [{ exerciseId: 'Pullups', name: 'Pullups', sets: 2, reps: 10, slot: 'verticalPull' as const }] };
+    expect(routineToMap(routine).exercises[0]).toMatchObject({ slot: 'verticalPull' });
+    expect(routineToMap({ ...routine, exercises: [{ ...routine.exercises[0], slot: undefined }] }).exercises[0]).not.toHaveProperty('slot');
   });
 });
