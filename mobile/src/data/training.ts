@@ -125,7 +125,19 @@ DB_EXERCISES.forEach((x) => {
   if (!byId.has(x.id)) byId.set(x.id, e(x.id, x.name, groupOfDbMuscle(x.primaryMuscles[0] ?? ''), equipmentOfDb(x.equipment)));
 });
 /** What search and the picker list: one entry per real exercise, so linked hand-list entries are left out. */
-const SEARCHABLE = [...byId.values()].filter((x) => !x.media);
+/** Lower case, letters and digits only: "Pull-up" and "Pullups" compare, "(Machine)" loses its brackets. */
+const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+/** Hidden hand-list names stay findable as aliases of the database twin, e.g. "Bench Press". */
+const aliases = new Map<string, string[]>();
+EXERCISES.forEach((x) => { if (x.media) aliases.set(x.media, [...(aliases.get(x.media) ?? []), x.name]); });
+/**
+ * What search and the picker list: one entry per real exercise, so linked hand-list entries are left
+ * out. Sorted by name once here, with names already normalised, since the picker searches often.
+ */
+const SEARCHABLE = [...byId.values()].filter((x) => !x.media)
+  .sort((a, b) => a.name.localeCompare(b.name))
+  .map((x) => ({ x, names: [x.name, ...(aliases.get(x.id) ?? [])].map(norm) }));
+const KNOWN_NAMES = new Set(SEARCHABLE.flatMap((s) => s.names));
 
 const capital = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
@@ -145,23 +157,24 @@ export const ExerciseLibrary = {
   muscleOf: (id: string): Muscle => byId.get(id)?.muscle ?? 'OTHER',
   isBodyweight: (id: string) => byId.get(id)?.equipment === 'BODYWEIGHT',
   /**
-   * Search used by the picker and the library page: every typed word must appear in the name.
-   * Exercises done before (`done` holds `key()`s) come first, then exact names, then names starting
-   * with the query, then the rest, each alphabetically.
+   * Search used by the picker and the library page: every typed word must appear in the name or in
+   * one of its aliases. Exercises done before (`done` holds `key()`s) come first, then exact names,
+   * then names starting with the query, then the rest, each alphabetically.
    */
   search(query: string, muscle: Muscle | null, done?: ReadonlySet<string>): Exercise[] {
-    const q = query.trim().toLowerCase();
-    const words = q.split(' ').filter(Boolean);
-    const rank = (x: Exercise) => {
-      const name = x.name.toLowerCase();
-      return (done?.has(ExerciseLibrary.key(x.id)) ? 0 : 3) + (q === '' ? 0 : name === q ? 0 : name.startsWith(q) ? 1 : 2);
-    };
-    return SEARCHABLE
-      .filter((x) => (muscle == null || x.muscle === muscle) && words.every((w) => x.name.toLowerCase().includes(w)))
-      .map((x) => [rank(x), x] as const)
-      .sort((a, b) => a[0] - b[0] || a[1].name.localeCompare(b[1].name))
-      .map(([, x]) => x);
+    const q = norm(query);
+    const words = query.split(' ').map(norm).filter(Boolean);
+    const buckets: Exercise[][] = [[], [], [], [], [], []];
+    for (const { x, names } of SEARCHABLE) {
+      if (muscle != null && x.muscle !== muscle) continue;
+      if (!names.some((n) => words.every((w) => n.includes(w)))) continue;
+      const match = q === '' || names.includes(q) ? 0 : names.some((n) => n.startsWith(q)) ? 1 : 2;
+      buckets[(done?.has(ExerciseLibrary.key(x.id)) ? 0 : 3) + match].push(x);
+    }
+    return buckets.flat();
   },
+  /** Whether a name (or a hidden hand-list name) is already in the library: no custom twin then. */
+  hasName: (name: string): boolean => KNOWN_NAMES.has(norm(name)),
   /** Muscles in the generator's terms, for the sets notice: the generator's catalog first, then the database's labels. */
   generatorMuscles(id: string): { primary: CatalogMuscle[]; secondary: CatalogMuscle[] } | undefined {
     const key = ExerciseLibrary.key(id);
@@ -520,6 +533,17 @@ export function nextRoutine(program: Program | null, history: WorkoutRecord[] | 
 }
 
 /** Most recent sets of each exercise, from history (newest first). Powers the "Previous" column. */
+/** The most logged exercises, linked ids counted as one, named as most recently logged. History is newest first. */
+export function mainExercises(history: WorkoutRecord[], max: number): { id: string; name: string; count: number }[] {
+  const counts = new Map<string, { id: string; name: string; count: number }>();
+  history.forEach((w) => w.exercises.forEach((x) => {
+    const key = ExerciseLibrary.key(x.exerciseId);
+    const cur = counts.get(key) ?? { id: key, name: x.name, count: 0 };
+    counts.set(key, { ...cur, count: cur.count + 1 });
+  }));
+  return [...counts.values()].sort((a, b) => b.count - a.count).slice(0, max);
+}
+
 /** The exercise page opens on How to until the exercise has been logged, then on Summary. */
 export const defaultExerciseTab = (hasHistory: boolean): 'summary' | 'howto' => (hasHistory ? 'summary' : 'howto');
 

@@ -1,7 +1,7 @@
 import { DB_EXERCISES, DB_SOURCE_COMMIT } from '../exerciseDb';
 import { sessionsByExercise } from '../progress';
 import {
-  countRecords, defaultExerciseTab, doneKeys, EXERCISES, ExerciseLibrary, lastSets, recordsByExercise, setsFor, type LoggedSet, type WorkoutRecord,
+  countRecords, defaultExerciseTab, doneKeys, EXERCISES, ExerciseLibrary, lastSets, mainExercises, recordsByExercise, setsFor, type LoggedSet, type WorkoutRecord,
 } from '../training';
 
 const BENCH = 'Barbell_Bench_Press_-_Medium_Grip';
@@ -140,5 +140,35 @@ describe('defaultExerciseTab', () => {
   it('opens How to until the exercise has been logged', () => {
     expect(defaultExerciseTab(false)).toBe('howto');
     expect(defaultExerciseTab(true)).toBe('summary');
+  });
+});
+
+describe('search finds lifts by their usual names', () => {
+  it.each([
+    ['Bench Press', 'Barbell_Bench_Press_-_Medium_Grip'],
+    ['Squat', 'Barbell_Squat'],
+    ['Overhead Press', 'Standing_Military_Press'],
+    ['Pull-up', 'Pullups'],
+    ['Chest Fly (Machine)', 'Butterfly'],
+    ['Plank (seconds)', 'Plank'],
+  ])('"%s" puts %s first', (query, id) => {
+    expect(ExerciseLibrary.search(query, null)[0]?.id).toBe(id);
+  });
+
+  it('knows a hidden name, so the picker does not offer it as a custom exercise', () => {
+    expect(ExerciseLibrary.hasName('bench press')).toBe(true);
+    expect(ExerciseLibrary.hasName('Barbell Bench Press - Medium Grip')).toBe(true);
+    expect(ExerciseLibrary.hasName('My odd lift')).toBe(false);
+  });
+});
+
+describe('mainExercises', () => {
+  it('counts linked ids as one exercise, named as most recently logged', () => {
+    const w = (exerciseId: string, name: string) => ({ exercises: [{ exerciseId, name, sets: [] }] }) as unknown as WorkoutRecord;
+    const rows = mainExercises([w(BENCH, 'Barbell Bench Press - Medium Grip'), w('bench_press', 'Bench Press'), w('squat', 'Squat')], 6);
+    expect(rows).toEqual([
+      { id: BENCH, name: 'Barbell Bench Press - Medium Grip', count: 2 },
+      { id: 'Barbell_Squat', name: 'Squat', count: 1 },
+    ]);
   });
 });

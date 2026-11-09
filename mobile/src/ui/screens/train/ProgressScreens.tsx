@@ -5,7 +5,7 @@ import { Units } from '../../../data/profile';
 import { profileStore } from '../../../data/profileRepo';
 import { historyLive, TrainRepository } from '../../../data/trainRepo';
 import {
-  countsForRecords, defaultExerciseTab, doneKeys, EQUIPMENT_LABEL, type HowTo, ExerciseLibrary, LoggedSet, MUSCLE_LABEL, Muscle, MUSCLES, oneRepMax, recordsFrom,
+  countsForRecords, defaultExerciseTab, mainExercises, doneKeys, EQUIPMENT_LABEL, type HowTo, ExerciseLibrary, LoggedSet, MUSCLE_LABEL, Muscle, MUSCLES, oneRepMax, recordsFrom,
   setCount, setsFor, setVolume, WorkoutMath, WorkoutRecord,
 } from '../../../data/training';
 import { useNow, useStore } from '../../../lib/store';
@@ -320,13 +320,7 @@ export function StatisticsScreen() {
     perMuscle.set(m, (perMuscle.get(m) ?? 0) + x.sets.filter((s) => s.type !== 'WARMUP').length);
   }));
   const setsPerMuscle = [...perMuscle.entries()].filter(([, n]) => n > 0).sort((a, b) => b[1] - a[1]);
-  const counts = new Map<string, { id: string; name: string; count: number }>();
-  inRange.forEach((w) => w.exercises.forEach((x) => {
-    const key = `${x.exerciseId}\u0000${x.name}`;
-    const cur = counts.get(key) ?? { id: x.exerciseId, name: x.name, count: 0 };
-    counts.set(key, { ...cur, count: cur.count + 1 });
-  }));
-  const mainExercises = [...counts.values()].sort((a, b) => b.count - a.count).slice(0, 6);
+  const mainList = mainExercises(inRange, 6);
 
   return (
     <Screen>
@@ -358,7 +352,7 @@ export function StatisticsScreen() {
               </View>
             ))}
           <SectionTitle text="Main exercises" />
-          {mainExercises.map((x) => (
+          {mainList.map((x) => (
             <View key={`${x.id}-${x.name}`}>
               <PressableScale onPress={() => nav.navigate('ExerciseDetail', { exerciseId: x.id, name: x.name })}
                 style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: Gutter, paddingVertical: 12 }}>

@@ -33,8 +33,9 @@ export function ExercisePicker({ visible, onDismiss, onPick, muscle: initialMusc
   const [picked, setPicked] = useState<Exercise[]>([]);
   const history = useStore(historyLive);
   const done = useMemo(() => doneKeys(history), [history]);
-  const results = ExerciseLibrary.search(query, muscle, done);
-  const canCreate = query.trim() !== '' && !ExerciseLibrary.search('', null).some((x) => x.name.toLowerCase() === query.trim().toLowerCase());
+  // Hidden pickers stay mounted under screens that re-render every second: search only when open.
+  const results = useMemo(() => (visible ? ExerciseLibrary.search(query, muscle, done) : []), [visible, query, muscle, done]);
+  const canCreate = query.trim() !== '' && !ExerciseLibrary.hasName(query);
   const has = (x: Exercise) => picked.some((p) => p.id === x.id);
   const toggle = (x: Exercise) => {
     if (single) { onPick([x]); setQuery(''); return; }

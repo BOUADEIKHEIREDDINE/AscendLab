@@ -235,7 +235,7 @@ export const TrainRepository = {
   planForAdded(exerciseId: string, history: WorkoutRecord[]): ExercisePlan | null {
     const restSec = restSecFor(exerciseId);
     if (restSec == null) return null;
-    return exercisePlan(exerciseId, sessionsByExercise(history).get(exerciseId) ?? [], { ...DEFAULT_TARGET, restSec });
+    return exercisePlan(exerciseId, sessionsByExercise(history).get(ExerciseLibrary.key(exerciseId)) ?? [], { ...DEFAULT_TARGET, restSec });
   },
 
   /**
