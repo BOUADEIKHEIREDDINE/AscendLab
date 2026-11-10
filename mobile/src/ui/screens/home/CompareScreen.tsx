@@ -1,6 +1,6 @@
 /** You vs friends: calories eaten per day and weight change over the last 30 days. */
 import React, { useEffect, useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { ScrollView } from 'react-native';
 import { Convert, formatKcal, roundInt, UNIT, Units } from '../../../data/profile';
 import { profileStore } from '../../../data/profileRepo';
 import { Days } from '../../../data/social';
@@ -10,7 +10,7 @@ import { useNow, useStore } from '../../../lib/store';
 import { goBack, useNav } from '../../../navigation/types';
 import { palette, Gutter, people } from '../../theme';
 import { formatDate } from '../../format';
-import { Hairline, PageHeader, Screen, SectionTitle, SkeletonCard, T, Toggle } from '../../components/core';
+import { ListGroup, ListRow, PageHeader, Screen, SectionTitle, SkeletonCard, T, Tile, Toggle } from '../../components/core';
 import { ChartSeries, MultiLineChart } from '../../components/charts';
 
 const MAX_FRIENDS_SHOWN = 4;
@@ -79,40 +79,35 @@ export function CompareScreen() {
   return (
     <Screen>
       <PageHeader title="You vs friends" onBack={() => goBack(nav)} />
-      <ScrollView contentContainerStyle={{ paddingBottom: 24 }}>
+      <ScrollView contentContainerStyle={{ paddingBottom: 32 }}>
         {stats.length <= 1 && <T color={palette.textMuted} style={{ paddingHorizontal: Gutter, paddingVertical: 8 }}>Add friends to compare. Until then, here's just you.</T>}
 
         <SectionTitle text="Calories eaten per day" />
-        <View style={{ paddingHorizontal: Gutter }}>
+        <Tile span="2x1" style={{ marginHorizontal: Gutter }}>
           <MultiLineChart series={kcalSeries} startMs={start} endMs={end}
             valueLabel={(v) => `${formatKcal(roundInt(v))} kcal`} dayLabel={formatDate.shortDay} />
-        </View>
+        </Tile>
         <T v="bodyS" color={palette.textMuted} style={{ paddingHorizontal: Gutter, paddingVertical: 10 }}>
           Last 30 days, today not included. Daily average: {averages || 'no meals logged yet'}
         </T>
-        <Hairline style={{ marginTop: 8 }} />
-
         <SectionTitle text="Weight change" />
         {weightSeries.length === 0 ? <T color={palette.textMuted} style={{ paddingHorizontal: Gutter }}>No weigh-ins in the last 30 days.</T> : (
-          <View style={{ paddingHorizontal: Gutter }}>
+          <Tile span="2x1" style={{ marginHorizontal: Gutter }}>
             <MultiLineChart series={weightSeries} startMs={start} endMs={end} zeroLine carryForward
               valueLabel={(v) => `${signed(v)} ${UNIT[units].weightUnit}`} dayLabel={formatDate.shortDay} />
-          </View>
+          </Tile>
         )}
         <T v="bodyS" color={palette.textMuted} style={{ paddingHorizontal: Gutter, paddingVertical: 10 }}>
           Shown as change from each person's first weigh-in, so different body sizes compare fairly. Only friends who share their weight appear.
         </T>
-        <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: Gutter, paddingVertical: 8, gap: 12 }}>
-          <View style={{ flex: 1 }}>
-            <T v="body">Share my weight with friends</T>
-            <T v="bodyS" color={palette.textMuted}>Friends see how your weight changes over time</T>
-          </View>
-          <Toggle value={shareWeight} label="Share my weight with friends" onChange={async (on) => {
-            setShareWeight(on);
-            await StatsRepository.setShareWeight(on).catch(() => undefined);
-            setReload((r) => r + 1);
-          }} />
-        </View>
+        <ListGroup>
+          <ListRow icon="monitor-weight" title="Share my weight with friends" subtitle="Friends see how your weight changes over time"
+            trailing={<Toggle value={shareWeight} label="Share my weight with friends" onChange={async (on) => {
+              setShareWeight(on);
+              await StatsRepository.setShareWeight(on).catch(() => undefined);
+              setReload((r) => r + 1);
+            }} />} />
+        </ListGroup>
       </ScrollView>
     </Screen>
   );

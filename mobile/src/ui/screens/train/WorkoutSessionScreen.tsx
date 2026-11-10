@@ -365,7 +365,7 @@ function ExerciseBlock({ ex, index, previous, records, units, onOpen, onRecord, 
 }
 
 function Header({ text, width, flex }: { text: string; width?: number; flex?: number }) {
-  return <T v="bodyS" color={palette.textMuted} center style={{ width, flex }}>{text}</T>;
+  return <T v="overline" color={palette.textMuted} center style={{ width, flex }}>{text}</T>;
 }
 
 function SetRow({ number, set, previous, weightHint, repsHint, onChange, onToggle, onRemove, onType, pr }: {
