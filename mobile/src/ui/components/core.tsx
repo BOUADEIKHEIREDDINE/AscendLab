@@ -323,7 +323,8 @@ export function useBentoColumn(): number {
   return bento > 0 ? (bento - space.tileGap) / 2 : 0;
 }
 
-export type TileSpan = '1x1' | '2x1' | '2x2';
+/** `auto` takes no size from the Bento: the parent's layout decides (e.g. stacked tiles beside a square). */
+export type TileSpan = '1x1' | '2x1' | '2x2' | 'auto';
 
 /**
  * A surface tile: 1×1 (square), 2×1 (wide) or 2×2 (hero). Heights are minimums, so tiles grow
@@ -335,8 +336,9 @@ export function Tile({ span = '1x1', children, onPress, background = palette.sur
 }) {
   const bento = useContext(BentoWidth);
   const col = bento > 0 ? (bento - space.tileGap) / 2 : 0;
-  const width = bento > 0 ? (span === '1x1' ? col : bento) : undefined;
-  const minHeight = bento > 0 ? (span === '2x1' ? undefined : span === '2x2' ? bento * 0.9 : col) : undefined;
+  const sized = bento > 0 && span !== 'auto';
+  const width = sized ? (span === '1x1' ? col : bento) : undefined;
+  const minHeight = sized ? (span === '2x1' ? undefined : span === '2x2' ? bento * 0.9 : col) : undefined;
   const box: StyleProp<ViewStyle> = [{
     width, minHeight, borderRadius: span === '2x2' ? radius.xl : radius.lg, backgroundColor: background, padding, overflow: 'hidden',
     borderWidth: border ? 2 : 0, borderColor: border,

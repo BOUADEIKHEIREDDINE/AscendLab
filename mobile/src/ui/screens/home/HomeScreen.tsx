@@ -6,11 +6,12 @@ import { feedLive, meStore, SocialRepository } from '../../../data/socialRepo';
 import { createStore, useNow, useStore } from '../../../lib/store';
 import { useNav } from '../../../navigation/types';
 import { prepareFeed, targetsNow } from '../../../state/session';
-import { palette, Gutter } from '../../theme';
-import { Avatar, Hairline, Icon, IconButton, PressableScale, Screen, SkeletonCard, T } from '../../components/core';
+import { palette, Gutter, space, tone } from '../../theme';
+import { Avatar, EmptyState, Icon, IconButton, PressableScale, Screen, SkeletonCard, T, Tile } from '../../components/core';
+import { StoryRing } from '../../components/progress';
+import { ExpressiveShape } from '../../shapes/ExpressiveShape';
 import { BottomSheet } from '../../components/overlays';
 import { PostCard, RaceCard } from '../../components/feed';
-import { Ring } from '../../components/charts';
 
 /** Posts already watched as stories in this session, so their ring turns grey. */
 export const storySeen = createStore<Set<string>>(new Set());
@@ -60,14 +61,14 @@ export function HomeScreen() {
 
   const header = (
     <View>
-      <View style={{ flexDirection: 'row', alignItems: 'center', paddingLeft: 16, paddingRight: 4, paddingTop: 10, paddingBottom: 4 }}>
-        <Image source={require('../../../../assets/logo.png')} style={{ height: 26, width: 26 * (1200 / 219) }} resizeMode="contain" accessibilityLabel="AscendLab" />
+      <View style={{ flexDirection: 'row', alignItems: 'center', paddingLeft: Gutter, paddingRight: Gutter - 4, paddingTop: 10, paddingBottom: 4, gap: 6 }}>
+        <Image source={require('../../../../assets/logo.png')} style={{ height: 24, width: 24 * (1200 / 219) }} resizeMode="contain" accessibilityLabel="AscendLab" />
         <View style={{ flex: 1 }} />
-        <IconButton name="add-box" label="Log a meal" onPress={() => nav.navigate('CreatePost')} size={26} />
-        <IconButton name="mc:trophy-outline" label="Today's race" onPress={() => setRaceOpen(true)} size={26} />
-        <IconButton name="person-add-alt" label="Friends" onPress={() => nav.navigate('Friends')} size={26} />
+        <IconButton variant="tonal" name="add" label="Log a meal" onPress={() => nav.navigate('CreatePost')} />
+        <IconButton variant="tonal" name="mc:trophy-outline" label="Today's race" onPress={() => setRaceOpen(true)} />
+        <IconButton variant="tonal" name="person-add-alt" label="Friends" onPress={() => nav.navigate('Friends')} />
       </View>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 12, paddingVertical: 8, gap: 14 }}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: Gutter - 4, paddingVertical: 10, gap: 12 }}>
         {stories.map((p) => (
           <StoryBubble
             key={p.uid}
@@ -79,26 +80,23 @@ export function HomeScreen() {
           />
         ))}
       </ScrollView>
-      <Hairline style={{ marginTop: 4 }} />
       {me != null && me.friends.length === 0 && (
-        <>
-          <PressableScale onPress={() => nav.navigate('Friends')} style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: Gutter, paddingVertical: 14 }}>
+        <Tile span="2x1" onPress={() => nav.navigate('Friends')} label="Find your friends"
+          style={{ marginHorizontal: Gutter, marginVertical: 8, flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+          <ExpressiveShape shape="clover" size={48} fill={tone(palette.lime, 0.16)}>
             <Icon name="person-add-alt" color={palette.lime} />
-            <View style={{ flex: 1, marginLeft: 14 }}>
-              <T v="titleS">Find your friends</T>
-              <T v="bodyS" color={palette.textMuted}>See their meals and workouts here, and race to your goals.</T>
-            </View>
-          </PressableScale>
-          <Hairline />
-        </>
+          </ExpressiveShape>
+          <View style={{ flex: 1 }}>
+            <T v="titleS">Find your friends</T>
+            <T v="bodyS" color={palette.textMuted}>See their meals and workouts here, and race to your goals.</T>
+          </View>
+          <Icon name="chevron-right" color={palette.textMuted} />
+        </Tile>
       )}
       {feed.error && <T color={palette.error} style={{ paddingHorizontal: Gutter, paddingVertical: 12 }}>{feed.error}</T>}
       {feed.loading && <><SkeletonCard /><SkeletonCard /></>}
       {!feed.loading && feed.posts.length === 0 && !feed.error && (
-        <View style={{ padding: 40, alignItems: 'center' }}>
-          <T v="titleS">Welcome to your feed</T>
-          <T color={palette.textMuted} center style={{ marginTop: 6 }}>Meals and workouts from you and your friends show up here.</T>
-        </View>
+        <EmptyState icon="dynamic-feed" shape="clover" title="Welcome to your feed" hint="Meals and workouts from you and your friends show up here." />
       )}
     </View>
   );
@@ -117,7 +115,7 @@ export function HomeScreen() {
             onLike={() => SocialRepository.toggleLike(item)}
             onDelete={() => SocialRepository.deletePost(item)}
             onComment={() => nav.navigate('Comments', { postId: item.id })}
-            style={{ marginTop: 8 }}
+            style={{ marginTop: space.tileGap }}
           />
         )}
       />
@@ -141,22 +139,19 @@ function StoryBubble({ person, isMe, allSeen, onPress, onAdd }: {
   const progress = person.target > 0 ? Math.min(person.eaten / person.target, 1) : 0;
   const fresh = person.target > 0 && person.eaten > person.target ? palette.ember : palette.lime;
   return (
-    <PressableScale onPress={onPress} style={{ width: 76, alignItems: 'center' }}
+    <PressableScale onPress={onPress} style={{ width: 78, alignItems: 'center' }}
       label={`${person.name}, ${person.eaten} of ${person.target} kilocalories today`}>
-      <View style={{ width: 72, height: 72, alignItems: 'center', justifyContent: 'center' }}>
-        {person.posts.length === 0 ? <Ring size={72} stroke={3} progress={0} color={fresh} />
-          : allSeen ? <Ring size={72} stroke={3} progress={1} color={palette.outline} round={false} />
-            : <Ring size={72} stroke={3} progress={Math.max(progress, 0.04)} color={fresh} />}
-        <Avatar name={person.avatarName} seed={person.uid} size={60} />
+      <StoryRing size={74} progress={person.posts.length === 0 ? 0 : Math.max(progress, 0.04)} color={fresh} seen={allSeen}>
+        <Avatar name={person.avatarName} seed={person.uid} size={58} />
         {isMe && (
           <Pressable onPress={onAdd} accessibilityLabel="Log a meal" hitSlop={6}
-            style={{ position: 'absolute', right: 0, bottom: 0, width: 24, height: 24, borderRadius: 12, backgroundColor: palette.ink, padding: 2 }}>
-            <View style={{ flex: 1, borderRadius: 10, backgroundColor: palette.lime, alignItems: 'center', justifyContent: 'center' }}>
+            style={{ position: 'absolute', right: 0, bottom: 0, width: 26, height: 26, borderRadius: 13, backgroundColor: palette.ink, padding: 2 }}>
+            <View style={{ flex: 1, borderRadius: 11, backgroundColor: palette.lime, alignItems: 'center', justifyContent: 'center' }}>
               <Icon name="add" size={16} color={palette.onLime} />
             </View>
           </Pressable>
         )}
-      </View>
+      </StoryRing>
       <T v="label" lines={1} style={{ marginTop: 4 }}>{isMe ? person.name : person.name.split(' ')[0]}</T>
     </PressableScale>
   );

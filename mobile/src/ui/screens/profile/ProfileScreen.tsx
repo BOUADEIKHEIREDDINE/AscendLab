@@ -1,24 +1,27 @@
 import React, { useEffect, useState } from 'react';
 import { FlatList, View } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { BodyRepository, WeightEntry, weightsLive } from '../../../data/bodyRepo';
 import { BodyChecks, Convert, formatKcal, GOAL, hasEverythingForPlan, PlanCalculator, roundInt, UNIT, Units } from '../../../data/profile';
 import { ProfileRepository, profileStore } from '../../../data/profileRepo';
-import { FeedPost, MEAL } from '../../../data/social';
+import { FeedPost } from '../../../data/social';
 import { meStore, myPostsLive, SocialRepository } from '../../../data/socialRepo';
 import { TrainRepository } from '../../../data/trainRepo';
 import { useStore } from '../../../lib/store';
 import { useNav } from '../../../navigation/types';
 import { prepareFeed } from '../../../state/session';
-import { palette, Gutter, withAlpha } from '../../theme';
+import { palette, Gutter, radius, space, tone, withAlpha } from '../../theme';
 import { haptics } from '../../haptics';
 import { formatDate } from '../../format';
 import {
-  Avatar, Button, digits, Icon, IconButton, IconName, PressableScale, Screen, SectionTitle, Skeleton, T, TabHeader, TextField,
+  Avatar, Bento, Button, digits, EmptyState, Icon, IconButton, IconName, ListGroup, ListRow, PressableScale, Screen, SectionTitle, Skeleton, T,
+  TabHeader, TextField, Tile, TileHeader,
 } from '../../components/core';
 import { BarChart, LineChart } from '../../components/charts';
 import { Dialog } from '../../components/overlays';
-import { MealPhoto } from '../../components/feed';
+import { MealPhoto, MiniCover } from '../../components/feed';
+import { StreakTile } from '../../components/progress';
+import { ExpressiveShape } from '../../shapes/ExpressiveShape';
+import { ShapeName } from '../../shapes/library';
 
 const WEEKS_SHOWN = 8;
 const DAY_MS = 24 * 3600 * 1000;
@@ -71,32 +74,45 @@ export function ProfileScreen() {
 
   const header = (
     <View>
-      <TabHeader title={me?.name ?? 'Profile'} actions={<IconButton name="settings" label="Settings" onPress={() => nav.navigate('Settings')} />} />
+      <TabHeader title="Profile" actions={<IconButton variant="tonal" name="settings" label="Settings" onPress={() => nav.navigate('Settings')} />} />
 
-      {/* Avatar, then the numbers that matter, the way social profiles do it. */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: Gutter, paddingVertical: 8 }}>
-        {me ? <Avatar name={me.name} seed={me.uid} size={76} /> : <Skeleton width={76} height={76} radius={38} />}
-        <View style={{ flex: 1, flexDirection: 'row', marginLeft: 16 }}>
-          <HeaderStat value={stats ? (stats.capped ? `${stats.total}+` : `${stats.total}`) : null} label="workouts" />
-          <HeaderStat value={stats ? `${stats.streak}` : null} label="week streak" />
-          <HeaderStat value={me ? `${me.friends.length}` : null} label="friends" onPress={() => nav.navigate('Friends')} />
+      {/* Avatar in a clover ring, then the name. */}
+      <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: Gutter, paddingVertical: 8, gap: 16 }}>
+        <ExpressiveShape shape="clover" size={104} fill={tone(palette.lime, 0.12, palette.ink)} stroke={palette.lime} strokeWidth={2}>
+          {me ? <Avatar name={me.name} seed={me.uid} size={72} /> : <Skeleton width={72} height={72} radius={36} />}
+        </ExpressiveShape>
+        <View style={{ flex: 1 }}>
+          <T v="headline" lines={2}>{me?.name ?? ' '}</T>
+          {me?.code ? <T color={palette.textMuted}>Friend code {me.code}</T> : null}
         </View>
       </View>
 
+      {/* Stats bento: workouts, week streak, friends. */}
+      <Bento style={{ marginTop: 8 }}>
+        <Tile span="1x1" center>
+          <StreakTile streak={stats ? stats.streak : null} size={110} />
+        </Tile>
+        <View style={{ gap: space.tileGap, flex: 1 }}>
+          <StatShapeTile shape="circle" icon="fitness-center" label="Workouts" value={stats ? (stats.capped ? `${stats.total}+` : `${stats.total}`) : null} />
+          <StatShapeTile shape="clover" icon="groups" label="Friends" value={me ? `${me.friends.length}` : null} onPress={() => nav.navigate('Friends')} />
+        </View>
+      </Bento>
+
       {/* Dashboard: the doors to everything you've logged. */}
-      <View style={{ flexDirection: 'row', paddingHorizontal: Gutter, paddingVertical: 4, gap: 10 }}>
-        <DashButton icon="bar-chart" label="Statistics" onPress={() => nav.navigate('Statistics')} />
-        <DashButton icon="fitness-center" label="Exercises" onPress={() => nav.navigate('ExerciseLibrary')} />
-        <DashButton icon="calendar-month" label="Calendar" onPress={() => nav.navigate('Calendar')} />
-        <DashButton icon="groups" label="Compare" onPress={() => nav.navigate('Compare')} />
+      <View style={{ flexDirection: 'row', paddingHorizontal: Gutter, paddingTop: space.tileGap, gap: 8 }}>
+        <DashButton icon="bar-chart" shape="cookie9" label="Statistics" onPress={() => nav.navigate('Statistics')} />
+        <DashButton icon="fitness-center" shape="softTriangle" label="Exercises" onPress={() => nav.navigate('ExerciseLibrary')} />
+        <DashButton icon="calendar-month" shape="gem" label="Calendar" onPress={() => nav.navigate('Calendar')} />
+        <DashButton icon="groups" shape="clover" label="Compare" onPress={() => nav.navigate('Compare')} />
       </View>
 
       <SectionTitle text="Workouts per week" />
-      <View style={{ paddingHorizontal: Gutter, paddingVertical: 8 }}>
+      <Tile span="2x1" style={{ marginHorizontal: Gutter }}>
         {stats == null ? <Skeleton height={140} /> : (
           <BarChart
             values={stats.perWeek}
             labels={stats.weekStarts.map(formatDate.numeric)}
+            goal={profile?.daysPerWeek ?? undefined}
             valueLabel={(i, v) => {
               const last = i === stats.perWeek.length - 1;
               const label = last ? 'This week' : `Week of ${formatDate.numeric(stats.weekStarts[i])}`;
@@ -105,7 +121,7 @@ export function ProfileScreen() {
             }}
           />
         )}
-      </View>
+      </Tile>
 
       <SectionTitle text="Body weight" trailing={weights && weights.length > 0
         ? <Button kind="text" label="Log" icon="add" onPress={() => setLoggingWeight(true)} /> : undefined} />
@@ -116,13 +132,10 @@ export function ProfileScreen() {
         return (
           <>
             <SectionTitle text="Goal" />
-            <PressableScale onPress={() => nav.navigate('EditGoals')} style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: Gutter, paddingVertical: 10 }}>
-              <View style={{ flex: 1, gap: 2 }}>
-                <T v="body">{GOAL[profile.goal].label}</T>
-                <T color={palette.textMuted}>{formatKcal(t.calories)} kcal · {t.proteinG} g protein · {profile.daysPerWeek} days a week</T>
-              </View>
-              <Icon name="keyboard-arrow-right" color={palette.textMuted} />
-            </PressableScale>
+            <ListGroup>
+              <ListRow icon="flag" iconColor={palette.lime} title={GOAL[profile.goal].label} onPress={() => nav.navigate('EditGoals')}
+                subtitle={`${formatKcal(t.calories)} kcal · ${t.proteinG} g protein · ${profile.daysPerWeek} days a week`} />
+            </ListGroup>
           </>
         );
       })()}
@@ -130,7 +143,7 @@ export function ProfileScreen() {
       {/* A grid of everything you've posted. */}
       <SectionTitle text="Posts" />
       {posts == null ? <View style={{ paddingHorizontal: Gutter }}><Skeleton height={120} /></View>
-        : posts.length === 0 ? <T color={palette.textMuted} style={{ paddingHorizontal: Gutter, paddingVertical: 8 }}>Your meals and workouts will show up here.</T> : null}
+        : posts.length === 0 ? <EmptyState icon="photo-library" shape="cookie9" title="No posts yet" hint="Your meals and workouts will show up here." /> : null}
     </View>
   );
 
@@ -142,7 +155,7 @@ export function ProfileScreen() {
         ListHeaderComponent={header}
         contentContainerStyle={{ paddingBottom: 24 }}
         renderItem={({ item }) => (
-          <View style={{ flexDirection: 'row', gap: 2, marginBottom: 2 }}>
+          <View style={{ flexDirection: 'row', gap: 4, marginBottom: 4, paddingHorizontal: Gutter }}>
             {item.map((p) => <GridTile key={p.id} post={p} onPress={() => nav.navigate('Comments', { postId: p.id })} />)}
             {Array.from({ length: 3 - item.length }, (_, i) => <View key={i} style={{ flex: 1 }} />)}
           </View>
@@ -155,21 +168,28 @@ export function ProfileScreen() {
   );
 }
 
-function HeaderStat({ value, label, onPress }: { value: string | null; label: string; onPress?: () => void }) {
-  const content = (
-    <View style={{ alignItems: 'center', paddingVertical: 4 }}>
-      {value != null ? <T v="title">{value}</T> : <Skeleton width={28} height={24} />}
-      <T v="bodyS" color={palette.textMuted}>{label}</T>
-    </View>
+/** A wide-ish stat tile: a tonal shape with the icon, then the number. */
+function StatShapeTile({ shape, icon, label, value, onPress }: { shape: ShapeName; icon: IconName; label: string; value: string | null; onPress?: () => void }) {
+  return (
+    <Tile span="auto" onPress={onPress} label={`${value ?? ''} ${label}`} padding={14} style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+      <ExpressiveShape shape={shape} size={44} fill={tone(palette.lime, 0.16)}>
+        <Icon name={icon} size={20} color={palette.lime} />
+      </ExpressiveShape>
+      <View style={{ flex: 1 }}>
+        {value != null ? <T v="displayS">{value}</T> : <Skeleton width={36} height={28} />}
+        <T v="overline" color={palette.textMuted}>{label}</T>
+      </View>
+    </Tile>
   );
-  return <View style={{ flex: 1 }}>{onPress ? <PressableScale onPress={onPress} label={`${value ?? ''} ${label}`}>{content}</PressableScale> : content}</View>;
 }
 
-function DashButton({ icon, label, onPress }: { icon: IconName; label: string; onPress: () => void }) {
+function DashButton({ icon, shape, label, onPress }: { icon: IconName; shape: ShapeName; label: string; onPress: () => void }) {
   return (
-    <PressableScale onPress={onPress} label={label} style={{ flex: 1, alignItems: 'center', paddingVertical: 10, paddingHorizontal: 4, borderWidth: 1, borderColor: palette.outline, borderRadius: 20 }}>
-      <Icon name={icon} color={palette.lime} />
-      <T v="label" color={palette.lime} style={{ marginTop: 4 }} lines={1}>{label}</T>
+    <PressableScale onPress={onPress} label={label} style={{ flex: 1, alignItems: 'center', paddingVertical: 12, paddingHorizontal: 4, borderRadius: radius.md, backgroundColor: palette.surface, gap: 6 }}>
+      <ExpressiveShape shape={shape} size={38} fill={palette.limeContainer}>
+        <Icon name={icon} size={18} color={palette.onLimeContainer} />
+      </ExpressiveShape>
+      <T v="label" lines={1} style={{ fontSize: 12 }}>{label}</T>
     </PressableScale>
   );
 }
@@ -177,25 +197,13 @@ function DashButton({ icon, label, onPress }: { icon: IconName; label: string; o
 /** A square in the posts grid: the photo, or a small cover with the key number. */
 function GridTile({ post, onPress }: { post: FeedPost; onPress: () => void }) {
   return (
-    <PressableScale onPress={onPress} style={{ flex: 1, aspectRatio: 1 }} label={post.workout ? post.workout.title : `${post.calories} kcal`}>
-      {post.photo ? <MealPhoto photo={post.photo} style={{ flex: 1 }} /> : (
-        <LinearGradient colors={post.workout ? ['#15302B', '#1C2934'] : ['#1C3A3A', '#2A2420']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-          style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 8 }}>
-          {post.workout ? (
-            <>
-              <Icon name="fitness-center" color={palette.lime} />
-              <T v="label" color="#FFFFFF" lines={2} center>{post.workout.title}</T>
-            </>
-          ) : (
-            <>
-              <T v="title" color="#FFFFFF">{formatKcal(post.calories)}</T>
-              <T v="bodyS" color={withAlpha('#FFFFFF', 0.7)}>kcal · {MEAL[post.mealType].label.toLowerCase()}</T>
-            </>
-          )}
-        </LinearGradient>
-      )}
+    <PressableScale onPress={onPress} style={{ flex: 1, aspectRatio: 1, borderRadius: radius.sm, overflow: 'hidden' }} label={post.workout ? post.workout.title : `${post.calories} kcal`}>
+      {post.photo ? <MealPhoto photo={post.photo} style={{ flex: 1 }} /> : <MiniCover post={post} />}
       {(post.commentCount > 0 || post.likes.length > 0) && (
-        <T v="bodyS" color="#FFFFFF" style={{ position: 'absolute', left: 6, bottom: 6 }}>♥ {post.likes.length}</T>
+        <View style={{ position: 'absolute', left: 6, bottom: 6, flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: withAlpha(palette.ink, 0.7), borderRadius: radius.full, paddingHorizontal: 7, paddingVertical: 2 }}>
+          <Icon name="favorite" size={11} color={palette.like} />
+          <T v="bodyS" style={{ fontSize: 11, lineHeight: 14 }}>{post.likes.length}</T>
+        </View>
       )}
     </PressableScale>
   );
@@ -204,23 +212,25 @@ function GridTile({ post, onPress }: { post: FeedPost; onPress: () => void }) {
 const formatPrecise = (kg: number, units: Units) => `${roundInt((units === 'IMPERIAL' ? Convert.kgToLb(kg) : kg) * 10) / 10} ${UNIT[units].weightUnit}`;
 
 function WeightSection({ entries, profileKg, units, onLog }: { entries: WeightEntry[] | null; profileKg: number | null; units: Units; onLog: () => void }) {
-  if (entries == null) return <View style={{ paddingHorizontal: Gutter, paddingVertical: 8 }}><Skeleton height={120} /></View>;
+  if (entries == null) return <View style={{ paddingHorizontal: Gutter }}><Skeleton height={140} radius={radius.lg} /></View>;
   if (entries.length === 0) {
     return (
-      <View style={{ paddingHorizontal: Gutter, paddingVertical: 8, gap: 12 }}>
-        <T v="title">{profileKg != null ? Convert.formatWeight(profileKg, units) : '–'}</T>
+      <Tile span="2x1" style={{ marginHorizontal: Gutter, gap: 12 }}>
+        <TileHeader icon="monitor-weight" text="Body weight" />
+        <T v="displayM">{profileKg != null ? Convert.formatWeight(profileKg, units) : '–'}</T>
         <T color={palette.textMuted}>Log your weight regularly to see the trend.</T>
         <Button kind="tonal" label="Log today's weight" onPress={onLog} />
-      </View>
+      </Tile>
     );
   }
   const latest = entries[entries.length - 1];
   const change = latest.kg - entries[0].kg;
   const sign = change > 0 ? '+' : change < 0 ? '−' : '±';
   return (
-    <View style={{ paddingHorizontal: Gutter, paddingVertical: 8, gap: 12 }}>
-      <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 10 }}>
-        <T v="title">{formatPrecise(latest.kg, units)}</T>
+    <Tile span="2x1" style={{ marginHorizontal: Gutter, gap: 10 }}>
+      <TileHeader icon="monitor-weight" text="Body weight" />
+      <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 10, flexWrap: 'wrap' }}>
+        <T v="displayM">{formatPrecise(latest.kg, units)}</T>
         {entries.length > 1 && (
           <T color={palette.textMuted} style={{ marginBottom: 3 }}>{sign}{formatPrecise(Math.abs(change), units)} since {formatDate.dayMonth(entries[0].at)}</T>
         )}
@@ -228,7 +238,7 @@ function WeightSection({ entries, profileKg, units, onLog }: { entries: WeightEn
       {entries.length > 1
         ? <LineChart points={entries.map((e) => [e.at, e.kg])} pointLabel={([at, kg]) => `${formatDate.dayMonth(at)}: ${formatPrecise(kg, units)}`} />
         : <T color={palette.textMuted}>Log again on another day to start your trend line.</T>}
-    </View>
+    </Tile>
   );
 }
 
