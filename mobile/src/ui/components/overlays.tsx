@@ -45,7 +45,7 @@ export function Dialog({ visible, onDismiss, title, icon, children, confirm, dis
   confirm?: DialogAction; dismiss?: DialogAction;
 }) {
   const { shown, progress, reduce } = usePresence(visible);
-  const accent = confirm?.danger ? palette.ember : palette.lime;
+  const accent = confirm?.danger ? palette.ember : palette.primary;
   return (
     <Modal visible={shown} transparent animationType="none" onRequestClose={onDismiss} statusBarTranslucent>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
@@ -117,7 +117,7 @@ function MenuRows({ items, onDismiss }: { items: MenuItem[]; onDismiss: () => vo
           style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 16, paddingHorizontal: space.tilePad + 4, minHeight: 54, backgroundColor: pressed ? palette.surfaceHigh : 'transparent' })}
         >
           {item.leading ?? (item.icon ? <Icon name={item.icon} color={item.danger ? palette.ember : palette.textMuted} /> : item.checked !== undefined
-            ? <View style={{ width: 24 }}>{item.checked && <Icon name="check" color={palette.lime} />}</View> : null)}
+            ? <View style={{ width: 24 }}>{item.checked && <Icon name="check" color={palette.primary} />}</View> : null)}
           <T v="body" color={item.danger ? palette.ember : palette.text} style={{ flex: 1 }}>{item.label}</T>
         </Pressable>
       ))}
@@ -176,7 +176,7 @@ export function ToastHost() {
   }, [current, opacity]);
   const shownToast = current ?? last;
   if (!shownToast) return null;
-  const look = { success: { shape: 'cookie9', color: palette.lime }, error: { shape: 'emberBurst', color: palette.ember }, info: { shape: 'pebble', color: palette.textMuted } } as const;
+  const look = { success: { shape: 'cookie9', color: palette.primary }, error: { shape: 'emberBurst', color: palette.ember }, info: { shape: 'pebble', color: palette.textMuted } } as const;
   const { shape, color } = look[shownToast.kind];
   return (
     <Animated.View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, bottom: insets.bottom + space.dock, alignItems: 'center', opacity }}>

@@ -72,7 +72,7 @@ export function WorkoutSessionScreen() {
   // Finished or discarded: leave the page.
   useEffect(() => { if (!workout) goBack(nav); }, [workout, nav]);
   const resting = workout != null && workout.restEndsAt != null && workout.restEndsAt > now;
-  // Flash the screen lime when a rest ends (tracked during render, not in an effect).
+  // Flash the screen iris when a rest ends (tracked during render, not in an effect).
   const [wasResting, setWasResting] = useState(resting);
   const [flashKey, setFlashKey] = useState<number | null>(null);
   if (wasResting !== resting) {
@@ -254,9 +254,9 @@ function ExerciseBlock({ ex, index, previous, records, units, onOpen, onRecord, 
       <View style={{ flexDirection: 'row', alignItems: 'center', paddingLeft: space.tilePad, paddingRight: 4 }}>
         <View style={{ flex: 1, alignItems: 'flex-start' }}>
           <Pressable onPress={onOpen} accessibilityRole="link" style={{ paddingVertical: 4 }}>
-            <T v="titleS" color={palette.lime}>{ex.name}</T>
+            <T v="titleS" color={palette.primary}>{ex.name}</T>
           </Pressable>
-          {ex.tag && <T v="bodyS" color={palette.lime}>{ex.tag === 'swapped' ? 'swapped for this workout' : 'added'}</T>}
+          {ex.tag && <T v="bodyS" color={palette.primary}>{ex.tag === 'swapped' ? 'swapped for this workout' : 'added'}</T>}
         </View>
         <IconButton name="more-vert" label="More" onPress={() => setMenu(true)} />
       </View>
@@ -265,7 +265,7 @@ function ExerciseBlock({ ex, index, previous, records, units, onOpen, onRecord, 
           <T v="bodyS" color={palette.textMuted}>
             {plan.sets} × {plan.repMin}–{plan.repMax} reps to failure · rest {restText(plan.restSec)}
           </T>
-          {plan.note && <T v="bodyS" color={plan.findWeight ? palette.gold : palette.lime}>{plan.note}</T>}
+          {plan.note && <T v="bodyS" color={plan.findWeight ? palette.gold : palette.primary}>{plan.note}</T>}
         </View>
       )}
       <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, paddingVertical: 6 }}>
@@ -375,13 +375,13 @@ function SetRow({ number, set, previous, weightHint, repsHint, onChange, onToggl
   const [menu, setMenu] = useState(false);
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', marginHorizontal: 6, marginVertical: 2, paddingHorizontal: 2, paddingVertical: 2,
-      borderRadius: radius.full, backgroundColor: set.done ? palette.limeContainer : 'transparent' }}>
+      borderRadius: radius.full, backgroundColor: set.done ? palette.primaryContainer : 'transparent' }}>
       {/* Tap the set number to change its type (W / F / D). */}
       <Pressable onPress={() => { haptics.tick(); setMenu(true); }} accessibilityLabel={`Set ${number} type`}
         style={{ width: 36, alignItems: 'center', paddingVertical: 8, borderRadius: 8 }}>
         <SetBadge type={set.type} normalIndex={number} />
       </Pressable>
-      <T v="bodyS" color={set.done ? palette.onLimeContainer : palette.textMuted} center style={{ flex: 1.4 }}>{previous}</T>
+      <T v="bodyS" color={set.done ? palette.onPrimaryContainer : palette.textMuted} center style={{ flex: 1.4 }}>{previous}</T>
       <NumberBox value={set.weight} hint={weightHint} decimal onChange={(v) => onChange({ ...set, weight: v })} label={`Set ${number} weight`} />
       <NumberBox value={set.reps} hint={repsHint} onChange={(v) => onChange({ ...set, reps: v })} label={`Set ${number} reps`} />
       <SetCheck done={set.done} onPress={onToggle} label={set.done ? `Mark set ${number} not done` : `Mark set ${number} done`} />
@@ -403,7 +403,7 @@ function NumberBox({ value, hint, decimal, onChange, label }: { value: string; h
         placeholder={hint}
         placeholderTextColor={palette.textFaint}
         keyboardType={decimal ? 'decimal-pad' : 'number-pad'}
-        selectionColor={palette.lime}
+        selectionColor={palette.primary}
         keyboardAppearance="dark"
         selectTextOnFocus
         accessibilityLabel={label}
@@ -460,7 +460,7 @@ function FinishDialog({ w, units, now, records, onDismiss }: { w: ActiveWorkout;
           {/* The ascent arrow rises behind the total volume. */}
           <View style={{ alignItems: 'center', justifyContent: 'center', height: 230 }}>
             <View style={{ position: 'absolute' }}><AscentHero size={230} /></View>
-            <T v="overline" color={palette.lime}>Total volume</T>
+            <T v="overline" color={palette.primary}>Total volume</T>
             <T v="hero">{volume}</T>
             <T v="bodyS" color={palette.textMuted}>{w.title}</T>
           </View>

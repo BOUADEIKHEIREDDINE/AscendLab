@@ -83,8 +83,8 @@ export function HomeScreen() {
       {me != null && me.friends.length === 0 && (
         <Tile span="2x1" onPress={() => nav.navigate('Friends')} label="Find your friends"
           style={{ marginHorizontal: Gutter, marginVertical: 8, flexDirection: 'row', alignItems: 'center', gap: 14 }}>
-          <ExpressiveShape shape="clover" size={48} fill={tone(palette.lime, 0.16)}>
-            <Icon name="person-add-alt" color={palette.lime} />
+          <ExpressiveShape shape="clover" size={48} fill={tone(palette.primary, 0.16)}>
+            <Icon name="person-add-alt" color={palette.primary} />
           </ExpressiveShape>
           <View style={{ flex: 1 }}>
             <T v="titleS">Find your friends</T>
@@ -137,7 +137,7 @@ function StoryBubble({ person, isMe, allSeen, onPress, onAdd }: {
   person: StoryPerson; isMe: boolean; allSeen: boolean; onPress: () => void; onAdd: () => void;
 }) {
   const progress = person.target > 0 ? Math.min(person.eaten / person.target, 1) : 0;
-  const fresh = person.target > 0 && person.eaten > person.target ? palette.ember : palette.lime;
+  const fresh = person.target > 0 && person.eaten > person.target ? palette.ember : palette.primary;
   return (
     <View style={{ width: 78 }}>
       <PressableScale onPress={onPress} style={{ width: 78, alignItems: 'center' }}
@@ -151,8 +151,8 @@ function StoryBubble({ person, isMe, allSeen, onPress, onAdd }: {
       {isMe && (
         <Pressable onPress={onAdd} accessibilityRole="button" accessibilityLabel="Log a meal" hitSlop={6}
           style={{ position: 'absolute', left: 2 + 74 - 26, top: 74 - 26, width: 26, height: 26, borderRadius: 13, backgroundColor: palette.ink, padding: 2 }}>
-          <View style={{ flex: 1, borderRadius: 11, backgroundColor: palette.lime, alignItems: 'center', justifyContent: 'center' }}>
-            <Icon name="add" size={16} color={palette.onLime} />
+          <View style={{ flex: 1, borderRadius: 11, backgroundColor: palette.primary, alignItems: 'center', justifyContent: 'center' }}>
+            <Icon name="add" size={16} color={palette.onPrimary} />
           </View>
         </Pressable>
       )}

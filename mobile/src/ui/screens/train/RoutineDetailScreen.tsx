@@ -107,7 +107,7 @@ function ExerciseView({ ex, last, units, onOpen }: { ex: RoutineExercise; last: 
       <View style={{ paddingVertical: 12 }}>
         <View style={{ paddingHorizontal: space.tilePad, alignItems: 'flex-start' }}>
           <Pressable onPress={onOpen} accessibilityRole="link" style={{ paddingVertical: 4 }}>
-            <T v="titleS" color={palette.lime}>{ex.name}</T>
+            <T v="titleS" color={palette.primary}>{ex.name}</T>
           </Pressable>
           <T v="bodyS" color={palette.textMuted}>
             {rest != null ? `${ex.sets} × ${target} reps to failure · rest ${restText(rest)}` : `${ex.sets} × ${ex.reps} reps`}

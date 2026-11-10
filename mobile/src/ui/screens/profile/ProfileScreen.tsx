@@ -78,7 +78,7 @@ export function ProfileScreen() {
 
       {/* Avatar in a clover ring, then the name. */}
       <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: Gutter, paddingVertical: 8, gap: 16 }}>
-        <ExpressiveShape shape="clover" size={104} fill={tone(palette.lime, 0.12, palette.ink)} stroke={palette.lime} strokeWidth={2}>
+        <ExpressiveShape shape="clover" size={104} fill={tone(palette.primary, 0.12, palette.ink)} stroke={palette.primary} strokeWidth={2}>
           {me ? <Avatar name={me.name} seed={me.uid} size={72} /> : <Skeleton width={72} height={72} radius={36} />}
         </ExpressiveShape>
         <View style={{ flex: 1 }}>
@@ -133,7 +133,7 @@ export function ProfileScreen() {
           <>
             <SectionTitle text="Goal" />
             <ListGroup>
-              <ListRow icon="flag" iconColor={palette.lime} title={GOAL[profile.goal].label} onPress={() => nav.navigate('EditGoals')}
+              <ListRow icon="flag" iconColor={palette.primary} title={GOAL[profile.goal].label} onPress={() => nav.navigate('EditGoals')}
                 subtitle={`${formatKcal(t.calories)} kcal · ${t.proteinG} g protein · ${profile.daysPerWeek} days a week`} />
             </ListGroup>
           </>
@@ -172,8 +172,8 @@ export function ProfileScreen() {
 function StatShapeTile({ shape, icon, label, value, onPress }: { shape: ShapeName; icon: IconName; label: string; value: string | null; onPress?: () => void }) {
   return (
     <Tile span="auto" onPress={onPress} label={`${value ?? ''} ${label}`} padding={14} style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-      <ExpressiveShape shape={shape} size={44} fill={tone(palette.lime, 0.16)}>
-        <Icon name={icon} size={20} color={palette.lime} />
+      <ExpressiveShape shape={shape} size={44} fill={tone(palette.primary, 0.16)}>
+        <Icon name={icon} size={20} color={palette.primary} />
       </ExpressiveShape>
       <View style={{ flex: 1 }}>
         {value != null ? <T v="displayS">{value}</T> : <Skeleton width={36} height={28} />}
@@ -186,8 +186,8 @@ function StatShapeTile({ shape, icon, label, value, onPress }: { shape: ShapeNam
 function DashButton({ icon, shape, label, onPress }: { icon: IconName; shape: ShapeName; label: string; onPress: () => void }) {
   return (
     <PressableScale onPress={onPress} label={label} style={{ flex: 1, alignItems: 'center', paddingVertical: 12, paddingHorizontal: 4, borderRadius: radius.md, backgroundColor: palette.surface, gap: 6 }}>
-      <ExpressiveShape shape={shape} size={38} fill={palette.limeContainer}>
-        <Icon name={icon} size={18} color={palette.onLimeContainer} />
+      <ExpressiveShape shape={shape} size={38} fill={palette.primaryContainer}>
+        <Icon name={icon} size={18} color={palette.onPrimaryContainer} />
       </ExpressiveShape>
       <T v="label" lines={1} style={{ fontSize: 12 }}>{label}</T>
     </PressableScale>

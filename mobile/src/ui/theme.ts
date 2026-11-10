@@ -24,10 +24,10 @@ export const palette = {
   textFaint: '#5E636D', // Disabled text, chart axis labels
 
   // Accent
-  lime: '#D4FF4F', // Primary buttons, main progress, active tab, links
-  onLime: '#0A0B0E',
-  limeContainer: '#2B3310', // Tonal buttons, selected chips, completed set rows
-  onLimeContainer: '#E8FFA3',
+  primary: '#9FA8FF', // Iris: primary buttons, main progress, active tab, links
+  onPrimary: '#0A0B0E',
+  primaryContainer: '#2A2D40', // Tonal buttons, selected chips, completed set rows
+  onPrimaryContainer: '#DDE1FF',
   ember: '#FF6B3D', // Over budget, calories burned, failure sets, destructive actions
   emberContainer: '#3A1A10',
   gold: '#FFC94A', // Milestones only: PRs, setup complete, race winner, streak records
@@ -45,16 +45,19 @@ export const palette = {
 export const data = {
   protein: '#FF8A5B',
   carbs: '#FFD25E',
-  fat: '#8FB8FF',
+  fat: '#6FE3C1', // mint
   water: '#5EE6FF',
-  recovery: '#B69CFF',
+  recovery: '#FF8FC7',
 };
 
 /** People colours for compare charts and avatars, in a fixed order (person 1 is you). */
-export const people = ['#D4FF4F', '#FF8A5B', '#8FB8FF', '#FFC94A', '#E58CFF'];
+export const people = ['#9FA8FF', '#FF8A5B', '#6FE3C1', '#FFC94A', '#FF8FC7'];
 
-/** Cover gradient for posts without a photo: lime dusk → ink → ember dusk, diagonal. */
-export const coverGradient = ['#141A0C', '#0A0B0E', '#1A120E'] as const;
+/** Cover gradient for posts without a photo: iris dusk → ink → ember dusk, diagonal. */
+export const coverGradient = ['#14162A', '#0A0B0E', '#1A120E'] as const;
+
+/** Summit glow: the primary colour at 18% fading to transparent (radial). */
+export const summitGlowOpacity = 0.18;
 
 const hex = (h: string) => {
   const s = h.replace('#', '');

@@ -117,8 +117,8 @@ function MealSheet({ type, items, budget, onDismiss, onAdd }: {
       {t && (
         <View style={{ paddingHorizontal: space.gutter, paddingBottom: 8, gap: 14 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
-            <ExpressiveShape shape={mealShape[t]} size={52} fill={tone(palette.lime, 0.16)}>
-              <Icon name={mealIcon(t)} color={palette.lime} />
+            <ExpressiveShape shape={mealShape[t]} size={52} fill={tone(palette.primary, 0.16)}>
+              <Icon name={mealIcon(t)} color={palette.primary} />
             </ExpressiveShape>
             <View style={{ flex: 1 }}>
               <T v="title">{MEAL[t].label}</T>

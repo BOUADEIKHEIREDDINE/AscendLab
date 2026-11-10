@@ -35,8 +35,8 @@ export function ProgramsScreen() {
                 subtitle={p.routines.length === 0 ? 'No routines' : p.routines.map((r) => r.name).join(' · ')}
                 onPress={() => TrainRepository.selectProgram(p.id)}
                 leading={(
-                  <ExpressiveShape shape={on ? 'cookie9' : 'circle'} size={28} fill={on ? palette.lime : 'none'} stroke={on ? undefined : palette.textMuted} strokeWidth={on ? 0 : 2} token="bouncy">
-                    {on && <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: palette.onLime }} />}
+                  <ExpressiveShape shape={on ? 'cookie9' : 'circle'} size={28} fill={on ? palette.primary : 'none'} stroke={on ? undefined : palette.textMuted} strokeWidth={on ? 0 : 2} token="bouncy">
+                    {on && <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: palette.onPrimary }} />}
                   </ExpressiveShape>
                 )}
                 trailing={<IconButton name="more-vert" label="More" color={palette.textMuted} onPress={() => setMenuFor(p)} />} />

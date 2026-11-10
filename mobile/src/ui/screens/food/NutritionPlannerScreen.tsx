@@ -41,7 +41,7 @@ export function NutritionPlannerScreen() {
                         <T v="titleS" style={{ flex: 1 }}>{MEAL[type].label}</T>
                         <T color={palette.textMuted}>{eaten === 0 ? `about ${formatKcal(budget)} kcal` : `${formatKcal(eaten)} / ${formatKcal(budget)} kcal`}</T>
                       </View>
-                      <ProgressBar progress={budget > 0 ? eaten / budget : 0} color={eaten > budget * 1.15 ? palette.ember : palette.lime} />
+                      <ProgressBar progress={budget > 0 ? eaten / budget : 0} color={eaten > budget * 1.15 ? palette.ember : palette.primary} />
                     </View>
                   </View>
                 );

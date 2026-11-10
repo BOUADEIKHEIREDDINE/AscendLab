@@ -2,7 +2,7 @@
  * Building blocks shared by every screen ("Ascent Expressive", docs/DESIGN_SYSTEM.md §5).
  *
  * Layout rules: tiles for numbers, rows for lists. Dashboards are a <Bento> of <Tile>s;
- * long lists sit in a <ListGroup> of <ListRow>s. One lime thing per screen is the hero.
+ * long lists sit in a <ListGroup> of <ListRow>s. One iris thing per screen is the hero.
  */
 import React, { createContext, ReactNode, useContext, useEffect, useRef, useState } from 'react';
 import {
@@ -104,8 +104,8 @@ export function IconButton({ name, onPress, label, color, size = 22, disabled, s
 }) {
   const [squish, setSquish] = useState(false);
   const since = useRef(0);
-  const bg = variant === 'filled' ? palette.lime : variant === 'tonal' ? palette.surfaceHigh : squish ? palette.surfaceHigh : 'transparent';
-  const fg = color ?? (variant === 'filled' ? palette.onLime : palette.text);
+  const bg = variant === 'filled' ? palette.primary : variant === 'tonal' ? palette.surfaceHigh : squish ? palette.surfaceHigh : 'transparent';
+  const fg = color ?? (variant === 'filled' ? palette.onPrimary : palette.text);
   return (
     <Pressable
       onPress={() => { haptics.tick(); onPress(); }}
@@ -128,7 +128,7 @@ export function PrimaryButton({ label, onPress, enabled = true, loading = false,
 }) {
   const disabled = !enabled || loading;
   const morph = useMorphPress(56);
-  const fg = disabled && !loading ? palette.textFaint : palette.onLime;
+  const fg = disabled && !loading ? palette.textFaint : palette.onPrimary;
   return (
     <AnimatedPressable
       onPress={() => { haptics.tick(); onPress(); }}
@@ -139,8 +139,8 @@ export function PrimaryButton({ label, onPress, enabled = true, loading = false,
       accessibilityLabel={label}
       accessibilityState={{ disabled, busy: loading }}
       style={[{ height: 56, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8, paddingHorizontal: 24,
-        backgroundColor: disabled && !loading ? palette.surfaceHigh : palette.lime }, morph.style, style]}>
-      {loading ? <ShapeLoader size={26} color={palette.onLime} /> : (
+        backgroundColor: disabled && !loading ? palette.surfaceHigh : palette.primary }, morph.style, style]}>
+      {loading ? <ShapeLoader size={26} color={palette.onPrimary} /> : (
         <>
           {icon && <Icon name={icon} color={fg} size={20} />}
           <T v="titleS" color={fg}>{label}</T>
@@ -150,13 +150,13 @@ export function PrimaryButton({ label, onPress, enabled = true, loading = false,
   );
 }
 
-/** XL 72 lime button, only for "Start workout" and "Finish workout". */
+/** XL 72 iris button, only for "Start workout" and "Finish workout". */
 export function HeroButton({ label, onPress, enabled = true, loading = false, style, icon }: {
   label: string; onPress: () => void; enabled?: boolean; loading?: boolean; style?: StyleProp<ViewStyle>; icon?: IconName;
 }) {
   const disabled = !enabled || loading;
   const morph = useMorphPress(72);
-  const fg = disabled && !loading ? palette.textFaint : palette.onLime;
+  const fg = disabled && !loading ? palette.textFaint : palette.onPrimary;
   return (
     <AnimatedPressable
       onPress={() => { haptics.confirm(); onPress(); }}
@@ -166,8 +166,8 @@ export function HeroButton({ label, onPress, enabled = true, loading = false, st
       accessibilityRole="button"
       accessibilityLabel={label}
       style={[{ height: 72, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 10, paddingHorizontal: 28,
-        backgroundColor: disabled && !loading ? palette.surfaceHigh : palette.lime }, morph.style, style]}>
-      {loading ? <ShapeLoader size={30} color={palette.onLime} /> : (
+        backgroundColor: disabled && !loading ? palette.surfaceHigh : palette.primary }, morph.style, style]}>
+      {loading ? <ShapeLoader size={30} color={palette.onPrimary} /> : (
         <>
           {icon && <Icon name={icon} color={fg} size={26} />}
           <T v="displayS" color={fg} style={{ fontSize: 20, lineHeight: 24, letterSpacing: -0.2 }}>{label}</T>
@@ -179,15 +179,15 @@ export function HeroButton({ label, onPress, enabled = true, loading = false, st
 
 export type ButtonKind = 'tonal' | 'outline' | 'text' | 'filled' | 'danger';
 
-/** Secondary actions: tonal (default look for secondary), outline, text, filled (lime) or danger (ember). */
+/** Secondary actions: tonal (default look for secondary), outline, text, filled (iris) or danger (ember). */
 export function Button({ label, onPress, kind = 'outline', icon, color, enabled = true, loading, style, compact }: {
   label: string; onPress: () => void; kind?: ButtonKind; icon?: IconName; color?: string;
   enabled?: boolean; loading?: boolean; style?: StyleProp<ViewStyle>; compact?: boolean;
 }) {
   const height = compact ? 40 : 48;
   const morph = useMorphPress(height);
-  const fg = color ?? ({ text: palette.lime, filled: palette.onLime, tonal: palette.onLimeContainer, danger: palette.ember, outline: palette.text } as const)[kind];
-  const bg = ({ tonal: palette.limeContainer, filled: palette.lime, danger: palette.emberContainer, text: 'transparent', outline: 'transparent' } as const)[kind];
+  const fg = color ?? ({ text: palette.primary, filled: palette.onPrimary, tonal: palette.onPrimaryContainer, danger: palette.ember, outline: palette.text } as const)[kind];
+  const bg = ({ tonal: palette.primaryContainer, filled: palette.primary, danger: palette.emberContainer, text: 'transparent', outline: 'transparent' } as const)[kind];
   return (
     <AnimatedPressable
       onPress={() => { haptics.tick(); onPress(); }}
@@ -216,8 +216,8 @@ export function SplitButton({ label, onPress, onMenu, kind = 'filled', enabled =
   label: string; onPress: () => void; onMenu: () => void; kind?: 'filled' | 'tonal'; enabled?: boolean; menuLabel?: string; compact?: boolean;
 }) {
   const height = compact ? 40 : 48;
-  const bg = kind === 'filled' ? palette.lime : palette.limeContainer;
-  const fg = kind === 'filled' ? palette.onLime : palette.onLimeContainer;
+  const bg = kind === 'filled' ? palette.primary : palette.primaryContainer;
+  const fg = kind === 'filled' ? palette.onPrimary : palette.onPrimaryContainer;
   const side = (left: boolean) => ({
     height, backgroundColor: bg, alignItems: 'center' as const, justifyContent: 'center' as const, opacity: enabled ? 1 : 0.38,
     borderTopLeftRadius: left ? height / 2 : 6, borderBottomLeftRadius: left ? height / 2 : 6,
@@ -455,8 +455,8 @@ export function ListRow({ icon, iconColor, title, subtitle, trailing, onPress, d
 export function HelpNote({ text, background = palette.surface }: { text: string; background?: string }) {
   return (
     <View style={{ flexDirection: 'row', gap: 12, padding: 14, borderRadius: radius.md, backgroundColor: background, alignItems: 'center' }}>
-      <ExpressiveShape shape="pebble" size={34} fill={tone(palette.lime, 0.2, background)}>
-        <Icon name="info-outline" size={18} color={palette.lime} />
+      <ExpressiveShape shape="pebble" size={34} fill={tone(palette.primary, 0.2, background)}>
+        <Icon name="info-outline" size={18} color={palette.primary} />
       </ExpressiveShape>
       <T color={palette.textMuted} style={{ flex: 1 }}>{text}</T>
     </View>
@@ -486,8 +486,8 @@ export function Notice({ lines, kind = 'ember', icon = kind === 'gold' ? 'emoji-
 export function EmptyState({ icon, title, hint, shape = 'pebble', action }: { icon: IconName; title: string; hint?: string; shape?: ShapeName; action?: ReactNode }) {
   return (
     <View style={{ alignItems: 'center', paddingHorizontal: 32, paddingVertical: 32, gap: 10 }}>
-      <ExpressiveShape shape={shape} size={96} fill={tone(palette.lime, 0.12, palette.ink)}>
-        <Icon name={icon} size={36} color={palette.lime} />
+      <ExpressiveShape shape={shape} size={96} fill={tone(palette.primary, 0.12, palette.ink)}>
+        <Icon name={icon} size={36} color={palette.primary} />
       </ExpressiveShape>
       <T v="title" center style={{ marginTop: 6 }}>{title}</T>
       {hint ? <T color={palette.textMuted} center>{hint}</T> : null}
@@ -550,7 +550,7 @@ export function CountingNumber({ value, from = 0, v = 'displayM', color = palett
 }
 
 /** A slim pill bar (8px) that glides to `progress` (0..1). For static values; WavyProgress is for ongoing ones. */
-export function ProgressBar({ progress, color = palette.lime, track = palette.surfaceHigh, height = 8, duration = 700 }: {
+export function ProgressBar({ progress, color = palette.primary, track = palette.surfaceHigh, height = 8, duration = 700 }: {
   progress: number; color?: string; track?: string; height?: number; duration?: number;
 }) {
   const anim = useAnimatedNumber(Math.min(Math.max(progress, 0), 1), duration, 0);
@@ -597,7 +597,7 @@ export function SkeletonCard() {
 
 // ---------------------------------------------------------------- Inputs
 
-/** Pill chip: surfaceHighest at rest; selected = limeContainer with a check that pops in. */
+/** Pill chip: surfaceHighest at rest; selected = primaryContainer with a check that pops in. */
 export function Chip({ label, selected, onPress }: { label: string; selected: boolean; onPress: () => void }) {
   const pop = useState(() => new Animated.Value(selected ? 1 : 0))[0];
   useEffect(() => { springTo(pop, selected ? 1 : 0, 'bouncy').start(); }, [selected, pop]);
@@ -608,16 +608,16 @@ export function Chip({ label, selected, onPress }: { label: string; selected: bo
       accessibilityState={{ selected }}
       style={{
         height: 36, paddingHorizontal: 16, borderRadius: radius.full, flexDirection: 'row', alignItems: 'center', gap: 6,
-        backgroundColor: selected ? palette.limeContainer : palette.surfaceHighest,
+        backgroundColor: selected ? palette.primaryContainer : palette.surfaceHighest,
       }}
     >
-      {selected && <Animated.View style={{ transform: [{ scale: pop }] }}><Icon name="check" size={16} color={palette.onLimeContainer} /></Animated.View>}
-      <T v="label" color={selected ? palette.onLimeContainer : palette.text}>{label}</T>
+      {selected && <Animated.View style={{ transform: [{ scale: pop }] }}><Icon name="check" size={16} color={palette.onPrimaryContainer} /></Animated.View>}
+      <T v="label" color={selected ? palette.onPrimaryContainer : palette.text}>{label}</T>
     </Pressable>
   );
 }
 
-/** Custom switch: track surfaceHighest → lime; the thumb is a small cookie that becomes a circle when on. */
+/** Custom switch: track surfaceHighest → iris; the thumb is a small cookie that becomes a circle when on. */
 export function Toggle({ value, onChange, label }: { value: boolean; onChange: (v: boolean) => void; label: string }) {
   const x = useState(() => new Animated.Value(value ? 1 : 0))[0];
   const fill = useState(() => new Animated.Value(value ? 1 : 0))[0];
@@ -628,16 +628,16 @@ export function Toggle({ value, onChange, label }: { value: boolean; onChange: (
   return (
     <Pressable onPress={() => { haptics.tick(); onChange(!value); }} accessibilityRole="switch" accessibilityLabel={label} accessibilityState={{ checked: value }} hitSlop={8}>
       <Animated.View style={{ width: 52, height: 32, borderRadius: 16, justifyContent: 'center', paddingHorizontal: 4,
-        backgroundColor: fill.interpolate({ inputRange: [0, 1], outputRange: [palette.surfaceHighest, palette.lime] }) }}>
+        backgroundColor: fill.interpolate({ inputRange: [0, 1], outputRange: [palette.surfaceHighest, palette.primary] }) }}>
         <Animated.View style={{ transform: [{ translateX: x.interpolate({ inputRange: [0, 1], outputRange: [0, 20] }) }] }}>
-          <ExpressiveShape shape={value ? 'circle' : 'cookie9'} size={24} fill={value ? palette.onLime : palette.textMuted} token="fast" />
+          <ExpressiveShape shape={value ? 'circle' : 'cookie9'} size={24} fill={value ? palette.onPrimary : palette.textMuted} token="fast" />
         </Animated.View>
       </Animated.View>
     </Pressable>
   );
 }
 
-/** Joined options in a surfaceHigh pill track; the selected one is a lime pill that slides with a spring. */
+/** Joined options in a surfaceHigh pill track; the selected one is a iris pill that slides with a spring. */
 export function Segmented<K extends string>({ options, selected, onSelect, disabled }: {
   options: { key: K; label: string }[]; selected: K; onSelect: (k: K) => void; disabled?: boolean;
 }) {
@@ -650,7 +650,7 @@ export function Segmented<K extends string>({ options, selected, onSelect, disab
     <View onLayout={(e) => setWidth(e.nativeEvent.layout.width)}
       style={{ flexDirection: 'row', backgroundColor: palette.surfaceHigh, borderRadius: radius.full, padding: 4, opacity: disabled ? 0.5 : 1 }}>
       {width > 0 && (
-        <Animated.View style={{ position: 'absolute', top: 4, bottom: 4, left: 4, width: seg, borderRadius: radius.full, backgroundColor: palette.lime,
+        <Animated.View style={{ position: 'absolute', top: 4, bottom: 4, left: 4, width: seg, borderRadius: radius.full, backgroundColor: palette.primary,
           transform: [{ translateX: x.interpolate({ inputRange: [0, 1], outputRange: [0, seg] }) }] }} />
       )}
       {options.map((o) => {
@@ -664,7 +664,7 @@ export function Segmented<K extends string>({ options, selected, onSelect, disab
             accessibilityState={{ selected: on }}
             style={{ flex: 1, height: 40, alignItems: 'center', justifyContent: 'center' }}
           >
-            <T v="label" color={on ? palette.onLime : palette.text}>{o.label}</T>
+            <T v="label" color={on ? palette.onPrimary : palette.text}>{o.label}</T>
           </Pressable>
         );
       })}
@@ -673,7 +673,7 @@ export function Segmented<K extends string>({ options, selected, onSelect, disab
 }
 
 /**
- * Filled text field: surfaceHigh, radius 16, the label floats inside the field, and a 2px lime
+ * Filled text field: surfaceHigh, radius 16, the label floats inside the field, and a 2px iris
  * bar grows from the centre on focus. Error: an ember bar and the message under it.
  */
 export function TextField({ label, value, onChangeText, suffix, error, hint, big, style, right, ...rest }: {
@@ -686,7 +686,7 @@ export function TextField({ label, value, onChangeText, suffix, error, hint, big
   const bar = useState(() => new Animated.Value(0))[0];
   useEffect(() => { springTo(lift, floated ? 1 : 0, 'fast', false).start(); }, [floated, lift]);
   useEffect(() => { springTo(bar, focused || error ? 1 : 0, 'default').start(); }, [focused, error, bar]);
-  const accent = error ? palette.ember : palette.lime;
+  const accent = error ? palette.ember : palette.primary;
   return (
     <View style={style}>
       <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: palette.surfaceHigh, borderRadius: 16, paddingHorizontal: 16, minHeight: 60, overflow: 'hidden' }}>
@@ -694,7 +694,7 @@ export function TextField({ label, value, onChangeText, suffix, error, hint, big
           {label ? (
             <Animated.Text numberOfLines={1} pointerEvents="none" style={[type.body, {
               position: 'absolute', left: 0, right: 0,
-              color: error ? palette.ember : focused ? palette.lime : palette.textMuted,
+              color: error ? palette.ember : focused ? palette.primary : palette.textMuted,
               top: lift.interpolate({ inputRange: [0, 1], outputRange: [19, 9] }),
               fontSize: lift.interpolate({ inputRange: [0, 1], outputRange: [15, 12] }),
               lineHeight: lift.interpolate({ inputRange: [0, 1], outputRange: [22, 16] }),
@@ -706,8 +706,8 @@ export function TextField({ label, value, onChangeText, suffix, error, hint, big
             onFocus={(e) => { setFocused(true); rest.onFocus?.(e); }}
             onBlur={(e) => { setFocused(false); rest.onBlur?.(e); }}
             placeholderTextColor={palette.textFaint}
-            selectionColor={palette.lime}
-            cursorColor={palette.lime}
+            selectionColor={palette.primary}
+            cursorColor={palette.primary}
             keyboardAppearance="dark"
             accessibilityLabel={label}
             {...rest}

@@ -23,7 +23,7 @@ SystemUI.setBackgroundColorAsync(palette.ink).catch(() => undefined);
 
 const navTheme = {
   ...DarkTheme,
-  colors: { ...DarkTheme.colors, background: palette.ink, card: palette.ink, primary: palette.lime, text: palette.text, border: palette.outline },
+  colors: { ...DarkTheme.colors, background: palette.ink, card: palette.ink, primary: palette.primary, text: palette.text, border: palette.outline },
 };
 
 /** Where to start: Welcome, Home, or back into onboarding for someone who stopped halfway. */

@@ -59,8 +59,8 @@ function BuildingPlan({ onDone }: { onDone: () => void }) {
             <View style={{ width: 28, height: 28, alignItems: 'center', justifyContent: 'center' }}>
               {i < done ? (
                 <Appear>
-                  <ExpressiveShape shape="cookie9" size={28} fill={palette.lime}>
-                    <Icon name="check" size={18} color={palette.onLime} />
+                  <ExpressiveShape shape="cookie9" size={28} fill={palette.primary}>
+                    <Icon name="check" size={18} color={palette.onPrimary} />
                   </ExpressiveShape>
                 </Appear>
               ) : i === done ? <ShapeLoader size={22} />
@@ -98,7 +98,7 @@ function PlanResult() {
       {/* Apricot is the brand's milestone accent: used here to celebrate the finished setup. */}
       <Appear index={1}>
         <View style={{ flexDirection: 'row', alignSelf: 'flex-start', alignItems: 'center', gap: 8, backgroundColor: palette.goldContainer, borderRadius: 999, paddingLeft: 6, paddingRight: 14, paddingVertical: 6 }}>
-          <ExpressiveShape shape="burst" size={26} fill={palette.gold}><Icon name="emoji-events" size={14} color={palette.onLime} /></ExpressiveShape>
+          <ExpressiveShape shape="burst" size={26} fill={palette.gold}><Icon name="emoji-events" size={14} color={palette.onPrimary} /></ExpressiveShape>
           <T v="label" color={palette.gold}>Setup complete</T>
         </View>
       </Appear>

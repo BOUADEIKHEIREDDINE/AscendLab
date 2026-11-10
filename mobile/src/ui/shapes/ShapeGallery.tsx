@@ -34,7 +34,7 @@ export function ShapeGallery({ visible, onDismiss }: { visible: boolean; onDismi
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space.tileGap }}>
             {NAMES.map((n) => (
               <View key={n} style={{ alignItems: 'center', gap: 6, width: 96 }}>
-                <ExpressiveShape shape={n} size={80} fill={tone(palette.lime)} stroke={palette.lime} strokeWidth={2} />
+                <ExpressiveShape shape={n} size={80} fill={tone(palette.primary)} stroke={palette.primary} strokeWidth={2} />
                 <T v="bodyS" color={palette.textMuted}>{n}</T>
               </View>
             ))}
@@ -51,7 +51,7 @@ export function ShapeGallery({ visible, onDismiss }: { visible: boolean; onDismi
           <WavyProgress progress={((i % 4) + 1) / 4} />
           <T v="titleS" onPress={() => setSlosh((s) => s + 1)}>Wave edge (tap to slosh)</T>
           <View style={{ width: 120, height: 160, borderRadius: 20, overflow: 'hidden', backgroundColor: palette.surfaceHigh }}>
-            <WaveEdge width={120} height={160} level={((i % 4) + 1) / 5} color={palette.lime} sloshKey={slosh} />
+            <WaveEdge width={120} height={160} level={((i % 4) + 1) / 5} color={palette.primary} sloshKey={slosh} />
           </View>
         </ScrollView>
       </SafeAreaView>

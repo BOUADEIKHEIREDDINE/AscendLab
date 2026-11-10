@@ -28,7 +28,7 @@ export function MealPhoto({ photo, style }: { photo: string; style?: StyleProp<V
   );
 }
 
-/** The cover gradient: lime dusk → ink → ember dusk, diagonal. */
+/** The cover gradient: iris dusk → ink → ember dusk, diagonal. */
 function CoverFrame({ children, style, padding = 24 }: { children: React.ReactNode; style?: StyleProp<ViewStyle>; padding?: number }) {
   return (
     <LinearGradient colors={[...coverGradient]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[{ padding, overflow: 'hidden' }, style]}>
@@ -47,7 +47,7 @@ export function MealCover({ post, style }: { post: FeedPost; style?: StyleProp<V
   return (
     <CoverFrame style={[{ alignItems: 'center', justifyContent: 'center' }, style]}>
       <BackdropShape shape={mealShape[post.mealType]} />
-      <T v="overline" color={palette.lime}>{MEAL[post.mealType].label}</T>
+      <T v="overline" color={palette.primary}>{MEAL[post.mealType].label}</T>
       <T v="displayL" color={palette.text} style={{ marginTop: 6 }}>{formatKcal(post.calories)}</T>
       <T v="titleS" color={palette.textMuted}>kcal</T>
       {post.description.trim() ? <T v="titleS" center lines={2} style={{ marginTop: 18 }}>{post.description}</T> : null}
@@ -70,7 +70,7 @@ function BackdropShape({ shape }: { shape: Parameters<typeof ExpressiveShape>[0]
   return (
     <View pointerEvents="none" onLayout={(e) => setSize(Math.min(e.nativeEvent.layout.width, e.nativeEvent.layout.height))}
       style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' }}>
-      {size > 0 && <ExpressiveShape shape={shape} size={size * 0.9} fill={tone(palette.lime, 0.07, palette.ink)} />}
+      {size > 0 && <ExpressiveShape shape={shape} size={size * 0.9} fill={tone(palette.primary, 0.07, palette.ink)} />}
     </View>
   );
 }
@@ -91,7 +91,7 @@ export function WorkoutCover({ w, style }: { w: WorkoutInfo; style?: StyleProp<V
     <CoverFrame style={[{ justifyContent: 'space-between' }, style]}>
       <BackdropShape shape={workoutShape} />
       <View>
-        <T v="overline" color={palette.lime}>Workout</T>
+        <T v="overline" color={palette.primary}>Workout</T>
         <T v="headline" lines={2} style={{ marginTop: 4 }}>{w.title}</T>
       </View>
       <View style={{ flexDirection: 'row' }}>
@@ -127,7 +127,7 @@ export function MiniCover({ post }: { post: FeedPost }) {
       <BackdropShape shape={post.workout ? workoutShape : mealShape[post.mealType]} />
       {post.workout ? (
         <>
-          <Icon name="fitness-center" color={palette.lime} />
+          <Icon name="fitness-center" color={palette.primary} />
           <T v="label" lines={2} center>{post.workout.title}</T>
         </>
       ) : (
@@ -216,7 +216,7 @@ export function PostCard({ post, myUid, onLike, onDelete, onComment, style }: {
         {isMeal(post) && post.photo && (
           // With a photo the numbers aren't on the picture, so they sit here.
           <T v="label">
-            <T v="label" color={palette.lime}>{formatKcal(post.calories)} kcal</T>
+            <T v="label" color={palette.primary}>{formatKcal(post.calories)} kcal</T>
             {post.protein > 0 ? <T v="label" color={palette.textMuted}>  ·  {post.protein} g protein</T> : null}
           </T>
         )}
@@ -268,11 +268,11 @@ export function RaceCard({ today, yesterdayWinner, myUid }: { today: Standing[];
                   <Avatar name={s.name} seed={s.uid} size={first ? 52 : 40} />
                   <View style={{ position: 'absolute', bottom: 2, right: 2, width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center',
                     backgroundColor: first ? palette.gold : palette.surfaceHigh }}>
-                    <T v="label" color={first ? palette.onLime : palette.text}>{place}</T>
+                    <T v="label" color={first ? palette.onPrimary : palette.text}>{place}</T>
                   </View>
                 </ExpressiveShape>
                 <T v="label" lines={1}>{s.uid === myUid ? 'You' : s.name.split(' ')[0]}</T>
-                <T v="bodyS" color={isOnTarget(s.eaten - s.target) ? palette.lime : palette.textMuted}>{gapLabel(s.eaten - s.target)}</T>
+                <T v="bodyS" color={isOnTarget(s.eaten - s.target) ? palette.primary : palette.textMuted}>{gapLabel(s.eaten - s.target)}</T>
               </View>
             );
           })}
@@ -289,7 +289,7 @@ export function RaceCard({ today, yesterdayWinner, myUid }: { today: Standing[];
               <T v="body" lines={1} style={isMe && { fontWeight: '600' }}>{isMe ? 'You' : s.name}</T>
               <T v="bodyS" color={palette.textMuted}>{formatKcal(s.eaten)} of {formatKcal(s.target)} kcal</T>
             </View>
-            <T v="label" color={isOnTarget(gap) ? palette.lime : palette.textMuted}>{gapLabel(gap)}</T>
+            <T v="label" color={isOnTarget(gap) ? palette.primary : palette.textMuted}>{gapLabel(gap)}</T>
           </View>
         );
       })}

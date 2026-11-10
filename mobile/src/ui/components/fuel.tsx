@@ -7,7 +7,7 @@ import { Animated, Easing, View } from 'react-native';
 import Svg, { Defs, G, Path, RadialGradient, Rect, Stop } from 'react-native-svg';
 import { formatKcal } from '../../data/profile';
 import { MEAL, MealType } from '../../data/social';
-import { data, palette, radius, space, tone } from '../theme';
+import { data, palette, radius, space, tone, summitGlowOpacity } from '../theme';
 import { haptics } from '../haptics';
 import { nativeDriver, useReduceMotion, useSpringNumber } from '../motion';
 import { ExpressiveShape, useMorphSpec, useShapeGeometry } from '../shapes/ExpressiveShape';
@@ -73,7 +73,7 @@ export function FuelBloom({ eaten, target, burned, meals, size = 240, preview }:
   // Meal segments along the outline, with gaps; burned calories as an ember extension.
   const L = geo.length;
   const gap = 4 + STROKE;
-  const color = state === 'over' ? palette.ember : palette.lime;
+  const color = state === 'over' ? palette.ember : palette.primary;
   const segments = useMemo(() => {
     const out: { from: number; to: number; type: MealType }[] = [];
     if (target <= 0) return out;
@@ -108,8 +108,8 @@ export function FuelBloom({ eaten, target, burned, meals, size = 240, preview }:
       <Svg width={size} height={size} style={{ position: 'absolute' }}>
         <Defs>
           <RadialGradient id="summit" cx="50%" cy="50%" r="50%">
-            <Stop offset="0" stopColor={palette.lime} stopOpacity={0.18} />
-            <Stop offset="1" stopColor={palette.lime} stopOpacity={0} />
+            <Stop offset="0" stopColor={palette.primary} stopOpacity={summitGlowOpacity} />
+            <Stop offset="1" stopColor={palette.primary} stopOpacity={0} />
           </RadialGradient>
         </Defs>
         {glow > 0.01 && <Rect x={0} y={0} width={size} height={size} fill="url(#summit)" opacity={glow} />}
@@ -137,12 +137,12 @@ export function FuelBloom({ eaten, target, burned, meals, size = 240, preview }:
       <Breathing size={size * 0.62} still={reduce} />
       <View style={{ alignItems: 'center' }}>
         <CountingNumber value={state === 'over' ? over : left} v="hero" color={state === 'over' ? palette.ember : palette.text} />
-        <T v="label" color={state === 'summit' ? palette.lime : palette.textMuted}>{caption}</T>
+        <T v="label" color={state === 'summit' ? palette.primary : palette.textMuted}>{caption}</T>
         <T v="bodyS" color={palette.textMuted} style={{ marginTop: 4 }}>
           {formatKcal(eaten)} eaten · <T v="bodyS" color={burned > 0 ? palette.ember : palette.textMuted}>{formatKcal(burned)} burned</T>
         </T>
       </View>
-      <ShapeConfetti fireKey={summitKey} colors={[palette.lime, palette.onLimeContainer, palette.gold]} distance={size * 0.55} />
+      <ShapeConfetti fireKey={summitKey} colors={[palette.primary, palette.onPrimaryContainer, palette.gold]} distance={size * 0.55} />
     </View>
   );
 }
@@ -161,7 +161,7 @@ function Breathing({ size, still }: { size: number; still: boolean }) {
   }, [still, s]);
   return (
     <Animated.View style={{ position: 'absolute', transform: [{ scale: s }] }}>
-      <ExpressiveShape shape="pebble" size={size} fill={tone(palette.lime, 0.06, palette.surface)} />
+      <ExpressiveShape shape="pebble" size={size} fill={tone(palette.primary, 0.06, palette.surface)} />
     </Animated.View>
   );
 }
@@ -213,9 +213,9 @@ export function MealTile({ type, eaten, budget, onOpen, onAdd, width }: {
     <View style={{ width }}>
     <PressableScale onPress={onOpen} label={`${MEAL[type].label}: ${formatKcal(eaten)} of ${formatKcal(budget)} kilocalories`}
       style={{ width, minHeight: width, borderRadius: radius.lg, backgroundColor: palette.surface, padding: space.tilePad, justifyContent: 'space-between' }}>
-      <ExpressiveShape shape={mealShape[type]} size={shapeSize} fill={tone(over ? palette.ember : palette.lime, 0.12)}
-        progress={budget > 0 ? eaten / budget : 0} progressColor={over ? palette.ember : palette.lime} trackColor={palette.surfaceHigh} progressWidth={5}>
-        <Icon name={MEAL_ICON[type]} size={24} color={over ? palette.ember : palette.lime} />
+      <ExpressiveShape shape={mealShape[type]} size={shapeSize} fill={tone(over ? palette.ember : palette.primary, 0.12)}
+        progress={budget > 0 ? eaten / budget : 0} progressColor={over ? palette.ember : palette.primary} trackColor={palette.surfaceHigh} progressWidth={5}>
+        <Icon name={MEAL_ICON[type]} size={24} color={over ? palette.ember : palette.primary} />
       </ExpressiveShape>
       <View style={{ marginTop: 10 }}>
         <T v="titleS">{MEAL[type].label}</T>

@@ -15,7 +15,7 @@ import { ShapeConfetti } from './confetti';
 const squircle: ShapeSpec = { lobes: 4, depth: 0.09, sharpness: 1, rotation: -Math.PI / 2 + Math.PI / 4, wobble: 0 };
 markStatic([squircle]);
 
-/** The set-done check: a rounded square that morphs into a lime cookie12 with a check. */
+/** The set-done check: a rounded square that morphs into a iris cookie12 with a check. */
 export function SetCheck({ done, onPress, label }: { done: boolean; onPress: () => void; label: string }) {
   return (
     <Pressable
@@ -25,14 +25,14 @@ export function SetCheck({ done, onPress, label }: { done: boolean; onPress: () 
       accessibilityLabel={label}
       style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}
     >
-      <ExpressiveShape shape={done ? 'cookie12' : squircle} size={done ? 34 : 30} fill={done ? palette.lime : palette.surfaceHighest} token="bouncy">
-        <Icon name="check" size={20} color={done ? palette.onLime : palette.textMuted} />
+      <ExpressiveShape shape={done ? 'cookie12' : squircle} size={done ? 34 : 30} fill={done ? palette.primary : palette.surfaceHighest} token="bouncy">
+        <Icon name="check" size={20} color={done ? palette.onPrimary : palette.textMuted} />
       </ExpressiveShape>
     </Pressable>
   );
 }
 
-/** "1", "2"… for normal sets; W = gold soft circle, F = ember burst, D = lime clover. */
+/** "1", "2"… for normal sets; W = gold soft circle, F = ember burst, D = iris clover. */
 export function SetBadge({ type, normalIndex, width }: { type: SetType; normalIndex: number; width?: number }) {
   if (type === 'NORMAL') {
     return <T v="displayS" style={[{ fontSize: 17, lineHeight: 22, textAlign: 'center' }, width != null && { width }]}>{normalIndex}</T>;
@@ -40,7 +40,7 @@ export function SetBadge({ type, normalIndex, width }: { type: SetType; normalIn
   const look: Record<Exclude<SetType, 'NORMAL'>, { letter: string; shape: ShapeName; color: string }> = {
     WARMUP: { letter: 'W', shape: 'circle', color: palette.gold },
     FAILURE: { letter: 'F', shape: 'burst', color: palette.ember },
-    DROP: { letter: 'D', shape: 'clover', color: palette.lime },
+    DROP: { letter: 'D', shape: 'clover', color: palette.primary },
   };
   const { letter, shape, color } = look[type as Exclude<SetType, 'NORMAL'>];
   return (
@@ -55,8 +55,8 @@ export function SetBadge({ type, normalIndex, width }: { type: SetType; normalIn
 const clockText = (sec: number) => `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;
 
 /**
- * The rest timer: a floating 72-high pill whose lime liquid drains right to left as time passes,
- * the time in Space Grotesk, and −15 / +15 / Skip. Flashes lime when it reaches zero.
+ * The rest timer: a floating 72-high pill whose iris liquid drains right to left as time passes,
+ * the time in Space Grotesk, and −15 / +15 / Skip. Flashes iris when it reaches zero.
  */
 export function RestTimerPill({ secondsLeft, total, onShift, onSkip }: { secondsLeft: number; total: number; onShift: (sec: number) => void; onSkip: () => void }) {
   const [width, setWidth] = useState(0);
@@ -78,8 +78,8 @@ export function RestTimerPill({ secondsLeft, total, onShift, onSkip }: { seconds
         <>
           {time(palette.text)}
           {/* The liquid, with the same text in ink on top of it: the time stays readable on both. */}
-          <View style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: fill, backgroundColor: palette.lime, overflow: 'hidden' }}>
-            {time(palette.onLime)}
+          <View style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: fill, backgroundColor: palette.primary, overflow: 'hidden' }}>
+            {time(palette.onPrimary)}
           </View>
         </>
       )}
@@ -102,7 +102,7 @@ function TimerButton({ label, a11y, onPress }: { label: string; a11y: string; on
   );
 }
 
-/** A full-screen lime flash when the rest timer hits zero. Changing `flashKey` fires it. */
+/** A full-screen iris flash when the rest timer hits zero. Changing `flashKey` fires it. */
 export function RestFlash({ flashKey }: { flashKey: number | null }) {
   const o = useState(() => new Animated.Value(0))[0];
   const reduce = useReduceMotion();
@@ -111,7 +111,7 @@ export function RestFlash({ flashKey }: { flashKey: number | null }) {
     o.setValue(reduce ? 0.12 : 0.28);
     fadeTo(o, 0, undefined, 700).start();
   }, [flashKey, o, reduce]);
-  return <Animated.View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: palette.lime, opacity: o }} />;
+  return <Animated.View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: palette.primary, opacity: o }} />;
 }
 
 /** A gold burst "New PR" badge that springs in, with a puff of gold confetti. */
@@ -121,7 +121,7 @@ export function PrBadge({ fireKey }: { fireKey: number }) {
   return (
     <Animated.View pointerEvents="none" style={{ transform: [{ scale: s }] }}>
       <ExpressiveShape shape="burst" size={52} fill={palette.gold}>
-        <T v="label" color={palette.onLime} style={{ fontSize: 11, lineHeight: 12, fontWeight: '700' }} center>{'New\nPR'}</T>
+        <T v="label" color={palette.onPrimary} style={{ fontSize: 11, lineHeight: 12, fontWeight: '700' }} center>{'New\nPR'}</T>
       </ExpressiveShape>
       <ShapeConfetti fireKey={fireKey} colors={[palette.gold, palette.goldContainer, palette.text]} count={10} distance={56} pieceSize={8} />
     </Animated.View>
@@ -158,7 +158,7 @@ export function StatTile({ label, value, color = palette.text, background = pale
   );
 }
 
-/** The finish celebration's hero: a giant lime-tone ascent triangle rising from the bottom. */
+/** The finish celebration's hero: a giant iris-tone ascent triangle rising from the bottom. */
 export function AscentHero({ size = 220 }: { size?: number }) {
   const reduce = useReduceMotion();
   const rise = useState(() => new Animated.Value(reduce ? 1 : 0))[0];
@@ -166,7 +166,7 @@ export function AscentHero({ size = 220 }: { size?: number }) {
   return (
     <Animated.View pointerEvents="none" style={{ alignItems: 'center', opacity: rise,
       transform: [{ translateY: rise.interpolate({ inputRange: [0, 1], outputRange: [size * 0.6, 0] }) }] }}>
-      <ExpressiveShape shape="softTriangle" size={size} fill={tone(palette.lime, 0.16, palette.ink)} from="circle" />
+      <ExpressiveShape shape="softTriangle" size={size} fill={tone(palette.primary, 0.16, palette.ink)} from="circle" />
     </Animated.View>
   );
 }

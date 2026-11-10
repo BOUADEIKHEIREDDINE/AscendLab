@@ -71,7 +71,7 @@ export function ChoiceCard({ selected, onPress, title, description, detail, icon
       springTo(scale, 1, 'bouncy'),
     ]).start();
   }, [selected, scale, native]);
-  const tint = selected ? palette.lime : palette.textMuted;
+  const tint = selected ? palette.primary : palette.textMuted;
   return (
     <Animated.View style={[{ transform: [{ scale }] }, style]}>
       <Pressable
@@ -80,15 +80,15 @@ export function ChoiceCard({ selected, onPress, title, description, detail, icon
         accessibilityState={{ selected }}
         accessibilityLabel={title}
         style={{
-          borderRadius: radius.lg, borderWidth: 2, borderColor: selected ? palette.lime : 'transparent',
-          backgroundColor: selected ? palette.limeContainer : palette.surface, padding: 16, flexGrow: 1,
+          borderRadius: radius.lg, borderWidth: 2, borderColor: selected ? palette.primary : 'transparent',
+          backgroundColor: selected ? palette.primaryContainer : palette.surface, padding: 16, flexGrow: 1,
         }}
       >
         {tall ? (
           <View style={{ alignItems: 'center', gap: 12, paddingVertical: 12 }}>
             {icon && (
-              <ExpressiveShape shape={selected ? 'cookie9' : 'circle'} size={84} fill={selected ? palette.lime : tone(palette.lime, 0.08)} token="bouncy">
-                <Icon name={icon} size={40} color={selected ? palette.onLime : tint} />
+              <ExpressiveShape shape={selected ? 'cookie9' : 'circle'} size={84} fill={selected ? palette.primary : tone(palette.primary, 0.08)} token="bouncy">
+                <Icon name={icon} size={40} color={selected ? palette.onPrimary : tint} />
               </ExpressiveShape>
             )}
             <T v="title" center>{title}</T>
@@ -97,19 +97,19 @@ export function ChoiceCard({ selected, onPress, title, description, detail, icon
         ) : (
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             {icon && (
-              <ExpressiveShape shape={selected ? 'cookie9' : 'circle'} size={50} fill={selected ? palette.lime : palette.surfaceHigh} token="bouncy" style={{ marginRight: 16 }}>
-                <Icon name={icon} size={24} color={selected ? palette.onLime : tint} />
+              <ExpressiveShape shape={selected ? 'cookie9' : 'circle'} size={50} fill={selected ? palette.primary : palette.surfaceHigh} token="bouncy" style={{ marginRight: 16 }}>
+                <Icon name={icon} size={24} color={selected ? palette.onPrimary : tint} />
               </ExpressiveShape>
             )}
             <View style={{ flex: 1, gap: 2, paddingRight: 28 }}>
-              <T v="titleS" color={selected ? palette.onLimeContainer : palette.text}>{title}</T>
+              <T v="titleS" color={selected ? palette.onPrimaryContainer : palette.text}>{title}</T>
               {description ? <T color={palette.textMuted}>{description}</T> : null}
               {detail ? <T v="bodyS" color={palette.textMuted} style={{ opacity: 0.8 }}>{detail}</T> : null}
             </View>
           </View>
         )}
         {/* The check mark shows "selected" without relying on colour alone. */}
-        {selected && <View style={{ position: 'absolute', top: 10, right: 10 }}><Icon name="check-circle" size={22} color={palette.lime} label="Selected" /></View>}
+        {selected && <View style={{ position: 'absolute', top: 10, right: 10 }}><Icon name="check-circle" size={22} color={palette.primary} label="Selected" /></View>}
       </Pressable>
     </Animated.View>
   );

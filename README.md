@@ -46,15 +46,15 @@ is spiky when you have a lot left to eat, turns into a smooth circle when you re
 | --- | --- | --- |
 | Background | `ink` | `#0A0B0E` |
 | Tiles and surfaces | `surface` / `surfaceHigh` | `#14161B` / `#1D2027` |
-| Primary action and main progress | `lime` | `#D4FF4F` |
+| Primary action and main progress | `primary` (iris) | `#9FA8FF` |
 | Over budget, burned, destructive | `ember` | `#FF6B3D` |
 | Milestones (PRs, streaks) | `gold` | `#FFC94A` |
-| Protein · carbs · fat | `protein` · `carbs` · `fat` | `#FF8A5B` · `#FFD25E` · `#8FB8FF` |
+| Protein · carbs · fat | `protein` · `carbs` · `fat` | `#FF8A5B` · `#FFD25E` · `#6FE3C1` |
 
 - **Space Grotesk** for numbers and display text, **Inter** for UI text, tabular numbers everywhere.
 - **Tiles for numbers, rows for lists.** Dashboards are bento grids of tiles; long lists sit
   on grouped surfaces.
-- **One lime thing per screen is the hero.** Everything else uses tonal surfaces and the data colours.
+- **One iris thing per screen is the hero.** Everything else uses tonal surfaces and the data colours.
 - Spring motion and haptics, with reduce-motion respected, and progress always shown with a
   number and a label, never with colour or shape alone.
 

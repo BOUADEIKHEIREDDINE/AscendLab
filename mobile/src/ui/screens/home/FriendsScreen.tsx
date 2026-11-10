@@ -54,7 +54,7 @@ export function FriendsScreen() {
           <TileHeader icon="qr-code-2" text="Your friend code" />
           {me == null ? <View style={{ alignItems: 'center' }}><ShapeLoader /></View> : (
             <>
-              <T v="mono" center color={palette.lime} style={{ fontSize: 36, lineHeight: 44, letterSpacing: 6 }}>
+              <T v="mono" center color={palette.primary} style={{ fontSize: 36, lineHeight: 44, letterSpacing: 6 }}>
                 {me.code.slice(0, 3)} {me.code.slice(3)}
               </T>
               <T color={palette.textMuted}>Friends type this code to add you. You'll then see each other's meals.</T>
@@ -79,7 +79,7 @@ export function FriendsScreen() {
             autoCorrect={false}
             returnKeyType="done"
           />
-          {addMessage && <T color={addMessage.ok ? palette.lime : palette.error}>{addMessage.text}</T>}
+          {addMessage && <T color={addMessage.ok ? palette.primary : palette.error}>{addMessage.text}</T>}
           <PrimaryButton label="Add friend" enabled={code.length === 6} loading={adding} onPress={addFriend} />
         </Tile>
 

@@ -1,5 +1,5 @@
 /**
- * Material 3 Expressive-style wavy progress line: a lime sine wave for the done part, a
+ * Material 3 Expressive-style wavy progress line: a iris sine wave for the done part, a
  * flat track for the rest, with a small gap between them. The wave drifts unless reduce
  * motion is on. Use it for ongoing progress (onboarding steps, long loading).
  */
@@ -11,7 +11,7 @@ import { useLoop, useSpringNumber } from '../motion';
 
 const WAVELENGTH = 18;
 
-export function WavyProgress({ progress, color = palette.lime, track = palette.surfaceHigh, thickness = 4, amplitude = 3, label }: {
+export function WavyProgress({ progress, color = palette.primary, track = palette.surfaceHigh, thickness = 4, amplitude = 3, label }: {
   progress: number; color?: string; track?: string; thickness?: number; amplitude?: number; label?: string;
 }) {
   const [width, setWidth] = useState(0);

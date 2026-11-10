@@ -127,11 +127,11 @@ function WeekdayPicker({ selected, onToggle }: { selected: number[]; onToggle: (
             accessibilityLabel={NAMES[d]}
             style={{
               flex: 1, aspectRatio: 1, borderRadius: 999, alignItems: 'center', justifyContent: 'center',
-              backgroundColor: on ? palette.lime : palette.surface, borderWidth: on ? 0 : 1, borderColor: palette.hairline,
+              backgroundColor: on ? palette.primary : palette.surface, borderWidth: on ? 0 : 1, borderColor: palette.hairline,
               transform: [{ scale: on ? 1.08 : 1 }],
             }}
           >
-            <T v="titleS" color={on ? palette.onLime : palette.text}>{letter}</T>
+            <T v="titleS" color={on ? palette.onPrimary : palette.text}>{letter}</T>
           </Pressable>
         );
       })}
@@ -161,10 +161,10 @@ function CountPicker({ tapped, count, onSelect }: { tapped: number; count: numbe
               accessibilityState={{ selected: on }}
               style={{
                 borderRadius: 999, paddingHorizontal: 14, paddingVertical: 8,
-                backgroundColor: on ? palette.lime : palette.surface, borderWidth: on ? 0 : 1, borderColor: palette.hairline,
+                backgroundColor: on ? palette.primary : palette.surface, borderWidth: on ? 0 : 1, borderColor: palette.hairline,
               }}
             >
-              <T v="label" color={on ? palette.onLime : palette.text}>{o.label}</T>
+              <T v="label" color={on ? palette.onPrimary : palette.text}>{o.label}</T>
             </Pressable>
           );
         })}

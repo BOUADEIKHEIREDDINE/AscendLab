@@ -70,7 +70,7 @@ export function WeekCard({ week }: { week: TrainingWeek }) {
       <View style={{ borderRadius: 20, backgroundColor: palette.surfaceHigh, paddingVertical: 6 }}>
         {week.days.map((day, i) => (
           <View key={day.dayIndex} style={{ flexDirection: 'row', paddingHorizontal: 14, paddingVertical: 8, borderTopWidth: i > 0 ? 1 : 0, borderTopColor: palette.hairline }}>
-            <T v="label" color={palette.lime} style={{ width: 44, marginTop: 2 }}>{DAY_NAMES[day.dayIndex].slice(0, 3)}</T>
+            <T v="label" color={palette.primary} style={{ width: 44, marginTop: 2 }}>{DAY_NAMES[day.dayIndex].slice(0, 3)}</T>
             <View style={{ flex: 1 }}>
               <T v="titleS">{day.title}</T>
               <T v="bodyS" color={palette.textMuted}>{day.focus}</T>

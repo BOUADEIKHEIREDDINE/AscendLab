@@ -61,11 +61,11 @@ export function TrainingPlanScreen() {
               <Button kind="tonal" label="Resume" compact onPress={() => nav.navigate('WorkoutSession')} />
             </View>
           )}>
-          <ExpressiveShape shape="softTriangle" size={48} fill={tone(palette.lime, 0.18)}>
-            <Icon name="fitness-center" size={20} color={palette.lime} />
+          <ExpressiveShape shape="softTriangle" size={48} fill={tone(palette.primary, 0.18)}>
+            <Icon name="fitness-center" size={20} color={palette.primary} />
           </ExpressiveShape>
           <View style={{ flex: 1 }}>
-            <T v="overline" color={palette.lime}>In progress</T>
+            <T v="overline" color={palette.primary}>In progress</T>
             <T v="titleS" lines={1}>{active.title}</T>
             <T v="bodyS" color={palette.textMuted}>{doneSets(active)} sets done</T>
           </View>
@@ -174,16 +174,16 @@ export function TrainingPlanScreen() {
                 }}
                 style={({ pressed }) => ({
                   flexDirection: 'row', alignItems: 'center', gap: 12, padding: space.tilePad, borderRadius: radius.lg, borderWidth: 2,
-                  borderColor: current ? palette.lime : 'transparent',
-                  backgroundColor: current ? palette.limeContainer : pressed ? palette.surfaceHighest : palette.surfaceHigh,
+                  borderColor: current ? palette.primary : 'transparent',
+                  backgroundColor: current ? palette.primaryContainer : pressed ? palette.surfaceHighest : palette.surfaceHigh,
                 })}
               >
                 <View style={{ flex: 1, gap: 4 }}>
                   <T v="titleS">{o.label}</T>
                   <T v="bodyS" color={palette.textMuted}>{o.description}</T>
-                  {current && <T v="bodyS" color={palette.lime}>Your current split</T>}
+                  {current && <T v="bodyS" color={palette.primary}>Your current split</T>}
                 </View>
-                {current ? <Icon name="check-circle" color={palette.lime} /> : <Icon name="chevron-right" color={palette.textMuted} />}
+                {current ? <Icon name="check-circle" color={palette.primary} /> : <Icon name="chevron-right" color={palette.textMuted} />}
               </Pressable>
             );
           })}
@@ -260,7 +260,7 @@ function RoutineRow({ routine, next, onStart, onOpen, onEdit, onDelete }: {
 }) {
   const [menu, setMenu] = useState(false);
   return (
-    <Tile span="2x1" onPress={onOpen} label={routine.name} border={next ? palette.lime : undefined} style={{ gap: 10 }}
+    <Tile span="2x1" onPress={onOpen} label={routine.name} border={next ? palette.primary : undefined} style={{ gap: 10 }}
       overlay={(
         <View pointerEvents="box-none" style={{ position: 'absolute', right: space.tilePad, bottom: space.tilePad }}>
           <SplitButton label="Start" kind="tonal" onPress={onStart} onMenu={() => setMenu(true)} enabled={routine.exercises.length > 0} menuLabel={`More for ${routine.name}`} />
@@ -269,8 +269,8 @@ function RoutineRow({ routine, next, onStart, onOpen, onEdit, onDelete }: {
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
         <T v="titleS" style={{ flexShrink: 1 }} lines={1}>{routine.name}</T>
         {next && (
-          <View style={{ backgroundColor: palette.lime, borderRadius: radius.full, paddingHorizontal: 10, paddingVertical: 3 }}>
-            <T v="overline" color={palette.onLime}>Up next</T>
+          <View style={{ backgroundColor: palette.primary, borderRadius: radius.full, paddingHorizontal: 10, paddingVertical: 3 }}>
+            <T v="overline" color={palette.onPrimary}>Up next</T>
           </View>
         )}
       </View>

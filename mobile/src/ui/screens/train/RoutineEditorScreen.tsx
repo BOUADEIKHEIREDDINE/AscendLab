@@ -180,7 +180,7 @@ function ExerciseSection({ ex, first, last, onSwap, onSets, onReps, onMoveUp, on
       <View style={{ paddingVertical: 12 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', paddingLeft: space.tilePad, paddingRight: 4 }}>
           <View style={{ flex: 1, alignItems: 'flex-start' }}>
-            <T v="titleS" color={palette.lime} lines={2} style={{ paddingVertical: 4 }}>{ex.name}</T>
+            <T v="titleS" color={palette.primary} lines={2} style={{ paddingVertical: 4 }}>{ex.name}</T>
           </View>
           <IconButton name="more-vert" label="More" onPress={() => setMenu(true)} />
         </View>

@@ -12,7 +12,7 @@ The source of truth is `docs/DESIGN_SYSTEM.md`. Three rules always apply:
    comments) are flat rows on a grouped surface, separated by hairlines.
 2. **One expressive shape per tile, at most.** The shape carries meaning (progress, state,
    category). Never stack two decorative shapes in one tile.
-3. **One lime thing per screen is the hero.** Lime marks the primary action or the main
+3. **One iris thing per screen is the hero.** Iris (`primary`, `#9FA8FF`) marks the primary action or the main
    progress. Everything else uses tonal surfaces and the data palette.
 
 ## How to style a new screen

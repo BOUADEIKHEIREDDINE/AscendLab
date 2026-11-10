@@ -1,5 +1,5 @@
 /**
- * Navigation chrome: the floating tab dock with its sliding lime indicator, and the
+ * Navigation chrome: the floating tab dock with its sliding iris indicator, and the
  * minimized-workout mini player that sits above it on every tab.
  *
  * The dock is laid out in flow under the tab pages (not absolutely positioned over them), so
@@ -77,7 +77,7 @@ export function TabDock({ state, navigation, tabs }: BottomTabBarProps & { tabs:
       >
         {inner > 0 && (
           <Animated.View pointerEvents="none" style={{ position: 'absolute', top: 6, bottom: 6, left: Animated.add(left, 5), width: Animated.subtract(right, left),
-            borderRadius: radius.full, backgroundColor: palette.lime }} />
+            borderRadius: radius.full, backgroundColor: palette.primary }} />
         )}
         {tabs.map((tab, i) => {
           const route = state.routes[i];
@@ -95,8 +95,8 @@ export function TabDock({ state, navigation, tabs }: BottomTabBarProps & { tabs:
                 }}
                 style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 }}
               >
-                <Icon name={tab.icon} color={focused ? palette.onLime : palette.textMuted} />
-                {focused && <T v="label" color={palette.onLime} lines={1}>{tab.label}</T>}
+                <Icon name={tab.icon} color={focused ? palette.onPrimary : palette.textMuted} />
+                {focused && <T v="label" color={palette.onPrimary} lines={1}>{tab.label}</T>}
               </Pressable>
             </Animated.View>
           );
@@ -122,8 +122,8 @@ function MiniPlayer({ onOpen }: { onOpen: () => void }) {
     <Pressable onPress={() => { haptics.tick(); onOpen(); }} accessibilityRole="button" accessibilityLabel={`Workout in progress: ${active.title}. Open`}
       style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 12, height: 56, paddingLeft: 8, paddingRight: 14, borderRadius: radius.full,
         backgroundColor: pressed ? palette.surfaceHigh : palette.surface, borderWidth: 1, borderColor: palette.hairline })}>
-      <ExpressiveShape shape="softTriangle" size={40} fill={palette.limeContainer}>
-        <Icon name="fitness-center" size={18} color={palette.lime} />
+      <ExpressiveShape shape="softTriangle" size={40} fill={palette.primaryContainer}>
+        <Icon name="fitness-center" size={18} color={palette.primary} />
       </ExpressiveShape>
       <View style={{ flex: 1 }}>
         <T v="titleS" lines={1}>{current?.name ?? active.title}</T>
@@ -131,7 +131,7 @@ function MiniPlayer({ onOpen }: { onOpen: () => void }) {
           {resting ? `Rest · ${clock(Math.ceil((active.restEndsAt! - now) / 1000))}` : `${doneSets(active)} sets done`}
         </T>
       </View>
-      <T v="mono" color={palette.lime} style={{ letterSpacing: 0 }}>{clock(Math.trunc((now - active.startedAt) / 1000))}</T>
+      <T v="mono" color={palette.primary} style={{ letterSpacing: 0 }}>{clock(Math.trunc((now - active.startedAt) / 1000))}</T>
       <Icon name="keyboard-arrow-up" color={palette.textMuted} />
     </Pressable>
   );

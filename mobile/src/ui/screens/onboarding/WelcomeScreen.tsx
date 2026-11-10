@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Animated, Easing, Image, Platform, ScrollView, View } from 'react-native';
 import Svg, { Defs, RadialGradient, Rect, Stop } from 'react-native-svg';
 import { useNav } from '../../../navigation/types';
-import { palette, tone } from '../../theme';
+import { palette, tone, summitGlowOpacity } from '../../theme';
 import { springTo, useReduceMotion } from '../../motion';
 import { ExpressiveShape } from '../../shapes/ExpressiveShape';
 import { ShapeName } from '../../shapes/library';
@@ -44,13 +44,13 @@ function AnimatedLogo() {
   }, [logo]);
   return (
     <View style={{ gap: 16 }}>
-      {/* Summit glow: lime at 18% fading out, behind the logo. */}
+      {/* Summit glow: iris at 18% fading out, behind the logo. */}
       <View pointerEvents="none" style={{ position: 'absolute', left: 0, top: -70, width: 300, height: 220 }}>
         <Svg width={300} height={220}>
           <Defs>
             <RadialGradient id="glow" cx="50%" cy="50%" r="50%">
-              <Stop offset="0" stopColor={palette.lime} stopOpacity={0.18} />
-              <Stop offset="1" stopColor={palette.lime} stopOpacity={0} />
+              <Stop offset="0" stopColor={palette.primary} stopOpacity={summitGlowOpacity} />
+              <Stop offset="1" stopColor={palette.primary} stopOpacity={0} />
             </RadialGradient>
           </Defs>
           <Rect x={0} y={0} width={300} height={220} fill="url(#glow)" />
@@ -61,7 +61,7 @@ function AnimatedLogo() {
         <Image source={require('../../../../assets/logo.png')} style={{ width: '72%', height: undefined, aspectRatio: 1200 / 219 }} resizeMode="contain" accessibilityLabel="AscendLab" />
       </Animated.View>
       <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 10 }}>
-        <Animated.View style={{ opacity: logo }}><T v="title" color={palette.lime}>Training made simple.</T></Animated.View>
+        <Animated.View style={{ opacity: logo }}><T v="title" color={palette.primary}>Training made simple.</T></Animated.View>
         <RisingSteps />
       </View>
     </View>
@@ -86,7 +86,7 @@ function RisingSteps() {
       {STEPS.map((step, i) => (
         <Animated.View key={step.shape} style={{ marginBottom: i * 4, opacity: progress[i],
           transform: [{ translateY: progress[i].interpolate({ inputRange: [0, 1], outputRange: [24, 0] }) }, { scale: progress[i] }] }}>
-          <ExpressiveShape shape={step.shape} size={step.size} fill={palette.lime} />
+          <ExpressiveShape shape={step.shape} size={step.size} fill={palette.primary} />
         </Animated.View>
       ))}
     </View>
@@ -96,8 +96,8 @@ function RisingSteps() {
 function Promise({ icon, title, text, shape }: { icon: IconName; title: string; text: string; shape: ShapeName }) {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
-      <ExpressiveShape shape={shape} size={48} fill={tone(palette.lime, 0.16, palette.ink)}>
-        <Icon name={icon} size={22} color={palette.lime} />
+      <ExpressiveShape shape={shape} size={48} fill={tone(palette.primary, 0.16, palette.ink)}>
+        <Icon name={icon} size={22} color={palette.primary} />
       </ExpressiveShape>
       <View style={{ flex: 1 }}>
         <T v="titleS">{title}</T>

@@ -15,7 +15,7 @@ const STEP_MS = 650;
 
 const ease = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 
-export function ShapeLoader({ size = 40, color = palette.lime, label = 'Loading' }: { size?: number; color?: string; label?: string }) {
+export function ShapeLoader({ size = 40, color = palette.primary, label = 'Loading' }: { size?: number; color?: string; label?: string }) {
   const reduce = useReduceMotion();
   const phase = useState(() => new Animated.Value(0))[0];
   const spin = useState(() => new Animated.Value(0))[0];

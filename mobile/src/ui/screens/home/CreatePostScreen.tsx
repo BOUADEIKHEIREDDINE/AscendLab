@@ -94,7 +94,7 @@ export function CreatePostScreen() {
           placeholderTextColor={palette.textMuted}
           multiline
           autoCapitalize="sentences"
-          selectionColor={palette.lime}
+          selectionColor={palette.primary}
           keyboardAppearance="dark"
           accessibilityLabel="What did you eat?"
           style={[type.body, { color: palette.text, minHeight: 72, paddingHorizontal: 18, paddingVertical: 16, textAlignVertical: 'top' }]}
@@ -124,7 +124,7 @@ function PhotoSource({ icon, label, onPress }: { icon: IconName; label: string; 
   return (
     <PressableScale onPress={onPress} label={label} style={{ alignItems: 'center', padding: 12 }}>
       <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: palette.ink, alignItems: 'center', justifyContent: 'center' }}>
-        <Icon name={icon} color={palette.lime} />
+        <Icon name={icon} color={palette.primary} />
       </View>
       <T v="label" style={{ marginTop: 8 }}>{label}</T>
     </PressableScale>
@@ -143,7 +143,7 @@ function NumberRow({ label, value, onChange, suffix, error }: { label: string; v
           placeholder="0"
           placeholderTextColor={palette.textMuted}
           keyboardType="number-pad"
-          selectionColor={palette.lime}
+          selectionColor={palette.primary}
           keyboardAppearance="dark"
           accessibilityLabel={label}
           style={[type.displayS, { fontSize: 18, lineHeight: 24, letterSpacing: 0, color: palette.text, textAlign: 'right', width: 120, paddingVertical: 4 }]}

@@ -91,7 +91,7 @@ export function WorkoutDetailScreen() {
               <Tile span="2x1" style={{ marginHorizontal: Gutter, gap: 4 }}>
                 <PressableScale onPress={() => nav.navigate('ExerciseDetail', { exerciseId: item.exerciseId, name: item.name })}
                   role="link" style={{ paddingVertical: 4, alignSelf: 'flex-start' }}>
-                  <T v="titleS" color={palette.lime}>{item.name}</T>
+                  <T v="titleS" color={palette.primary}>{item.name}</T>
                 </PressableScale>
                 <View style={{ flexDirection: 'row', paddingVertical: 4 }}>
                   <T v="overline" color={palette.textMuted} style={{ width: 48 }}>Set</T>
@@ -262,7 +262,7 @@ function ExerciseHowTo({ howTo, photos }: { howTo: HowTo | null; photos: React.R
       <SectionTitle text="Instructions" />
       {howTo.instructions.map((step, i) => (
         <View key={i} style={{ flexDirection: 'row', paddingHorizontal: Gutter, paddingVertical: 6 }}>
-          <T v="displayS" color={palette.lime} style={{ width: 32, fontSize: 18, lineHeight: 22 }}>{i + 1}</T>
+          <T v="displayS" color={palette.primary} style={{ width: 32, fontSize: 18, lineHeight: 22 }}>{i + 1}</T>
           <T v="body" style={{ flex: 1 }}>{step}</T>
         </View>
       ))}
@@ -385,10 +385,10 @@ export function CalendarScreen() {
             return (
               <View key={i} style={{ flex: 1, aspectRatio: 1, padding: 4 }}>
                 {d > 0 && (
-                  <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', borderRadius: 999, borderWidth: isToday && !trained ? 1.5 : 0, borderColor: palette.lime }}
+                  <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', borderRadius: 999, borderWidth: isToday && !trained ? 1.5 : 0, borderColor: palette.primary }}
                     accessible accessibilityLabel={`${d}${trained ? ', workout' : ''}${isToday ? ', today' : ''}`}>
-                    {trained && <ExpressiveShape shape="cookie9" size={38} fill={palette.lime} style={{ position: 'absolute' }} />}
-                    <T style={isToday && { fontWeight: '700' }} color={trained ? palette.onLime : isToday ? palette.lime : palette.text}>{d}</T>
+                    {trained && <ExpressiveShape shape="cookie9" size={38} fill={palette.primary} style={{ position: 'absolute' }} />}
+                    <T style={isToday && { fontWeight: '700' }} color={trained ? palette.onPrimary : isToday ? palette.primary : palette.text}>{d}</T>
                   </View>
                 )}
               </View>
@@ -448,7 +448,7 @@ export function ExerciseLibraryScreen() {
               {!first && <Hairline inset={18} />}
               <ListRow title={item.name} subtitle={`${MUSCLE_LABEL[item.muscle]} · ${EQUIPMENT_LABEL[item.equipment]}`}
                 onPress={() => nav.navigate('ExerciseDetail', { exerciseId: item.id, name: item.name })}
-                trailing={sessionsById.has(ExerciseLibrary.key(item.id)) ? <T v="label" color={palette.lime}>{sessionsById.get(ExerciseLibrary.key(item.id))}×</T> : undefined} />
+                trailing={sessionsById.has(ExerciseLibrary.key(item.id)) ? <T v="label" color={palette.primary}>{sessionsById.get(ExerciseLibrary.key(item.id))}×</T> : undefined} />
             </View>
           );
         }}

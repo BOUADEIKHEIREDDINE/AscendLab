@@ -98,7 +98,7 @@ export function CommentsScreen() {
       {error && <T v="bodyS" color={palette.error} style={{ paddingHorizontal: Gutter }}>{error}</T>}
       <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingTop: 8, paddingBottom: 10, gap: 8, borderTopWidth: 1, borderTopColor: palette.hairline }}>
         {preparing ? <View style={{ width: 44, alignItems: 'center' }}><ShapeLoader size={28} /></View>
-          : <IconButton variant="tonal" name="image" label="Add a photo" color={palette.lime} onPress={pick} disabled={post == null} />}
+          : <IconButton variant="tonal" name="image" label="Add a photo" color={palette.primary} onPress={pick} disabled={post == null} />}
         <TextInput
           value={text}
           onChangeText={(t) => { setText(t.slice(0, 500)); setError(null); }}
@@ -106,7 +106,7 @@ export function CommentsScreen() {
           placeholderTextColor={palette.textMuted}
           multiline
           autoCapitalize="sentences"
-          selectionColor={palette.lime}
+          selectionColor={palette.primary}
           keyboardAppearance="dark"
           accessibilityLabel="Add a comment"
           style={[type.body, { flex: 1, color: palette.text, backgroundColor: palette.surfaceHigh, borderRadius: 24, paddingHorizontal: 16, paddingTop: 12, paddingBottom: 12, minHeight: 48, maxHeight: 120 }]}

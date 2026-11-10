@@ -4,12 +4,12 @@
 
 ## 0. The idea in one paragraph
 
-AscendLab is about **climbing, one small step at a time**. The new language turns that into a visual system. **Progress is shape.** Every number lives in a tile, and every tile has a shape from one shared family: soft scalloped "cookies", bursts, clovers, pebbles, and rounded triangles. They are close cousins of Material 3 Expressive, but drawn by us. Shapes are not just decoration. They **morph to show state**. A spiky burst means "far from the goal", a smooth circle means "summit reached", and a sharp ember burst means "over the limit". The background is near-black ink, the accent is an electric **Summit Lime**, and the numbers are huge, tight, and geometric. The app should feel like a premium sports watch face: calm, dense with meaning, and alive when you touch it.
+AscendLab is about **climbing, one small step at a time**. The new language turns that into a visual system. **Progress is shape.** Every number lives in a tile, and every tile has a shape from one shared family: soft scalloped "cookies", bursts, clovers, pebbles, and rounded triangles. They are close cousins of Material 3 Expressive, but drawn by us. Shapes are not just decoration. They **morph to show state**. A spiky burst means "far from the goal", a smooth circle means "summit reached", and a sharp ember burst means "over the limit". The background is near-black ink, the accent is a cool, bright **Iris**, and the numbers are huge, tight, and geometric. The app should feel like a premium sports watch face: calm, dense with meaning, and alive when you touch it.
 
 **Three rules everyone (human or AI) must follow:**
 1. **Tiles for numbers, rows for lists.** Dashboards (Food summary, Profile stats, Plan ready, workout stats) become a bento grid of tiles. Long lists (history, settings, exercise library, comments) stay flat rows on a grouped surface, separated by hairlines.
 2. **One expressive shape per tile, at most.** The shape carries meaning (progress, state, category). Never stack two decorative shapes in one tile.
-3. **One lime thing per screen is the hero.** Lime marks the primary action or the main progress. Everything else uses tonal surfaces and the data palette.
+3. **One iris thing per screen is the hero.** Iris marks the primary action or the main progress. Everything else uses tonal surfaces and the data palette.
 
 ---
 
@@ -33,10 +33,10 @@ Dark-only for now, but the theme must be built so a light theme can be added lat
 ### Accent
 | Token | Hex | Use |
 |---|---|---|
-| `lime` (primary) | `#D4FF4F` | Primary buttons, main progress, active tab, links |
-| `onLime` | `#0A0B0E` | Text and icons on lime |
-| `limeContainer` | `#2B3310` | Tonal buttons, selected chips, completed set rows, shape fills behind lime content |
-| `onLimeContainer` | `#E8FFA3` | Text on limeContainer |
+| `primary` (iris) | `#9FA8FF` | Primary buttons, main progress, active tab, links |
+| `onPrimary` | `#0A0B0E` | Text and icons on iris |
+| `primaryContainer` | `#2A2D40` | Tonal buttons, selected chips, completed set rows, shape fills behind iris content |
+| `onPrimaryContainer` | `#DDE1FF` | Text on primaryContainer |
 | `ember` | `#FF6B3D` | Over budget, calories burned, failure sets, destructive actions |
 | `emberContainer` | `#3A1A10` | Background of warnings |
 | `gold` | `#FFC94A` | Milestones only: PRs, "Setup complete", race winner, streak records |
@@ -49,10 +49,10 @@ Dark-only for now, but the theme must be built so a light theme can be added lat
 |---|---|---|
 | `protein` | `#FF8A5B` | Protein (warm coral) |
 | `carbs` | `#FFD25E` | Carbs (sun) |
-| `fat` | `#8FB8FF` | Fat (glacier) |
+| `fat` | `#6FE3C1` | Fat (mint) |
 | `water` (future) | `#5EE6FF` | Hydration |
-| `recovery` (future) | `#B69CFF` | Sleep / recovery |
-| People (compare charts) | `#D4FF4F`, `#FF8A5B`, `#8FB8FF`, `#FFC94A`, `#E58CFF` | Person 1–5 |
+| `recovery` (future) | `#FF8FC7` | Sleep / recovery |
+| People (compare charts) | `#9FA8FF`, `#FF8A5B`, `#6FE3C1`, `#FFC94A`, `#FF8FC7` | Person 1–5 |
 
 Avatar backgrounds use the same five people colors, with the initial in `ink`, weight 700.
 
@@ -61,8 +61,8 @@ Each tile shape sits on a tonal version of its content color: 16% of the color m
 
 ### Gradients
 Only two are allowed:
-- **Summit glow**: radial, `lime` at 18% → transparent. Used behind the Fuel Bloom when the goal is reached, and behind the Welcome logo.
-- **Cover gradient** for posts without photos: `#141A0C → #0A0B0E → #1A120E` (lime-dusk → ink → ember-dusk), diagonal.
+- **Summit glow**: radial, `primary` (iris) at 18% → transparent. Used behind the Fuel Bloom when the goal is reached, and behind the Welcome logo.
+- **Cover gradient** for posts without photos: `#14162A → #0A0B0E → #1A120E` (iris-dusk → ink → ember-dusk), diagonal.
 
 No other hard-coded colors anywhere in screens. Everything goes through the theme.
 
@@ -156,27 +156,27 @@ A `WaveEdge` component draws a soft sine top edge (amplitude 6, wavelength 48) f
 ## 5. Core components
 
 **Buttons** (all heights follow M3 Expressive sizes: S 40, M 48, L 56, XL 72)
-- `PrimaryButton`: L 56, lime, `onLime` label in `titleS`, full pill. Press → radius morphs to 16 and scale 0.98, with a spring and haptic tick. Disabled → `surfaceHigh` + `textFaint`.
-- `HeroButton` (new): XL 72, used **only** for "Start workout" and "Finish workout". Lime, with the label in Space Grotesk 20.
-- `Button` kinds: `tonal` (limeContainer + onLimeContainer, the default secondary), `outline` (1px outline), `text` (lime text), `danger` (emberContainer + ember).
-- `IconButton`: 44 circle. Variants `standard`, `tonal` (surfaceHigh), `filled` (lime). Press = morph to `cookie9` shape for 120ms (a playful "squish"), then back.
+- `PrimaryButton`: L 56, iris, `onPrimary` label in `titleS`, full pill. Press → radius morphs to 16 and scale 0.98, with a spring and haptic tick. Disabled → `surfaceHigh` + `textFaint`.
+- `HeroButton` (new): XL 72, used **only** for "Start workout" and "Finish workout". Iris, with the label in Space Grotesk 20.
+- `Button` kinds: `tonal` (primaryContainer + onPrimaryContainer, the default secondary), `outline` (1px outline), `text` (iris text), `danger` (emberContainer + ember).
+- `IconButton`: 44 circle. Variants `standard`, `tonal` (surfaceHigh), `filled` (iris). Press = morph to `cookie9` shape for 120ms (a playful "squish"), then back.
 - **Split button** for "Start routine ▾" in Train (main action + menu half).
 
 **Inputs**
-- `TextField`: **filled** style instead of outlined. `surfaceHigh` background, radius 16, label floats inside the field, a 2px lime underline-bar that grows from the center on focus. Error: ember bar + message.
-- `Chip`: pill, `surfaceHighest` at rest; selected = limeContainer + check icon that pops in.
-- `Segmented`: a pill track in `surfaceHigh`; the selected segment is a **lime pill that slides** between options with a spring (no outline).
-- `Toggle`: custom switch: track `surfaceHighest` → lime; the thumb is a small `cookie9` that becomes a circle when on.
+- `TextField`: **filled** style instead of outlined. `surfaceHigh` background, radius 16, label floats inside the field, a 2px iris underline-bar that grows from the center on focus. Error: ember bar + message.
+- `Chip`: pill, `surfaceHighest` at rest; selected = primaryContainer + check icon that pops in.
+- `Segmented`: a pill track in `surfaceHigh`; the selected segment is a **iris pill that slides** between options with a spring (no outline).
+- `Toggle`: custom switch: track `surfaceHighest` → iris; the thumb is a small `cookie9` that becomes a circle when on.
 - `Stepper`: two tonal 40 circles around a Space Grotesk number.
 
 **Feedback**
-- `WavyProgress` (new, replaces ProgressBar where it shows *ongoing* progress): an M3 Expressive-style wavy line. Lime wave for the done part, flat `surfaceHigh` line for the rest. Used in onboarding steps and long loading.
+- `WavyProgress` (new, replaces ProgressBar where it shows *ongoing* progress): an M3 Expressive-style wavy line. Iris wave for the done part, flat `surfaceHigh` line for the rest. Used in onboarding steps and long loading.
 - `ProgressBar` stays for static values (macros in lists), but becomes 8px tall with full-pill ends.
 - `ShapeLoader` (new, replaces spinners): a 40px shape that morphs `cookie9 → clover → softTriangle → burst → circle` while rotating. Used in buttons, "Building your plan", pull-to-refresh.
-- `Toast`: floating pill above the dock, `surfaceHighest`, with a small colored shape icon on the left (lime cookie = success, ember burst = error).
+- `Toast`: floating pill above the dock, `surfaceHighest`, with a small colored shape icon on the left (iris cookie = success, ember burst = error).
 - `Skeleton`: tiles and rows shimmer with a diagonal sheen (not a pulse).
 - Empty states: a large tonal shape (e.g. pebble) with an icon inside, a `title`, and a one-line hint. No illustrations needed.
-- `HelpNote`: `surface` pill-ish box (radius 20) with a lime `pebble` icon container.
+- `HelpNote`: `surface` pill-ish box (radius 20) with a iris `pebble` icon container.
 - Notices (volume, warnings): `emberContainer` or `goldContainer` box, radius 20, colored icon in a small burst.
 
 **Overlays**
@@ -185,7 +185,7 @@ A `WaveEdge` component draws a soft sine top edge (amplitude 6, wavelength 48) f
 - `ActionMenu`: a floating rounded-28 menu anchored near the ⋮ button (not a bottom sheet) on tablets/web; bottom sheet on phones. Destructive rows in ember.
 
 **Navigation chrome**
-- **Floating tab dock**: a pill (height 64, radius full) floating 12 above the bottom safe area, `surfaceHighest` at 92% with a hairline border. The active tab gets a **lime pill indicator that stretches and slides** to the next tab (like a liquid blob, spring), with the icon in `onLime` and the label shown only for the active tab. Inactive icons are `textMuted`.
+- **Floating tab dock**: a pill (height 64, radius full) floating 12 above the bottom safe area, `surfaceHighest` at 92% with a hairline border. The active tab gets a **iris pill indicator that stretches and slides** to the next tab (like a liquid blob, spring), with the icon in `onPrimary` and the label shown only for the active tab. Inactive icons are `textMuted`.
 - `TabHeader`: `headline` title left, subtitle in `textMuted`, actions as tonal icon buttons. On scroll, the title collapses into a small centered title over an `ink` 90% bar.
 - `PageHeader`: tonal back button (a 44 circle) + `title`.
 - Transitions: keep the current ones, but use spring timing; shared-element feel for tile → detail (the tile scales into the page).
@@ -201,7 +201,7 @@ The hero of the Food tab. A **2×2 hero tile**, about 240px.
   - closer to the goal → the lobes shrink smoothly (`depth` and `sharpness` interpolate toward 0)
   - goal reached (within ±5%) → perfect `circle`, a **Summit glow** blooms behind it, a heavy haptic fires, and the caption becomes "Summit reached".
   - over budget → morphs to `emberBurst` in ember.
-- The progress stroke (14px, round caps) runs **along that shape's outline**, measured from the sampled points, so the progress traces the scallops. It is split into **meal segments** with 4px gaps (each segment = one meal, all lime, but each with a small meal-shape marker at its end).
+- The progress stroke (14px, round caps) runs **along that shape's outline**, measured from the sampled points, so the progress traces the scallops. It is split into **meal segments** with 4px gaps (each segment = one meal, all iris, but each with a small meal-shape marker at its end).
 - **Burned calories** appear as an ember extension past the goal ("you earned more fuel").
 - Center: remaining kcal in `hero` (Space Grotesk 64), the word "left" in `label`, then "1 840 eaten · 320 burned" in `bodyS`.
 - Inside the outline, a soft tonal `pebble` slowly "breathes" (scale 0.98 ↔ 1.0, 4s) unless reduce-motion.
@@ -211,10 +211,10 @@ The hero of the Food tab. A **2×2 hero tile**, about 240px.
 A `2×1` tile with **three liquid columns** (Protein, Carbs, Fat), each a rounded-20 glass with a `WaveEdge` liquid surface filled with the macro color. The liquid level = progress. When food is logged, the liquid **sloshes** (wave amplitude spikes, then settles). Under each column: grams eaten in `displayS` + "/ 160 g" in `bodyS`. Over the goal, the column's rim turns ember.
 
 ### 6.3 Meal tiles (replaces the meal rows)
-A 2-column grid of `1×1` tiles: the meal-shape container (§3.3) with its icon, the progress stroke traced around that shape, the meal name, and "420 / 600 kcal". A small lime `+` icon button in the corner. Tapping the tile opens the meal; the food lines move to the meal detail sheet.
+A 2-column grid of `1×1` tiles: the meal-shape container (§3.3) with its icon, the progress stroke traced around that shape, the meal name, and "420 / 600 kcal". A small iris `+` icon button in the corner. Tapping the tile opens the meal; the food lines move to the meal detail sheet.
 
 ### 6.4 Ridge week (replaces the week dots)
-The weekly plan is drawn as a **mountain ridge line**: 7 points on one smooth path; training days are **peaks**, rest days are valleys. Completed peaks are filled lime with a small flag; today's peak pulses; missed ones are `textFaint`. Peaks rise one after another on mount.
+The weekly plan is drawn as a **mountain ridge line**: 7 points on one smooth path; training days are **peaks**, rest days are valleys. Completed peaks are filled iris with a small flag; today's peak pulses; missed ones are `textFaint`. Peaks rise one after another on mount.
 
 ### 6.5 Streak tile
 A `cookie9` tile in gold tone: the week-streak number in `displayM`, label "WEEK STREAK". Every time the streak grows, the cookie gains a lobe animation (spins 1/9 turn with a spring) and a gold sparkle of tiny shapes.
@@ -224,25 +224,25 @@ The rings become `cookie12` outlines (3px). The calorie progress is traced aroun
 
 ### 6.7 Live workout
 - **Stats strip**: three small tiles (Duration, Volume, Sets) with Space Grotesk numbers.
-- **Exercise card**: each exercise is a `surface` tile (radius 28). Name in `titleS` lime, ⋮ menu, plan note.
+- **Exercise card**: each exercise is a `surface` tile (radius 28). Name in `titleS` iris, ⋮ menu, plan note.
 - **Set rows**: pills inside the card. Columns stay (SET · PREVIOUS · KG · REPS · ✓). Inputs are `surfaceHigh` radius-12 boxes with Space Grotesk numbers.
-- **Set done**: the check box **morphs from a rounded square to a lime `cookie12`** with a check, the row fills `limeContainer`, haptic confirm.
-- **Set type badges**: W = gold soft circle, F = ember burst, D = lime clover.
-- **Rest timer**: a floating `HeroButton`-sized pill above the dock: a lime **liquid fill that drains** from right to left as time passes, the time in `displayL`-sized Space Grotesk, plus −15 / +15 / Skip. At 0 → heavy haptic, the pill flashes lime.
+- **Set done**: the check box **morphs from a rounded square to a iris `cookie12`** with a check, the row fills `primaryContainer`, haptic confirm.
+- **Set type badges**: W = gold soft circle, F = ember burst, D = iris clover.
+- **Rest timer**: a floating `HeroButton`-sized pill above the dock: a iris **liquid fill that drains** from right to left as time passes, the time in `displayL`-sized Space Grotesk, plus −15 / +15 / Skip. At 0 → heavy haptic, the pill flashes iris.
 - **Minimized workout**: a floating mini-player pill above the tab dock (live timer + current exercise + expand chevron), on every tab.
 - **New PR**: a gold `burst` badge with "New PR" springs in on the set row, gold confetti of tiny shapes, and a goldContainer banner slides down from the top.
 
 ### 6.8 Workout summary / Finish
-A full-screen celebration: a giant `softTriangle` (ascent arrow) in lime tone rises from the bottom, total volume in `hero`, then bento tiles (duration, sets, PRs in gold).
+A full-screen celebration: a giant `softTriangle` (ascent arrow) in iris tone rises from the bottom, total volume in `hero`, then bento tiles (duration, sets, PRs in gold).
 
 ### 6.9 Charts
-- **Bar chart** (workouts per week): full-pill bars; the current week is lime, past weeks `surfaceHighest`, the goal shown as a dashed line. Tapping a bar morphs it into a lime pill with a value bubble.
-- **Line chart** (body weight): a smooth curve with a lime-to-transparent area fill; the latest point is a lime `cookie9` marker; the goal is a dashed gold line with a small flag.
+- **Bar chart** (workouts per week): full-pill bars; the current week is iris, past weeks `surfaceHighest`, the goal shown as a dashed line. Tapping a bar morphs it into a iris pill with a value bubble.
+- **Line chart** (body weight): a smooth curve with a iris-to-transparent area fill; the latest point is a iris `cookie9` marker; the goal is a dashed gold line with a small flag.
 - **Multi-line** (compare): people colors, 2.5px lines, the leader's line drawn on top and slightly thicker.
 
 ### 6.10 Feed
 - Post card: rounded-24 image inside the gutter, author row above, action row below. The double-tap heart burst becomes a **heart that pops, then splits into small `like`-colored shapes**.
-- Covers without a photo: a 1:1 tile with the cover gradient and the post's shape (meal shape or ascent triangle) huge and tonal in the background, the overline in lime, kcal in `displayL`, macro pills in their data colors at 16% tone.
+- Covers without a photo: a 1:1 tile with the cover gradient and the post's shape (meal shape or ascent triangle) huge and tonal in the background, the overline in iris, kcal in `displayL`, macro pills in their data colors at 16% tone.
 - The daily race leaderboard: a podium of 3 shapes (gold cookie for #1, larger), then rows.
 
 ### 6.11 Profile
@@ -253,8 +253,8 @@ A full-screen celebration: a giant `softTriangle` (ascent arrow) in lime tone ri
 
 ### 6.12 Onboarding and Welcome
 - **Welcome**: the logo sits on a Summit glow; three shapes (`cookie9`, `clover`, `softTriangle`) rise and stack like steps next to the tagline. "Get started" is a `HeroButton`.
-- **Onboarding**: `WavyProgress` at the top. ChoiceCards become tiles: when selected, their icon container morphs from `circle` into a lime `cookie9`, the tile fills `limeContainer` and gets a 2px lime border.
-- **Building your plan**: a large `ShapeLoader` in the center, and the 4 steps check off below it, each check being a small lime cookie.
+- **Onboarding**: `WavyProgress` at the top. ChoiceCards become tiles: when selected, their icon container morphs from `circle` into a iris `cookie9`, the tile fills `primaryContainer` and gets a 2px iris border.
+- **Building your plan**: a large `ShapeLoader` in the center, and the 4 steps check off below it, each check being a small iris cookie.
 - **Plan ready**: bento: calorie target (hero tile with a static Fuel Bloom preview), macro columns, ridge week, sessions list.
 
 ---
@@ -285,7 +285,7 @@ Keep Material Icons, but switch to the **Rounded** look where available (`Materi
 
 ## 9. Accessibility
 
-- Contrast: `text` on `ink` ≈ 18:1, `textMuted` on `surface` ≥ 6:1, `onLime` on `lime` ≈ 17:1. Never put lime text on `limeContainer` below 14px.
+- Contrast: `text` on `ink` ≈ 18:1, `textMuted` on `surface` ≥ 6:1, `onPrimary` on `primary` ≈ 9:1, iris text on `surface` ≈ 8:1 (≥ 6.4:1 on every surface, 6.2:1 on `primaryContainer`). Keep every text pair at 4.5:1 or more.
 - Shape changes always come with a text change ("12 left" → "Summit reached" → "180 over"). Never rely on shape or color alone.
 - Touch targets ≥ 44.
 - Respect reduce motion (§7) and font scaling (tiles grow in height, numbers may wrap to a second line rather than clip).

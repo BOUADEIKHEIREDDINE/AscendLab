@@ -68,8 +68,8 @@ export function Ring({ size, stroke, progress, color, track = palette.surfaceHig
 
 /**
  * Column chart for a handful of values (e.g. workouts per week): full-pill bars, the current
- * (last) one lime and past ones surfaceHighest, an optional dashed goal line. Tap a bar to read it:
- * it turns lime and shows a value bubble.
+ * (last) one iris and past ones surfaceHighest, an optional dashed goal line. Tap a bar to read it:
+ * it turns iris and shows a value bubble.
  */
 export function BarChart({ values, labels, valueLabel, goal }: { values: number[]; labels: string[]; valueLabel: (i: number, v: number) => string; goal?: number }) {
   const [picked, setSelected] = useState<number | null>(null);
@@ -106,7 +106,7 @@ export function BarChart({ values, labels, valueLabel, goal }: { values: number[
                 <G key={i}>
                   {/* An empty week still shows a faint stub, so the rhythm reads. */}
                   {h <= 0 ? <Rect x={left} y={baseline - 6} width={barWidth} height={6} rx={3} fill={palette.surfaceHigh} />
-                    : <Rect x={left} y={baseline - h} width={barWidth} height={h} rx={barWidth / 2} fill={lit ? palette.lime : palette.surfaceHighest} fillOpacity={current && i !== selected && picked != null ? 0.55 : 1} />}
+                    : <Rect x={left} y={baseline - h} width={barWidth} height={h} rx={barWidth / 2} fill={lit ? palette.primary : palette.surfaceHighest} fillOpacity={current && i !== selected && picked != null ? 0.55 : 1} />}
                 </G>
               );
             })}
@@ -120,7 +120,7 @@ export function BarChart({ values, labels, valueLabel, goal }: { values: number[
               const w = 14 + label.length * 9;
               return (
                 <G>
-                  <Rect x={Math.min(Math.max(cx - w / 2, 0), width - w)} y={Math.max(baseline - h - 26, 0)} width={w} height={22} rx={11} fill={palette.lime} />
+                  <Rect x={Math.min(Math.max(cx - w / 2, 0), width - w)} y={Math.max(baseline - h - 26, 0)} width={w} height={22} rx={11} fill={palette.primary} />
                 </G>
               );
             })()}
@@ -133,7 +133,7 @@ export function BarChart({ values, labels, valueLabel, goal }: { values: number[
           const w = 14 + label.length * 9;
           return (
             <View pointerEvents="none" style={{ position: 'absolute', left: Math.min(Math.max(cx - w / 2, 0), width - w), top: Math.max(baseline - h - 26, 0), width: w, height: 22, alignItems: 'center', justifyContent: 'center' }}>
-              <T v="label" color={palette.onLime} style={{ fontSize: 12, lineHeight: 14 }}>{label}</T>
+              <T v="label" color={palette.onPrimary} style={{ fontSize: 12, lineHeight: 14 }}>{label}</T>
             </View>
           );
         })()}
@@ -156,8 +156,8 @@ function xPositions(points: [number, number][], width: number): number[] {
 }
 
 /**
- * Line chart for a value over time (e.g. body weight): a smooth curve with a lime-to-transparent
- * area, the latest point as a lime cookie, and an optional dashed gold goal line with a flag.
+ * Line chart for a value over time (e.g. body weight): a smooth curve with a iris-to-transparent
+ * area, the latest point as a iris cookie, and an optional dashed gold goal line with a flag.
  * Tap anywhere to read the nearest point.
  */
 export function LineChart({ points, pointLabel, goal }: { points: [number, number][]; pointLabel: (p: [number, number]) => string; goal?: number | null }) {
@@ -196,8 +196,8 @@ export function LineChart({ points, pointLabel, goal }: { points: [number, numbe
           <Svg width={width} height={height}>
             <Defs>
               <LinearGradient id="area" x1="0" y1="0" x2="0" y2="1">
-                <Stop offset="0" stopColor={palette.lime} stopOpacity={0.28} />
-                <Stop offset="1" stopColor={palette.lime} stopOpacity={0} />
+                <Stop offset="0" stopColor={palette.primary} stopOpacity={0.28} />
+                <Stop offset="1" stopColor={palette.primary} stopOpacity={0} />
               </LinearGradient>
             </Defs>
             {goal != null && (
@@ -207,18 +207,18 @@ export function LineChart({ points, pointLabel, goal }: { points: [number, numbe
               </>
             )}
             {area ? <Path d={area} fill="url(#area)" /> : null}
-            {d ? <Path d={d} stroke={palette.lime} strokeWidth={2.5} fill="none" strokeLinecap="round" strokeLinejoin="round" /> : null}
+            {d ? <Path d={d} stroke={palette.primary} strokeWidth={2.5} fill="none" strokeLinecap="round" strokeLinejoin="round" /> : null}
             {/* Left-to-right reveal: a background-coloured cover that slides away. */}
             <Rect x={width * reveal} y={0} width={width * (1 - reveal)} height={height} fill={palette.surface} />
             {sel && xs[selected] != null && selected !== points.length - 1 && (
               <>
                 <Line x1={xs[selected]} x2={xs[selected]} y1={0} y2={height} stroke={palette.outline} strokeWidth={1} />
-                <Circle cx={xs[selected]} cy={y(sel[1])} r={5} fill={palette.surface} stroke={palette.lime} strokeWidth={2} />
+                <Circle cx={xs[selected]} cy={y(sel[1])} r={5} fill={palette.surface} stroke={palette.primary} strokeWidth={2} />
               </>
             )}
             {last && reveal > 0.95 && (
               <G transform={`translate(${last[0] - 9},${last[1] - 9})`}>
-                <Path d={shapePath(shapes.cookie9, 18)} fill={palette.lime} stroke={palette.surface} strokeWidth={2} />
+                <Path d={shapePath(shapes.cookie9, 18)} fill={palette.primary} stroke={palette.surface} strokeWidth={2} />
               </G>
             )}
           </Svg>

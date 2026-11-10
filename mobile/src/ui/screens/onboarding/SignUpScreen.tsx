@@ -115,7 +115,7 @@ export function SignUpScreen() {
         />
 
         {error && <T color={palette.error}>{error}</T>}
-        {info && <T color={palette.lime}>{info}</T>}
+        {info && <T color={palette.primary}>{info}</T>}
 
         <PrimaryButton label={isLogIn ? 'Log in' : 'Sign up'} onPress={submit} loading={loading} />
         {isLogIn && <Button kind="text" label="Forgot password?" onPress={forgot} enabled={!loading} />}

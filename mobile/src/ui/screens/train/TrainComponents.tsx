@@ -170,13 +170,13 @@ function ExerciseRow({ title, subtitle, selected, onPress, create }: { title: st
     <View>
       <Pressable onPress={() => { haptics.tick(); onPress(); }} accessibilityRole="button" accessibilityState={{ selected }}
         style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', marginHorizontal: 8, paddingHorizontal: 14, paddingVertical: 12, gap: 14, borderRadius: radius.md,
-          backgroundColor: selected ? palette.limeContainer : pressed ? palette.surface : 'transparent' })}>
-        {create && <Icon name="add" color={palette.lime} />}
+          backgroundColor: selected ? palette.primaryContainer : pressed ? palette.surface : 'transparent' })}>
+        {create && <Icon name="add" color={palette.primary} />}
         <View style={{ flex: 1 }}>
-          <T v="titleS" color={selected ? palette.onLimeContainer : palette.text}>{title}</T>
+          <T v="titleS" color={selected ? palette.onPrimaryContainer : palette.text}>{title}</T>
           <T v="bodyS" color={palette.textMuted}>{subtitle}</T>
         </View>
-        {selected && <Icon name="check-circle" color={palette.lime} label="Selected" />}
+        {selected && <Icon name="check-circle" color={palette.primary} label="Selected" />}
       </Pressable>
       {!selected && <Hairline inset={22} style={{ marginRight: 22 }} />}
     </View>

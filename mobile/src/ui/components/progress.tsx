@@ -16,7 +16,7 @@ const easeOutBack = (t: number) => { const c1 = 1.4, c3 = c1 + 1; return 1 + c3 
 
 /**
  * The week as a mountain ridge: training days are peaks, rest days valleys. Completed peaks
- * are lime with a flag, today's peak pulses, missed ones are faint. Peaks rise in turn on mount.
+ * are iris with a flag, today's peak pulses, missed ones are faint. Peaks rise in turn on mount.
  */
 export function RidgeWeek({ training, completed, today, height = 96 }: {
   /** Training days, 0 = Monday. */
@@ -62,12 +62,12 @@ export function RidgeWeek({ training, completed, today, height = 96 }: {
         <Svg width={width} height={height - 16}>
           <Defs>
             <LinearGradient id="ridge" x1="0" y1="0" x2="0" y2="1">
-              <Stop offset="0" stopColor={palette.lime} stopOpacity={0.22} />
-              <Stop offset="1" stopColor={palette.lime} stopOpacity={0} />
+              <Stop offset="0" stopColor={palette.primary} stopOpacity={0.22} />
+              <Stop offset="1" stopColor={palette.primary} stopOpacity={0} />
             </LinearGradient>
           </Defs>
           <Path d={area} fill="url(#ridge)" />
-          <Path d={ridge} fill="none" stroke={palette.lime} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
+          <Path d={ridge} fill="none" stroke={palette.primary} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
           {DAY_LETTERS.map((_, i) => {
             if (!on.has(i)) return null;
             const x = slot * (i + 0.5), y = peakY(i);
@@ -75,25 +75,25 @@ export function RidgeWeek({ training, completed, today, height = 96 }: {
             if (done.has(i)) {
               return (
                 <React.Fragment key={i}>
-                  <Circle cx={x} cy={y} r={6} fill={palette.lime} />
-                  <Path d={`M${x},${y - 6} L${x},${y - 20} L${x + 10},${y - 16} L${x},${y - 12}`} stroke={palette.lime} strokeWidth={1.5} fill={palette.lime} />
+                  <Circle cx={x} cy={y} r={6} fill={palette.primary} />
+                  <Path d={`M${x},${y - 6} L${x},${y - 20} L${x + 10},${y - 16} L${x},${y - 12}`} stroke={palette.primary} strokeWidth={1.5} fill={palette.primary} />
                 </React.Fragment>
               );
             }
-            return <Circle key={i} cx={x} cy={y} r={5} fill={palette.ink} stroke={missed ? palette.textFaint : palette.lime} strokeWidth={2} />;
+            return <Circle key={i} cx={x} cy={y} r={5} fill={palette.ink} stroke={missed ? palette.textFaint : palette.primary} strokeWidth={2} />;
           })}
         </Svg>
       )}
       {/* Today's peak pulses: a ring that grows and fades. */}
       {width > 0 && today != null && on.has(today) && !done.has(today) && (
         <Animated.View pointerEvents="none" style={{
-          position: 'absolute', left: slot * (today + 0.5) - 12, top: peakY(today) - 12, width: 24, height: 24, borderRadius: 12, borderWidth: 2, borderColor: palette.lime,
+          position: 'absolute', left: slot * (today + 0.5) - 12, top: peakY(today) - 12, width: 24, height: 24, borderRadius: 12, borderWidth: 2, borderColor: palette.primary,
           opacity: pulse.interpolate({ inputRange: [0, 1], outputRange: [0.8, 0] }), transform: [{ scale: pulse.interpolate({ inputRange: [0, 1], outputRange: [0.5, 1.6] }) }],
         }} />
       )}
       <View style={{ flexDirection: 'row' }}>
         {DAY_LETTERS.map((l, i) => (
-          <T key={i} v="label" center style={{ flex: 1 }} color={today === i ? palette.lime : on.has(i) ? palette.text : palette.textFaint}>{l}</T>
+          <T key={i} v="label" center style={{ flex: 1 }} color={today === i ? palette.primary : on.has(i) ? palette.text : palette.textFaint}>{l}</T>
         ))}
       </View>
     </View>

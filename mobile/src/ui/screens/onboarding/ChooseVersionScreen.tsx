@@ -70,10 +70,10 @@ function Figure({ sex, icon, selected }: { sex: Sex; icon: IconName; selected: S
           accessibilityLabel={SEX_LABEL[sex]}
           style={{
             width: 136, height: 136, borderRadius: 68, alignItems: 'center', justifyContent: 'center',
-            backgroundColor: isSelected ? palette.lime : 'transparent', borderWidth: isSelected ? 0 : 2, borderColor: palette.outline,
+            backgroundColor: isSelected ? palette.primary : 'transparent', borderWidth: isSelected ? 0 : 2, borderColor: palette.outline,
           }}
         >
-          <Icon name={icon} size={80} color={isSelected ? palette.onLime : palette.text} />
+          <Icon name={icon} size={80} color={isSelected ? palette.onPrimary : palette.text} />
         </Pressable>
       </Animated.View>
       <T v="title">{SEX_LABEL[sex]}</T>
