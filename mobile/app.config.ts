@@ -15,7 +15,7 @@ const config: ExpoConfig = {
   icon: './assets/icon.png',
   // The brand is dark-only.
   userInterfaceStyle: 'dark',
-  backgroundColor: '#101820',
+  backgroundColor: '#0A0B0E',
   scheme: 'ascendlab',
   ios: {
     bundleIdentifier: 'com.ascendlab.app',
@@ -29,7 +29,7 @@ const config: ExpoConfig = {
     package: 'com.ascendlab.app',
     googleServicesFile: androidServices,
     adaptiveIcon: {
-      backgroundColor: '#101820',
+      backgroundColor: '#0A0B0E',
       foregroundImage: './assets/android-icon-foreground.png',
       backgroundImage: './assets/android-icon-background.png',
       monochromeImage: './assets/android-icon-monochrome.png',
@@ -41,7 +41,7 @@ const config: ExpoConfig = {
     bundler: 'metro',
   },
   plugins: [
-    ['expo-splash-screen', { image: './assets/splash-icon.png', imageWidth: 160, backgroundColor: '#101820' }],
+    ['expo-splash-screen', { image: './assets/splash-icon.png', imageWidth: 160, backgroundColor: '#0A0B0E' }],
     ['expo-image-picker', {
       photosPermission: 'AscendLab uses your photos so you can add a picture to a meal or a comment.',
       cameraPermission: 'AscendLab uses the camera so you can take a picture of your meal.',

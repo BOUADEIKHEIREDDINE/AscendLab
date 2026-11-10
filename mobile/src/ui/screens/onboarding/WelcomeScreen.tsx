@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Animated, Easing, Image, Platform, ScrollView, View } from 'react-native';
 import { useNav } from '../../../navigation/types';
-import { c } from '../../theme';
+import { palette } from '../../theme';
 import { Appear, Button, Icon, IconName, PrimaryButton, Screen, T } from '../../components/core';
 
 const native = Platform.OS !== 'web';
@@ -14,7 +14,7 @@ export function WelcomeScreen() {
       <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', gap: 28, paddingVertical: 24 }} showsVerticalScrollIndicator={false}>
         <AnimatedLogo />
         <Appear index={3}>
-          <T v="bodyLarge" color={c.onSurfaceVariant}>
+          <T v="body" color={palette.textMuted}>
             Your personal training and nutrition plan, built around you. No experience needed.
           </T>
         </Appear>
@@ -45,7 +45,7 @@ function AnimatedLogo() {
         <Image source={require('../../../../assets/logo.png')} style={{ width: '72%', height: undefined, aspectRatio: 1200 / 219 }} resizeMode="contain" accessibilityLabel="AscendLab" />
       </Animated.View>
       <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 10 }}>
-        <Animated.View style={{ opacity: logo }}><T v="titleLarge" color={c.primary}>Training made simple.</T></Animated.View>
+        <Animated.View style={{ opacity: logo }}><T v="title" color={palette.lime}>Training made simple.</T></Animated.View>
         <RisingSteps />
       </View>
     </View>
@@ -66,7 +66,7 @@ function RisingSteps() {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 3, marginBottom: 6, height: 20 }}>
       {heights.map((h, i) => (
-        <Animated.View key={i} style={{ width: 7, borderRadius: 2, backgroundColor: c.primary, height: progress[i].interpolate({ inputRange: [0, 2], outputRange: [0, h * 2], extrapolateLeft: 'clamp' }) }} />
+        <Animated.View key={i} style={{ width: 7, borderRadius: 2, backgroundColor: palette.lime, height: progress[i].interpolate({ inputRange: [0, 2], outputRange: [0, h * 2], extrapolateLeft: 'clamp' }) }} />
       ))}
     </View>
   );
@@ -75,12 +75,12 @@ function RisingSteps() {
 function Promise({ icon, title, text }: { icon: IconName; title: string; text: string }) {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
-      <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: c.primaryContainer, alignItems: 'center', justifyContent: 'center' }}>
-        <Icon name={icon} size={22} color={c.primary} />
+      <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: palette.limeContainer, alignItems: 'center', justifyContent: 'center' }}>
+        <Icon name={icon} size={22} color={palette.lime} />
       </View>
       <View style={{ flex: 1 }}>
-        <T v="titleMedium">{title}</T>
-        <T color={c.onSurfaceVariant}>{text}</T>
+        <T v="titleS">{title}</T>
+        <T color={palette.textMuted}>{text}</T>
       </View>
     </View>
   );

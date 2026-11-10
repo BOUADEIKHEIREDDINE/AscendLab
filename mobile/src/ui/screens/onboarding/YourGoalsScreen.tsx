@@ -6,7 +6,7 @@ import {
 import { useStore } from '../../../lib/store';
 import { useNav } from '../../../navigation/types';
 import { draftStore, Onboarding } from '../../../state/session';
-import { c } from '../../theme';
+import { palette } from '../../theme';
 import { haptics } from '../../haptics';
 import { Appear, HelpNote, IconName, SectionLabel, T } from '../../components/core';
 import { ChoiceCard, OnboardingScaffold } from '../../components/onboarding';
@@ -62,7 +62,7 @@ export function GoalsForm({ value, onChange, showErrors, firstIndex = 1 }: {
             description={GOAL[g].description} icon={GOAL_ICON[g]} />
         </Appear>
       ))}
-      {showErrors && value.goal == null && <T color={c.error}>Pick the goal that matters most to you right now.</T>}
+      {showErrors && value.goal == null && <T color={palette.error}>Pick the goal that matters most to you right now.</T>}
 
       <Appear index={i++}><SectionLabel text="How much have you trained?" /></Appear>
       {LEVELS.map((l) => (
@@ -71,7 +71,7 @@ export function GoalsForm({ value, onChange, showErrors, firstIndex = 1 }: {
             description={LEVEL[l].description} />
         </Appear>
       ))}
-      {showErrors && value.level == null && <T color={c.error}>Pick your level. Not sure? Choose beginner.</T>}
+      {showErrors && value.level == null && <T color={palette.error}>Pick your level. Not sure? Choose beginner.</T>}
 
       <Appear index={i++}><SectionLabel text="Which days can you train?" /></Appear>
       <Appear index={i++}>
@@ -90,7 +90,7 @@ export function GoalsForm({ value, onChange, showErrors, firstIndex = 1 }: {
         <HelpNote text={days != null ? PlanCalculator.daysAdvice(days.length)
           : 'Tap every day you could train. Be realistic: a plan you can keep beats a perfect plan you skip.'} />
       </Appear>
-      {showErrors && days == null && <T color={c.error}>Tap at least 2 days.</T>}
+      {showErrors && days == null && <T color={palette.error}>Tap at least 2 days.</T>}
 
       <Appear index={i++}><SectionLabel text="Where will you train?" /></Appear>
       <Appear index={i++}>
@@ -101,7 +101,7 @@ export function GoalsForm({ value, onChange, showErrors, firstIndex = 1 }: {
           ))}
         </View>
       </Appear>
-      {showErrors && value.place == null && <T color={c.error}>Pick where you'll train.</T>}
+      {showErrors && value.place == null && <T color={palette.error}>Pick where you'll train.</T>}
       <Appear index={i++}>
         <HelpNote text="Not sure? Choose what's easiest for you today. You can change all of this later in Settings." />
       </Appear>
@@ -127,11 +127,11 @@ function WeekdayPicker({ selected, onToggle }: { selected: number[]; onToggle: (
             accessibilityLabel={NAMES[d]}
             style={{
               flex: 1, aspectRatio: 1, borderRadius: 999, alignItems: 'center', justifyContent: 'center',
-              backgroundColor: on ? c.primary : c.surfaceContainer, borderWidth: on ? 0 : 1, borderColor: c.outlineVariant,
+              backgroundColor: on ? palette.lime : palette.surface, borderWidth: on ? 0 : 1, borderColor: palette.hairline,
               transform: [{ scale: on ? 1.08 : 1 }],
             }}
           >
-            <T v="titleMedium" color={on ? c.onPrimary : c.onSurface}>{letter}</T>
+            <T v="titleS" color={on ? palette.onLime : palette.text}>{letter}</T>
           </Pressable>
         );
       })}
@@ -149,7 +149,7 @@ function CountPicker({ tapped, count, onSelect }: { tapped: number; count: numbe
   ];
   return (
     <View style={{ gap: 8 }}>
-      <T v="bodySmall" color={c.onSurfaceVariant}>Train on all of them, or only some? We pick the best-spaced days.</T>
+      <T v="bodyS" color={palette.textMuted}>Train on all of them, or only some? We pick the best-spaced days.</T>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
         {options.map((o) => {
           const on = count === o.value;
@@ -161,10 +161,10 @@ function CountPicker({ tapped, count, onSelect }: { tapped: number; count: numbe
               accessibilityState={{ selected: on }}
               style={{
                 borderRadius: 999, paddingHorizontal: 14, paddingVertical: 8,
-                backgroundColor: on ? c.primary : c.surfaceContainer, borderWidth: on ? 0 : 1, borderColor: c.outlineVariant,
+                backgroundColor: on ? palette.lime : palette.surface, borderWidth: on ? 0 : 1, borderColor: palette.hairline,
               }}
             >
-              <T v="labelLarge" color={on ? c.onPrimary : c.onSurface}>{o.label}</T>
+              <T v="label" color={on ? palette.onLime : palette.text}>{o.label}</T>
             </Pressable>
           );
         })}

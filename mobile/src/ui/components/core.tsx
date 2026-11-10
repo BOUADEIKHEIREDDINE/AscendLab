@@ -10,13 +10,13 @@ import {
 } from 'react-native';
 import { SafeAreaView, Edge } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
-import { avatarColor, c, Gutter, radius, type, TypeVariant } from '../theme';
+import { avatarColor, palette, Gutter, radius, resolveWeight, type, TypeVariant } from '../theme';
 import { haptics } from '../haptics';
 import { formatKcal } from '../../data/profile';
 
 // ---------------------------------------------------------------- Text and icons
 
-export function T({ v = 'bodyMedium', color = c.onSurface, style, children, lines, center, ...rest }: {
+export function T({ v = 'body', color = palette.text, style, children, lines, center, ...rest }: {
   v?: TypeVariant; color?: string; style?: StyleProp<TextStyle>; children?: ReactNode; lines?: number; center?: boolean;
   accessibilityLabel?: string; onPress?: () => void;
 }) {
@@ -25,7 +25,8 @@ export function T({ v = 'bodyMedium', color = c.onSurface, style, children, line
       {...rest}
       numberOfLines={lines}
       ellipsizeMode="tail"
-      style={[type[v], { color }, center && { textAlign: 'center' }, style]}
+      // Custom fonts have one file per weight: a fontWeight override becomes the matching family.
+      style={resolveWeight([type[v], { color }, center && { textAlign: 'center' as const }, style])}
     >
       {children}
     </Text>
@@ -37,7 +38,7 @@ type CommunityName = React.ComponentProps<typeof MaterialCommunityIcons>['name']
 /** Material icons, the same set the Android app used. Prefix "mc:" for Material Community icons. */
 export type IconName = MaterialName | `mc:${CommunityName}`;
 
-export function Icon({ name, size = 24, color = c.onSurface, label }: { name: IconName; size?: number; color?: string; label?: string }) {
+export function Icon({ name, size = 24, color = palette.text, label }: { name: IconName; size?: number; color?: string; label?: string }) {
   if (name.startsWith('mc:')) {
     return <MaterialCommunityIcons name={name.slice(3) as CommunityName} size={size} color={color} accessibilityLabel={label} />;
   }
@@ -73,7 +74,7 @@ export function PressableScale({ onPress, onLongPress, disabled, style, children
   );
 }
 
-export function IconButton({ name, onPress, label, color = c.onSurface, size = 24, disabled, style }: {
+export function IconButton({ name, onPress, label, color = palette.text, size = 24, disabled, style }: {
   name: IconName; onPress: () => void; label: string; color?: string; size?: number; disabled?: boolean; style?: StyleProp<ViewStyle>;
 }) {
   return (
@@ -84,7 +85,7 @@ export function IconButton({ name, onPress, label, color = c.onSurface, size = 2
       accessibilityRole="button"
       accessibilityLabel={label}
       style={({ pressed }) => [{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 22, opacity: disabled ? 0.38 : 1 },
-        pressed && { backgroundColor: c.surfaceContainer }, style]}
+        pressed && { backgroundColor: palette.surface }, style]}
     >
       <Icon name={name} size={size} color={color} />
     </Pressable>
@@ -99,12 +100,12 @@ export function PrimaryButton({ label, onPress, enabled = true, loading = false,
     <PressableScale onPress={onPress} disabled={disabled} label={label} noHaptic
       style={[{
         height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8,
-        backgroundColor: disabled && !loading ? c.surfaceContainerHigh : c.primary,
+        backgroundColor: disabled && !loading ? palette.surfaceHigh : palette.lime,
       }, style]}>
-      {loading ? <ActivityIndicator color={c.onPrimary} /> : (
+      {loading ? <ActivityIndicator color={palette.onLime} /> : (
         <>
-          {icon && <Icon name={icon} color={disabled ? c.onSurfaceVariant : c.onPrimary} size={20} />}
-          <T v="titleMedium" color={disabled ? c.onSurfaceVariant : c.onPrimary}>{label}</T>
+          {icon && <Icon name={icon} color={disabled ? palette.textMuted : palette.onLime} size={20} />}
+          <T v="titleS" color={disabled ? palette.textMuted : palette.onLime}>{label}</T>
         </>
       )}
     </PressableScale>
@@ -116,8 +117,8 @@ export function Button({ label, onPress, kind = 'outline', icon, color, enabled 
   label: string; onPress: () => void; kind?: 'outline' | 'tonal' | 'text' | 'filled'; icon?: IconName; color?: string;
   enabled?: boolean; loading?: boolean; style?: StyleProp<ViewStyle>; compact?: boolean;
 }) {
-  const fg = color ?? (kind === 'text' ? c.primary : kind === 'filled' ? c.onPrimary : kind === 'tonal' ? c.primary : c.onSurface);
-  const bg = kind === 'tonal' ? c.primaryContainer : kind === 'filled' ? c.primary : 'transparent';
+  const fg = color ?? (kind === 'text' ? palette.lime : kind === 'filled' ? palette.onLime : kind === 'tonal' ? palette.lime : palette.text);
+  const bg = kind === 'tonal' ? palette.limeContainer : kind === 'filled' ? palette.lime : 'transparent';
   return (
     <Pressable
       onPress={onPress}
@@ -127,13 +128,13 @@ export function Button({ label, onPress, kind = 'outline', icon, color, enabled 
       style={({ pressed }) => [{
         minHeight: compact ? 36 : kind === 'text' ? 40 : 48, paddingHorizontal: kind === 'text' ? 12 : 18, borderRadius: 24,
         flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: bg,
-        borderWidth: kind === 'outline' ? 1 : 0, borderColor: c.outline, opacity: enabled ? (pressed ? 0.7 : 1) : 0.38,
+        borderWidth: kind === 'outline' ? 1 : 0, borderColor: palette.outline, opacity: enabled ? (pressed ? 0.7 : 1) : 0.38,
       }, style]}
     >
       {loading ? <ActivityIndicator color={fg} size="small" /> : (
         <>
           {icon && <Icon name={icon} color={fg} size={18} />}
-          <T v="labelLarge" color={fg}>{label}</T>
+          <T v="label" color={fg}>{label}</T>
         </>
       )}
     </Pressable>
@@ -143,7 +144,7 @@ export function Button({ label, onPress, kind = 'outline', icon, color, enabled 
 // ---------------------------------------------------------------- Layout
 
 /** Safe-area page with the app background. `keyboard` lifts content above the iOS keyboard. */
-export function Screen({ children, edges = ['top'], keyboard, style, background = c.background }: {
+export function Screen({ children, edges = ['top'], keyboard, style, background = palette.ink }: {
   children: ReactNode; edges?: Edge[]; keyboard?: boolean; style?: StyleProp<ViewStyle>; background?: string;
 }) {
   const content = <View style={[{ flex: 1 }, style]}>{children}</View>;
@@ -158,11 +159,11 @@ export function Screen({ children, edges = ['top'], keyboard, style, background 
 
 /** Full-width hairline between items and sections. */
 export function Hairline({ inset = 0, style }: { inset?: number; style?: StyleProp<ViewStyle> }) {
-  return <View style={[{ height: 0.5, backgroundColor: c.outline, marginLeft: inset }, style]} />;
+  return <View style={[{ height: 0.5, backgroundColor: palette.outline, marginLeft: inset }, style]} />;
 }
 
 export function Avatar({ name, seed, size = 40 }: { name: string; seed: string; size?: number }) {
-  const v: TypeVariant = size >= 64 ? 'headlineSmall' : size >= 40 ? 'titleMedium' : 'labelLarge';
+  const v: TypeVariant = size >= 64 ? 'title' : size >= 40 ? 'titleS' : 'label';
   return (
     <View style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: avatarColor(seed), alignItems: 'center', justifyContent: 'center' }}>
       <T v={v} color="#101820" style={{ fontWeight: '700' }}>{name.trim().charAt(0).toUpperCase() || '?'}</T>
@@ -175,8 +176,8 @@ export function TabHeader({ title, subtitle, actions }: { title: string; subtitl
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', paddingLeft: Gutter, paddingRight: 8, paddingTop: 12, paddingBottom: 8 }}>
       <View style={{ flex: 1 }}>
-        <T v="headlineMedium" lines={1}>{title}</T>
-        {subtitle ? <T color={c.onSurfaceVariant}>{subtitle}</T> : null}
+        <T v="headline" lines={1}>{title}</T>
+        {subtitle ? <T color={palette.textMuted}>{subtitle}</T> : null}
       </View>
       {actions}
     </View>
@@ -188,7 +189,7 @@ export function PageHeader({ title, onBack, actions }: { title: string; onBack: 
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', paddingLeft: 4, paddingRight: 8, paddingTop: 8, paddingBottom: 4 }}>
       <IconButton name={Platform.OS === 'ios' ? 'arrow-back-ios-new' : 'arrow-back'} onPress={onBack} label="Back" size={Platform.OS === 'ios' ? 20 : 24} />
-      <T v="titleLarge" lines={1} style={{ flex: 1, marginLeft: 4 }}>{title}</T>
+      <T v="title" lines={1} style={{ flex: 1, marginLeft: 4 }}>{title}</T>
       {actions}
     </View>
   );
@@ -198,22 +199,22 @@ export function PageHeader({ title, onBack, actions }: { title: string; onBack: 
 export function SectionTitle({ text, trailing }: { text: string; trailing?: ReactNode }) {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', paddingLeft: Gutter, paddingRight: 8, paddingTop: 20, paddingBottom: 4, minHeight: 32 }}>
-      <T v="titleMedium" style={{ flex: 1 }}>{text}</T>
+      <T v="titleS" style={{ flex: 1 }}>{text}</T>
       {trailing}
     </View>
   );
 }
 
 export function SectionLabel({ text }: { text: string }) {
-  return <T v="titleMedium" style={{ marginTop: 8 }}>{text}</T>;
+  return <T v="titleS" style={{ marginTop: 8 }}>{text}</T>;
 }
 
 /** A short, friendly explanation of why a question is asked or what a word means. */
-export function HelpNote({ text, background = c.surfaceContainer }: { text: string; background?: string }) {
+export function HelpNote({ text, background = palette.surface }: { text: string; background?: string }) {
   return (
     <View style={{ flexDirection: 'row', gap: 10, padding: 12, borderRadius: radius.sm, backgroundColor: background }}>
-      <Icon name="info-outline" size={18} color={c.primary} />
-      <T color={c.onSurfaceVariant} style={{ flex: 1 }}>{text}</T>
+      <Icon name="info-outline" size={18} color={palette.lime} />
+      <T color={palette.textMuted} style={{ flex: 1 }}>{text}</T>
     </View>
   );
 }
@@ -222,8 +223,8 @@ export function ErrorText({ message }: { message: string | null | undefined }) {
   if (!message) return null;
   return (
     <View style={{ flexDirection: 'row', gap: 8, alignItems: 'flex-start' }}>
-      <Icon name="error-outline" size={20} color={c.error} />
-      <T color={c.error} style={{ flex: 1 }}>{message}</T>
+      <Icon name="error-outline" size={20} color={palette.error} />
+      <T color={palette.error} style={{ flex: 1 }}>{message}</T>
     </View>
   );
 }
@@ -258,7 +259,7 @@ export function useAnimatedNumber(value: number, duration = 700, from?: number):
 }
 
 /** A number that counts up from `from` to `value` (or from its previous value when it changes). */
-export function CountingNumber({ value, from = 0, v = 'displaySmall', color = c.onSurface }: { value: number; from?: number; v?: TypeVariant; color?: string }) {
+export function CountingNumber({ value, from = 0, v = 'displayM', color = palette.text }: { value: number; from?: number; v?: TypeVariant; color?: string }) {
   const anim = useAnimatedNumber(value, 1200, from);
   const [shown, setShown] = useState(from);
   useEffect(() => {
@@ -269,7 +270,7 @@ export function CountingNumber({ value, from = 0, v = 'displaySmall', color = c.
 }
 
 /** A slim rounded bar that glides to `progress` (0..1). */
-export function ProgressBar({ progress, color = c.primary, track = c.surfaceContainerHigh, height = 6, duration = 700 }: {
+export function ProgressBar({ progress, color = palette.lime, track = palette.surfaceHigh, height = 6, duration = 700 }: {
   progress: number; color?: string; track?: string; height?: number; duration?: number;
 }) {
   const anim = useAnimatedNumber(Math.min(Math.max(progress, 0), 1), duration, 0);
@@ -291,7 +292,7 @@ export function Skeleton({ width = '100%', height = 16, radius: r = 8, style }: 
     loop.start();
     return () => loop.stop();
   }, [pulse]);
-  return <Animated.View style={[{ width, height, borderRadius: r, backgroundColor: c.surfaceContainerHigh, opacity: pulse }, style]} />;
+  return <Animated.View style={[{ width, height, borderRadius: r, backgroundColor: palette.surfaceHigh, opacity: pulse }, style]} />;
 }
 
 /** Placeholder for a feed or list item while it loads. */
@@ -321,11 +322,11 @@ export function Chip({ label, selected, onPress }: { label: string; selected: bo
       accessibilityState={{ selected }}
       style={{
         height: 34, paddingHorizontal: 14, borderRadius: 10, flexDirection: 'row', alignItems: 'center', gap: 6,
-        backgroundColor: selected ? c.primaryContainer : 'transparent', borderWidth: 1, borderColor: selected ? c.primaryContainer : c.outline,
+        backgroundColor: selected ? palette.limeContainer : 'transparent', borderWidth: 1, borderColor: selected ? palette.limeContainer : palette.outline,
       }}
     >
-      {selected && <Icon name="check" size={16} color={c.primary} />}
-      <T v="labelLarge" color={selected ? c.primary : c.onSurface}>{label}</T>
+      {selected && <Icon name="check" size={16} color={palette.lime} />}
+      <T v="label" color={selected ? palette.lime : palette.text}>{label}</T>
     </Pressable>
   );
 }
@@ -336,9 +337,9 @@ export function Toggle({ value, onChange, label }: { value: boolean; onChange: (
       value={value}
       onValueChange={(v) => { haptics.tick(); onChange(v); }}
       accessibilityLabel={label}
-      trackColor={{ false: c.surfaceContainerHigh, true: c.primary }}
-      thumbColor={Platform.OS === 'android' ? (value ? c.onPrimary : c.onSurfaceVariant) : undefined}
-      ios_backgroundColor={c.surfaceContainerHigh}
+      trackColor={{ false: palette.surfaceHigh, true: palette.lime }}
+      thumbColor={Platform.OS === 'android' ? (value ? palette.onLime : palette.textMuted) : undefined}
+      ios_backgroundColor={palette.surfaceHigh}
     />
   );
 }
@@ -348,7 +349,7 @@ export function Segmented<K extends string>({ options, selected, onSelect, disab
   options: { key: K; label: string }[]; selected: K; onSelect: (k: K) => void; disabled?: boolean;
 }) {
   return (
-    <View style={{ flexDirection: 'row', borderWidth: 1, borderColor: c.outline, borderRadius: 24, overflow: 'hidden', opacity: disabled ? 0.5 : 1 }}>
+    <View style={{ flexDirection: 'row', borderWidth: 1, borderColor: palette.outline, borderRadius: 24, overflow: 'hidden', opacity: disabled ? 0.5 : 1 }}>
       {options.map((o, i) => {
         const on = o.key === selected;
         return (
@@ -360,11 +361,11 @@ export function Segmented<K extends string>({ options, selected, onSelect, disab
             accessibilityState={{ selected: on }}
             style={{
               flex: 1, height: 44, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 6,
-              backgroundColor: on ? c.primaryContainer : 'transparent', borderLeftWidth: i > 0 ? 1 : 0, borderLeftColor: c.outline,
+              backgroundColor: on ? palette.limeContainer : 'transparent', borderLeftWidth: i > 0 ? 1 : 0, borderLeftColor: palette.outline,
             }}
           >
-            {on && <Icon name="check" size={16} color={c.primary} />}
-            <T v="labelLarge" color={on ? c.primary : c.onSurface}>{o.label}</T>
+            {on && <Icon name="check" size={16} color={palette.lime} />}
+            <T v="label" color={on ? palette.lime : palette.text}>{o.label}</T>
           </Pressable>
         );
       })}
@@ -378,30 +379,30 @@ export function TextField({ label, value, onChangeText, suffix, error, hint, big
   big?: boolean; style?: StyleProp<ViewStyle>; right?: ReactNode;
 } & Omit<TextInputProps, 'value' | 'onChangeText' | 'style'>) {
   const [focused, setFocused] = useState(false);
-  const border = error ? c.error : focused ? c.primary : c.outline;
+  const border = error ? palette.error : focused ? palette.lime : palette.outline;
   return (
     <View style={style}>
-      {label ? <T v="labelMedium" color={error ? c.error : focused ? c.primary : c.onSurfaceVariant} style={{ marginBottom: 6 }}>{label}</T> : null}
+      {label ? <T v="label" color={error ? palette.error : focused ? palette.lime : palette.textMuted} style={{ marginBottom: 6 }}>{label}</T> : null}
       <View style={{ flexDirection: 'row', alignItems: 'center', borderWidth: focused || error ? 2 : 1, borderColor: border, borderRadius: 8, paddingHorizontal: focused || error ? 13 : 14, minHeight: 56 }}>
         <TextInput
           value={value}
           onChangeText={onChangeText}
           onFocus={(e) => { setFocused(true); rest.onFocus?.(e); }}
           onBlur={(e) => { setFocused(false); rest.onBlur?.(e); }}
-          placeholderTextColor={c.onSurfaceVariant}
-          selectionColor={c.primary}
-          cursorColor={c.primary}
+          placeholderTextColor={palette.textMuted}
+          selectionColor={palette.lime}
+          cursorColor={palette.lime}
           keyboardAppearance="dark"
           accessibilityLabel={label}
           {...rest}
-          style={[big ? type.titleLarge : type.bodyLarge, { flex: 1, color: c.onSurface, paddingVertical: 12 },
+          style={[big ? type.title : type.body, { flex: 1, color: palette.text, paddingVertical: 12 },
             Platform.OS === 'web' && ({ outlineStyle: 'none' } as object)]}
         />
-        {suffix ? <T v="bodyLarge" color={c.onSurfaceVariant} style={{ marginLeft: 6 }}>{suffix}</T> : null}
+        {suffix ? <T v="body" color={palette.textMuted} style={{ marginLeft: 6 }}>{suffix}</T> : null}
         {right}
       </View>
-      {error ? <T v="bodySmall" color={c.error} style={{ marginTop: 4, marginLeft: 4 }}>{error}</T>
-        : hint ? <T v="bodySmall" color={c.onSurfaceVariant} style={{ marginTop: 4, marginLeft: 4 }}>{hint}</T> : null}
+      {error ? <T v="bodyS" color={palette.error} style={{ marginTop: 4, marginLeft: 4 }}>{error}</T>
+        : hint ? <T v="bodyS" color={palette.textMuted} style={{ marginTop: 4, marginLeft: 4 }}>{hint}</T> : null}
     </View>
   );
 }

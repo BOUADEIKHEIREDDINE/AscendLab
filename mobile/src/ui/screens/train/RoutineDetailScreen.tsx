@@ -11,7 +11,7 @@ import { activeStore, historyLive, TrainRepository, trainLive } from '../../../d
 import { ExerciseLibrary, lastSets, LoggedSet, previousForSets, RoutineExercise } from '../../../data/training';
 import { useStore } from '../../../lib/store';
 import { goBack, useNav, useParams } from '../../../navigation/types';
-import { c, Gutter } from '../../theme';
+import { palette, Gutter } from '../../theme';
 import { haptics } from '../../haptics';
 import { Hairline, IconButton, PageHeader, PrimaryButton, Screen, T } from '../../components/core';
 import { ActionMenu, Dialog } from '../../components/overlays';
@@ -43,8 +43,8 @@ export function RoutineDetailScreen() {
     return (
       <Screen>
         <PageHeader title="Routine" onBack={() => goBack(nav)} />
-        {state.loading ? <ActivityIndicator color={c.primary} style={{ padding: 32 }} />
-          : <T color={c.onSurfaceVariant} style={{ padding: Gutter }}>This routine no longer exists.</T>}
+        {state.loading ? <ActivityIndicator color={palette.lime} style={{ padding: 32 }} />
+          : <T color={palette.textMuted} style={{ padding: Gutter }}>This routine no longer exists.</T>}
       </Screen>
     );
   }
@@ -56,7 +56,7 @@ export function RoutineDetailScreen() {
         actions={<IconButton name="more-vert" label="More" onPress={() => setMenu(true)} />} />
       <ScrollView contentContainerStyle={{ paddingBottom: 16 }}>
         <View style={{ paddingHorizontal: Gutter, paddingTop: 4, paddingBottom: 12, gap: 12 }}>
-          <T v="bodySmall" color={c.onSurfaceVariant}>
+          <T v="bodyS" color={palette.textMuted}>
             In {program.name} · {routine.exercises.length} exercise{routine.exercises.length === 1 ? '' : 's'} · {sets} sets
           </T>
           <PrimaryButton label="Start workout" icon="play-arrow" enabled={routine.exercises.length > 0}
@@ -108,9 +108,9 @@ function ExerciseView({ ex, last, units, onOpen }: { ex: RoutineExercise; last: 
       <View style={{ paddingVertical: 12 }}>
         <View style={{ paddingHorizontal: Gutter, alignItems: 'flex-start' }}>
           <Pressable onPress={onOpen} accessibilityRole="link" style={{ paddingVertical: 4 }}>
-            <T v="titleMedium" color={c.primary}>{ex.name}</T>
+            <T v="titleS" color={palette.lime}>{ex.name}</T>
           </Pressable>
-          <T v="bodySmall" color={c.onSurfaceVariant}>
+          <T v="bodyS" color={palette.textMuted}>
             {rest != null ? `${ex.sets} × ${target} reps to failure · rest ${restText(rest)}` : `${ex.sets} × ${ex.reps} reps`}
           </T>
         </View>
@@ -122,10 +122,10 @@ function ExerciseView({ ex, last, units, onOpen }: { ex: RoutineExercise; last: 
         {rows.map((p, i) => (
           <View key={i} style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: Gutter - 8, paddingVertical: 8 }}>
             <View style={{ width: 36, alignItems: 'center' }}><SetBadge type="NORMAL" normalIndex={i + 1} /></View>
-            <T color={p ? c.onSurface : c.onSurfaceVariant} center style={{ flex: 1.4 }}>
+            <T color={p ? palette.text : palette.textMuted} center style={{ flex: 1.4 }}>
               {p ? `${p.weightKg > 0 ? `${weight(p.weightKg)} ${unit} × ` : ''}${p.reps}` : '–'}
             </T>
-            <T color={c.onSurfaceVariant} center style={{ flex: 1 }}>{target}</T>
+            <T color={palette.textMuted} center style={{ flex: 1 }}>{target}</T>
           </View>
         ))}
       </View>
@@ -134,5 +134,5 @@ function ExerciseView({ ex, last, units, onOpen }: { ex: RoutineExercise; last: 
 }
 
 function Header({ text, width, flex }: { text: string; width?: number; flex?: number }) {
-  return <T v="labelSmall" color={c.onSurfaceVariant} center style={{ width, flex }}>{text}</T>;
+  return <T v="bodyS" color={palette.textMuted} center style={{ width, flex }}>{text}</T>;
 }

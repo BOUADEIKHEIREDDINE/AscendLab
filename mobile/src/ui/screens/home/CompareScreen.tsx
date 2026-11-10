@@ -8,7 +8,7 @@ import { SocialRepository } from '../../../data/socialRepo';
 import { PersonStats, StatsRepository } from '../../../data/statsRepo';
 import { useNow, useStore } from '../../../lib/store';
 import { goBack, useNav } from '../../../navigation/types';
-import { c, Gutter, personColors } from '../../theme';
+import { palette, Gutter, people } from '../../theme';
 import { formatDate } from '../../format';
 import { Hairline, PageHeader, Screen, SectionTitle, SkeletonCard, T, Toggle } from '../../components/core';
 import { ChartSeries, MultiLineChart } from '../../components/charts';
@@ -61,7 +61,7 @@ export function CompareScreen() {
   // Calories stop at yesterday: today isn't finished, and a half day would look like a crash.
   const kcalSeries: ChartSeries[] = stats.map((p, i) => ({
     name: p.name,
-    color: personColors[i],
+    color: people[i],
     points: Object.entries(p.kcal).filter(([k, v]) => k !== todayKey && v > 0)
       .flatMap(([k, v]) => { const t = inRange(k); return t == null ? [] : [[t + DAY_MS / 2, v] as [number, number]]; }),
   }));
@@ -71,7 +71,7 @@ export function CompareScreen() {
       .sort((a, b) => a[0] - b[0]);
     if (pts.length === 0) return [];
     const base = pts[0][1];
-    return [{ name: p.name, color: personColors[i], points: pts.map(([t, kg]) => [t, toUnit(kg - base, units)] as [number, number]) }];
+    return [{ name: p.name, color: people[i], points: pts.map(([t, kg]) => [t, toUnit(kg - base, units)] as [number, number]) }];
   });
   const averages = kcalSeries.filter((s) => s.points.length > 0)
     .map((s) => `${s.name} ${formatKcal(roundInt(s.points.reduce((a, p) => a + p[1], 0) / s.points.length))}`).join('  ·  ');
@@ -80,32 +80,32 @@ export function CompareScreen() {
     <Screen>
       <PageHeader title="You vs friends" onBack={() => goBack(nav)} />
       <ScrollView contentContainerStyle={{ paddingBottom: 24 }}>
-        {stats.length <= 1 && <T color={c.onSurfaceVariant} style={{ paddingHorizontal: Gutter, paddingVertical: 8 }}>Add friends to compare. Until then, here's just you.</T>}
+        {stats.length <= 1 && <T color={palette.textMuted} style={{ paddingHorizontal: Gutter, paddingVertical: 8 }}>Add friends to compare. Until then, here's just you.</T>}
 
         <SectionTitle text="Calories eaten per day" />
         <View style={{ paddingHorizontal: Gutter }}>
           <MultiLineChart series={kcalSeries} startMs={start} endMs={end}
             valueLabel={(v) => `${formatKcal(roundInt(v))} kcal`} dayLabel={formatDate.shortDay} />
         </View>
-        <T v="bodySmall" color={c.onSurfaceVariant} style={{ paddingHorizontal: Gutter, paddingVertical: 10 }}>
+        <T v="bodyS" color={palette.textMuted} style={{ paddingHorizontal: Gutter, paddingVertical: 10 }}>
           Last 30 days, today not included. Daily average: {averages || 'no meals logged yet'}
         </T>
         <Hairline style={{ marginTop: 8 }} />
 
         <SectionTitle text="Weight change" />
-        {weightSeries.length === 0 ? <T color={c.onSurfaceVariant} style={{ paddingHorizontal: Gutter }}>No weigh-ins in the last 30 days.</T> : (
+        {weightSeries.length === 0 ? <T color={palette.textMuted} style={{ paddingHorizontal: Gutter }}>No weigh-ins in the last 30 days.</T> : (
           <View style={{ paddingHorizontal: Gutter }}>
             <MultiLineChart series={weightSeries} startMs={start} endMs={end} zeroLine carryForward
               valueLabel={(v) => `${signed(v)} ${UNIT[units].weightUnit}`} dayLabel={formatDate.shortDay} />
           </View>
         )}
-        <T v="bodySmall" color={c.onSurfaceVariant} style={{ paddingHorizontal: Gutter, paddingVertical: 10 }}>
+        <T v="bodyS" color={palette.textMuted} style={{ paddingHorizontal: Gutter, paddingVertical: 10 }}>
           Shown as change from each person's first weigh-in, so different body sizes compare fairly. Only friends who share their weight appear.
         </T>
         <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: Gutter, paddingVertical: 8, gap: 12 }}>
           <View style={{ flex: 1 }}>
-            <T v="bodyLarge">Share my weight with friends</T>
-            <T v="bodySmall" color={c.onSurfaceVariant}>Friends see how your weight changes over time</T>
+            <T v="body">Share my weight with friends</T>
+            <T v="bodyS" color={palette.textMuted}>Friends see how your weight changes over time</T>
           </View>
           <Toggle value={shareWeight} label="Share my weight with friends" onChange={async (on) => {
             setShareWeight(on);

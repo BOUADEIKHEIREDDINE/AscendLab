@@ -6,7 +6,7 @@ import { ProfileRepository, profileStore } from '../../../data/profileRepo';
 import { useStore } from '../../../lib/store';
 import { goBack, useNav } from '../../../navigation/types';
 import { signOut } from '../../../state/session';
-import { c, withAlpha } from '../../theme';
+import { palette, withAlpha } from '../../theme';
 import { Appear, Hairline, Icon, IconName, PageHeader, Screen, Segmented, T, TextField } from '../../components/core';
 import { Dialog } from '../../components/overlays';
 
@@ -43,8 +43,8 @@ export function SettingsScreen() {
           <Section title="Units">
             <View style={{ padding: 16, gap: 10 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
-                <Icon name="straighten" color={c.onSurfaceVariant} />
-                <T v="bodyLarge">Weight and height</T>
+                <Icon name="straighten" color={palette.textMuted} />
+                <T v="body">Weight and height</T>
               </View>
               <Segmented<Units>
                 options={[{ key: 'METRIC', label: 'kg · cm' }, { key: 'IMPERIAL', label: 'lb · ft / in' }]}
@@ -110,9 +110,9 @@ function DeleteAccountDialog({ onDismiss, onDeleted }: { onDismiss: () => void; 
         <TextField label="Your password" value={password} onChangeText={(t) => { setPassword(t); setError(null); }}
           secureTextEntry autoCapitalize="none" editable={!busy} textContentType="password" />
       ) : (
-        <T color={c.onSurfaceVariant}>To confirm, you'll pick your Google account again.</T>
+        <T color={palette.textMuted}>To confirm, you'll pick your Google account again.</T>
       )}
-      {error && <T color={c.error}>{error}</T>}
+      {error && <T color={palette.error}>{error}</T>}
     </Dialog>
   );
 }
@@ -120,7 +120,7 @@ function DeleteAccountDialog({ onDismiss, onDeleted }: { onDismiss: () => void; 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <View style={{ gap: 8 }}>
-      <T v="labelLarge" color={c.primary} style={{ paddingLeft: 16 }}>{title}</T>
+      <T v="label" color={palette.lime} style={{ paddingLeft: 16 }}>{title}</T>
       <View>{children}</View>
     </View>
   );
@@ -129,21 +129,21 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 function SettingRow({ icon, title, subtitle, onPress, enabled = true, danger }: {
   icon: IconName; title: string; subtitle: string; onPress?: () => void; enabled?: boolean; danger?: boolean;
 }) {
-  const tint = danger ? c.error : !enabled ? withAlpha(c.onSurfaceVariant, 0.5) : c.onSurface;
+  const tint = danger ? palette.ember : !enabled ? withAlpha(palette.textMuted, 0.5) : palette.text;
   return (
     <Pressable
       onPress={onPress}
       disabled={!onPress || !enabled}
       accessibilityRole={onPress ? 'button' : undefined}
-      style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, gap: 16, minHeight: 72, backgroundColor: pressed ? c.surfaceContainer : 'transparent' })}
+      style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, gap: 16, minHeight: 72, backgroundColor: pressed ? palette.surface : 'transparent' })}
     >
-      <Icon name={icon} color={danger ? tint : c.onSurfaceVariant} />
+      <Icon name={icon} color={danger ? tint : palette.textMuted} />
       <View style={{ flex: 1 }}>
-        <T v="bodyLarge" color={tint}>{title}</T>
-        <T color={c.onSurfaceVariant} style={{ opacity: enabled ? 1 : 0.5 }}>{subtitle}</T>
+        <T v="body" color={tint}>{title}</T>
+        <T color={palette.textMuted} style={{ opacity: enabled ? 1 : 0.5 }}>{subtitle}</T>
       </View>
-      {!enabled ? <T v="labelMedium" color={c.onSurfaceVariant}>Soon</T>
-        : onPress ? <Icon name="keyboard-arrow-right" color={c.onSurfaceVariant} /> : null}
+      {!enabled ? <T v="label" color={palette.textMuted}>Soon</T>
+        : onPress ? <Icon name="keyboard-arrow-right" color={palette.textMuted} /> : null}
     </Pressable>
   );
 }

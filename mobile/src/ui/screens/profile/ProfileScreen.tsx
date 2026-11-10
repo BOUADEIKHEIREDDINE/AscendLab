@@ -10,7 +10,7 @@ import { TrainRepository } from '../../../data/trainRepo';
 import { useStore } from '../../../lib/store';
 import { useNav } from '../../../navigation/types';
 import { prepareFeed } from '../../../state/session';
-import { c, Gutter, withAlpha } from '../../theme';
+import { palette, Gutter, withAlpha } from '../../theme';
 import { haptics } from '../../haptics';
 import { formatDate } from '../../format';
 import {
@@ -118,10 +118,10 @@ export function ProfileScreen() {
             <SectionTitle text="Goal" />
             <PressableScale onPress={() => nav.navigate('EditGoals')} style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: Gutter, paddingVertical: 10 }}>
               <View style={{ flex: 1, gap: 2 }}>
-                <T v="bodyLarge">{GOAL[profile.goal].label}</T>
-                <T color={c.onSurfaceVariant}>{formatKcal(t.calories)} kcal · {t.proteinG} g protein · {profile.daysPerWeek} days a week</T>
+                <T v="body">{GOAL[profile.goal].label}</T>
+                <T color={palette.textMuted}>{formatKcal(t.calories)} kcal · {t.proteinG} g protein · {profile.daysPerWeek} days a week</T>
               </View>
-              <Icon name="keyboard-arrow-right" color={c.onSurfaceVariant} />
+              <Icon name="keyboard-arrow-right" color={palette.textMuted} />
             </PressableScale>
           </>
         );
@@ -130,7 +130,7 @@ export function ProfileScreen() {
       {/* A grid of everything you've posted. */}
       <SectionTitle text="Posts" />
       {posts == null ? <View style={{ paddingHorizontal: Gutter }}><Skeleton height={120} /></View>
-        : posts.length === 0 ? <T color={c.onSurfaceVariant} style={{ paddingHorizontal: Gutter, paddingVertical: 8 }}>Your meals and workouts will show up here.</T> : null}
+        : posts.length === 0 ? <T color={palette.textMuted} style={{ paddingHorizontal: Gutter, paddingVertical: 8 }}>Your meals and workouts will show up here.</T> : null}
     </View>
   );
 
@@ -158,8 +158,8 @@ export function ProfileScreen() {
 function HeaderStat({ value, label, onPress }: { value: string | null; label: string; onPress?: () => void }) {
   const content = (
     <View style={{ alignItems: 'center', paddingVertical: 4 }}>
-      {value != null ? <T v="titleLarge">{value}</T> : <Skeleton width={28} height={24} />}
-      <T v="bodySmall" color={c.onSurfaceVariant}>{label}</T>
+      {value != null ? <T v="title">{value}</T> : <Skeleton width={28} height={24} />}
+      <T v="bodyS" color={palette.textMuted}>{label}</T>
     </View>
   );
   return <View style={{ flex: 1 }}>{onPress ? <PressableScale onPress={onPress} label={`${value ?? ''} ${label}`}>{content}</PressableScale> : content}</View>;
@@ -167,9 +167,9 @@ function HeaderStat({ value, label, onPress }: { value: string | null; label: st
 
 function DashButton({ icon, label, onPress }: { icon: IconName; label: string; onPress: () => void }) {
   return (
-    <PressableScale onPress={onPress} label={label} style={{ flex: 1, alignItems: 'center', paddingVertical: 10, paddingHorizontal: 4, borderWidth: 1, borderColor: c.outline, borderRadius: 20 }}>
-      <Icon name={icon} color={c.primary} />
-      <T v="labelMedium" color={c.primary} style={{ marginTop: 4 }} lines={1}>{label}</T>
+    <PressableScale onPress={onPress} label={label} style={{ flex: 1, alignItems: 'center', paddingVertical: 10, paddingHorizontal: 4, borderWidth: 1, borderColor: palette.outline, borderRadius: 20 }}>
+      <Icon name={icon} color={palette.lime} />
+      <T v="label" color={palette.lime} style={{ marginTop: 4 }} lines={1}>{label}</T>
     </PressableScale>
   );
 }
@@ -183,19 +183,19 @@ function GridTile({ post, onPress }: { post: FeedPost; onPress: () => void }) {
           style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 8 }}>
           {post.workout ? (
             <>
-              <Icon name="fitness-center" color={c.primary} />
-              <T v="labelLarge" color="#FFFFFF" lines={2} center>{post.workout.title}</T>
+              <Icon name="fitness-center" color={palette.lime} />
+              <T v="label" color="#FFFFFF" lines={2} center>{post.workout.title}</T>
             </>
           ) : (
             <>
-              <T v="titleLarge" color="#FFFFFF">{formatKcal(post.calories)}</T>
-              <T v="labelSmall" color={withAlpha('#FFFFFF', 0.7)}>kcal · {MEAL[post.mealType].label.toLowerCase()}</T>
+              <T v="title" color="#FFFFFF">{formatKcal(post.calories)}</T>
+              <T v="bodyS" color={withAlpha('#FFFFFF', 0.7)}>kcal · {MEAL[post.mealType].label.toLowerCase()}</T>
             </>
           )}
         </LinearGradient>
       )}
       {(post.commentCount > 0 || post.likes.length > 0) && (
-        <T v="labelSmall" color="#FFFFFF" style={{ position: 'absolute', left: 6, bottom: 6 }}>♥ {post.likes.length}</T>
+        <T v="bodyS" color="#FFFFFF" style={{ position: 'absolute', left: 6, bottom: 6 }}>♥ {post.likes.length}</T>
       )}
     </PressableScale>
   );
@@ -208,8 +208,8 @@ function WeightSection({ entries, profileKg, units, onLog }: { entries: WeightEn
   if (entries.length === 0) {
     return (
       <View style={{ paddingHorizontal: Gutter, paddingVertical: 8, gap: 12 }}>
-        <T v="headlineSmall">{profileKg != null ? Convert.formatWeight(profileKg, units) : '–'}</T>
-        <T color={c.onSurfaceVariant}>Log your weight regularly to see the trend.</T>
+        <T v="title">{profileKg != null ? Convert.formatWeight(profileKg, units) : '–'}</T>
+        <T color={palette.textMuted}>Log your weight regularly to see the trend.</T>
         <Button kind="tonal" label="Log today's weight" onPress={onLog} />
       </View>
     );
@@ -220,14 +220,14 @@ function WeightSection({ entries, profileKg, units, onLog }: { entries: WeightEn
   return (
     <View style={{ paddingHorizontal: Gutter, paddingVertical: 8, gap: 12 }}>
       <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 10 }}>
-        <T v="headlineSmall">{formatPrecise(latest.kg, units)}</T>
+        <T v="title">{formatPrecise(latest.kg, units)}</T>
         {entries.length > 1 && (
-          <T color={c.onSurfaceVariant} style={{ marginBottom: 3 }}>{sign}{formatPrecise(Math.abs(change), units)} since {formatDate.dayMonth(entries[0].at)}</T>
+          <T color={palette.textMuted} style={{ marginBottom: 3 }}>{sign}{formatPrecise(Math.abs(change), units)} since {formatDate.dayMonth(entries[0].at)}</T>
         )}
       </View>
       {entries.length > 1
         ? <LineChart points={entries.map((e) => [e.at, e.kg])} pointLabel={([at, kg]) => `${formatDate.dayMonth(at)}: ${formatPrecise(kg, units)}`} />
-        : <T color={c.onSurfaceVariant}>Log again on another day to start your trend line.</T>}
+        : <T color={palette.textMuted}>Log again on another day to start your trend line.</T>}
     </View>
   );
 }

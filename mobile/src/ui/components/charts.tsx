@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { Animated, Easing, GestureResponderEvent, Pressable, View } from 'react-native';
 import Svg, { Circle, Line, Path, Rect } from 'react-native-svg';
-import { c } from '../theme';
+import { palette } from '../theme';
 import { haptics } from '../haptics';
 import { T } from './core';
 
@@ -35,7 +35,7 @@ const xOf = (e: GestureResponderEvent) => e.nativeEvent.locationX;
  * A ring (or an arc of `sweep` degrees starting at `start`, 0 = 3 o'clock) that fills to
  * `progress` (0..1) with a smooth animation.
  */
-export function Ring({ size, stroke, progress, color, track = c.surfaceContainerHigh, start = -90, sweep = 360, round = true, duration = 900 }: {
+export function Ring({ size, stroke, progress, color, track = palette.surfaceHigh, start = -90, sweep = 360, round = true, duration = 900 }: {
   size: number; stroke: number; progress: number; color: string; track?: string; start?: number; sweep?: number; round?: boolean; duration?: number;
 }) {
   const r = (size - stroke) / 2;
@@ -88,7 +88,7 @@ export function BarChart({ values, labels, valueLabel }: { values: number[]; lab
       >
         {width > 0 && (
           <Svg width={width} height={height}>
-            <Line x1={0} y1={baseline} x2={width} y2={baseline} stroke={c.outlineVariant} strokeWidth={1} />
+            <Line x1={0} y1={baseline} x2={width} y2={baseline} stroke={palette.hairline} strokeWidth={1} />
             {values.map((v, i) => {
               const h = (v / max) * (height - 8) * grow;
               if (h <= 0) return null;
@@ -97,13 +97,13 @@ export function BarChart({ values, labels, valueLabel }: { values: number[]; lab
               // Rounded data end, square at the baseline.
               const d = `M${left},${baseline} L${left},${baseline - h + r} Q${left},${baseline - h} ${left + r},${baseline - h} ` +
                 `L${left + barWidth - r},${baseline - h} Q${left + barWidth},${baseline - h} ${left + barWidth},${baseline - h + r} L${left + barWidth},${baseline} Z`;
-              return <Path key={i} d={d} fill={c.primary} fillOpacity={i === selected ? 1 : 0.45} />;
+              return <Path key={i} d={d} fill={palette.lime} fillOpacity={i === selected ? 1 : 0.45} />;
             })}
           </Svg>
         )}
       </Pressable>
       <View style={{ flexDirection: 'row' }}>
-        {labels.map((l, i) => <T key={i} v="labelSmall" color={c.onSurfaceVariant} center style={{ flex: 1 }}>{l}</T>)}
+        {labels.map((l, i) => <T key={i} v="bodyS" color={palette.textMuted} center style={{ flex: 1 }}>{l}</T>)}
       </View>
     </View>
   );
@@ -150,14 +150,14 @@ export function LineChart({ points, pointLabel }: { points: [number, number][]; 
       >
         {width > 0 && points.length > 0 && (
           <Svg width={width} height={height}>
-            {[0, 0.5, 1].map((f) => <Line key={f} x1={0} x2={width} y1={pad + f * (height - 2 * pad)} y2={pad + f * (height - 2 * pad)} stroke={c.outlineVariant} strokeWidth={1} />)}
-            <Path d={d} stroke={c.primary} strokeWidth={2} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+            {[0, 0.5, 1].map((f) => <Line key={f} x1={0} x2={width} y1={pad + f * (height - 2 * pad)} y2={pad + f * (height - 2 * pad)} stroke={palette.hairline} strokeWidth={1} />)}
+            <Path d={d} stroke={palette.lime} strokeWidth={2} fill="none" strokeLinecap="round" strokeLinejoin="round" />
             {/* Left-to-right reveal: a background-coloured cover that slides away. */}
-            <Rect x={width * reveal} y={0} width={width * (1 - reveal)} height={height} fill={c.background} />
+            <Rect x={width * reveal} y={0} width={width * (1 - reveal)} height={height} fill={palette.ink} />
             {sel && xs[selected] != null && (
               <>
-                <Circle cx={xs[selected]} cy={y(sel[1])} r={6} fill={c.surfaceContainer} />
-                <Circle cx={xs[selected]} cy={y(sel[1])} r={4} fill={c.primary} />
+                <Circle cx={xs[selected]} cy={y(sel[1])} r={6} fill={palette.surface} />
+                <Circle cx={xs[selected]} cy={y(sel[1])} r={4} fill={palette.lime} />
               </>
             )}
           </Svg>
@@ -206,8 +206,8 @@ export function MultiLineChart({ series, startMs, endMs, valueLabel, dayLabel, z
   return (
     <View>
       <View style={{ flexDirection: 'row' }}>
-        <T v="labelSmall" color={c.onSurfaceVariant} style={{ flex: 1 }}>{valueLabel(maxV)}</T>
-        {selectedDay != null && <T v="labelMedium">{dayLabel(selectedDay * DAY_MS)}</T>}
+        <T v="bodyS" color={palette.textMuted} style={{ flex: 1 }}>{valueLabel(maxV)}</T>
+        {selectedDay != null && <T v="label">{dayLabel(selectedDay * DAY_MS)}</T>}
       </View>
       <Pressable
         onLayout={onLayout}
@@ -222,9 +222,9 @@ export function MultiLineChart({ series, startMs, endMs, valueLabel, dayLabel, z
       >
         {width > 0 && (
           <Svg width={width} height={height}>
-            {[0, 0.5, 1].map((f) => <Line key={f} x1={0} x2={width} y1={pad + f * (height - 2 * pad)} y2={pad + f * (height - 2 * pad)} stroke={c.outlineVariant} strokeWidth={1} />)}
-            {zeroLine && minV < 0 && maxV > 0 && <Line x1={0} x2={width} y1={y(0)} y2={y(0)} stroke={c.onSurfaceVariant} strokeWidth={1} />}
-            {selectedDay != null && <Line x1={x(selectedDay * DAY_MS + DAY_MS / 2)} x2={x(selectedDay * DAY_MS + DAY_MS / 2)} y1={0} y2={height} stroke={c.onSurfaceVariant} strokeWidth={1} />}
+            {[0, 0.5, 1].map((f) => <Line key={f} x1={0} x2={width} y1={pad + f * (height - 2 * pad)} y2={pad + f * (height - 2 * pad)} stroke={palette.hairline} strokeWidth={1} />)}
+            {zeroLine && minV < 0 && maxV > 0 && <Line x1={0} x2={width} y1={y(0)} y2={y(0)} stroke={palette.textMuted} strokeWidth={1} />}
+            {selectedDay != null && <Line x1={x(selectedDay * DAY_MS + DAY_MS / 2)} x2={x(selectedDay * DAY_MS + DAY_MS / 2)} y1={0} y2={height} stroke={palette.textMuted} strokeWidth={1} />}
             {series.map((s) => {
               const pts = [...s.points].sort((a, b) => a[0] - b[0]);
               if (pts.length === 1) return <Circle key={s.name} cx={x(pts[0][0])} cy={y(pts[0][1])} r={4} fill={s.color} />;
@@ -232,14 +232,14 @@ export function MultiLineChart({ series, startMs, endMs, valueLabel, dayLabel, z
               const d = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${x(p[0])},${y(p[1])}`).join(' ');
               return <Path key={s.name} d={d} stroke={s.color} strokeWidth={2} fill="none" strokeLinecap="round" strokeLinejoin="round" />;
             })}
-            <Rect x={width * reveal} y={0} width={width * (1 - reveal)} height={height} fill={c.background} />
+            <Rect x={width * reveal} y={0} width={width * (1 - reveal)} height={height} fill={palette.ink} />
             {/* Markers on the selected day, ringed with the background so overlaps stay readable. */}
             {selectedDay != null && series.map((s) => {
               const p = s.points.find((q) => dayOf(q[0]) === selectedDay);
               if (!p) return null;
               return (
                 <React.Fragment key={s.name}>
-                  <Circle cx={x(p[0])} cy={y(p[1])} r={6} fill={c.background} />
+                  <Circle cx={x(p[0])} cy={y(p[1])} r={6} fill={palette.ink} />
                   <Circle cx={x(p[0])} cy={y(p[1])} r={4} fill={s.color} />
                 </React.Fragment>
               );
@@ -247,7 +247,7 @@ export function MultiLineChart({ series, startMs, endMs, valueLabel, dayLabel, z
           </Svg>
         )}
       </Pressable>
-      <T v="labelSmall" color={c.onSurfaceVariant}>{valueLabel(minV)}</T>
+      <T v="bodyS" color={palette.textMuted}>{valueLabel(minV)}</T>
       <View style={{ marginTop: 8, gap: 6 }}>
         {series.map((s) => {
           const v = selectedDay == null ? null : valueOn(s, selectedDay);
@@ -255,7 +255,7 @@ export function MultiLineChart({ series, startMs, endMs, valueLabel, dayLabel, z
             <View key={s.name} style={{ flexDirection: 'row', alignItems: 'center' }}>
               <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: s.color }} />
               <T style={{ flex: 1, marginLeft: 10 }}>{s.name}</T>
-              <T v="labelLarge">{selectedDay == null ? '' : v == null ? '–' : valueLabel(v)}</T>
+              <T v="label">{selectedDay == null ? '' : v == null ? '–' : valueLabel(v)}</T>
             </View>
           );
         })}

@@ -6,7 +6,7 @@ import { MEAL, MEAL_TYPES, MealType, mealTypeForNow, plural } from '../../../dat
 import { meStore, SocialRepository } from '../../../data/socialRepo';
 import { useStore } from '../../../lib/store';
 import { goBack, useNav, useParams } from '../../../navigation/types';
-import { c, Gutter, type } from '../../theme';
+import { palette, Gutter, type } from '../../theme';
 import { haptics } from '../../haptics';
 import { Chip, digits, Hairline, Icon, IconButton, IconName, PageHeader, PressableScale, PrimaryButton, Screen, T } from '../../components/core';
 import { MealPhoto } from '../../components/feed';
@@ -65,7 +65,7 @@ export function CreatePostScreen() {
       <PageHeader title="Log a meal" onBack={() => goBack(nav)} />
       <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="handled">
         {/* Photo first, edge to edge, like a photo app's composer. */}
-        <View style={{ width: '100%', aspectRatio: 4 / 3, backgroundColor: c.surfaceContainer, alignItems: 'center', justifyContent: 'center' }}>
+        <View style={{ width: '100%', aspectRatio: 4 / 3, backgroundColor: palette.surface, alignItems: 'center', justifyContent: 'center' }}>
           {photo ? (
             <>
               <MealPhoto photo={photo} style={{ width: '100%', height: '100%' }} />
@@ -73,7 +73,7 @@ export function CreatePostScreen() {
                 <IconButton name="close" label="Remove photo" onPress={() => { haptics.tick(); setPhoto(null); }} />
               </View>
             </>
-          ) : processingPhoto ? <ActivityIndicator color={c.primary} /> : (
+          ) : processingPhoto ? <ActivityIndicator color={palette.lime} /> : (
             <View style={{ flexDirection: 'row', gap: 40 }}>
               <PhotoSource icon="photo-camera" label="Take photo" onPress={() => attachPhoto(MealPhotos.take)} />
               <PhotoSource icon="photo-library" label="Choose photo" onPress={() => attachPhoto(MealPhotos.pick)} />
@@ -90,13 +90,13 @@ export function CreatePostScreen() {
           value={description}
           onChangeText={(t) => setDescription(t.slice(0, 200))}
           placeholder="What did you eat?"
-          placeholderTextColor={c.onSurfaceVariant}
+          placeholderTextColor={palette.textMuted}
           multiline
           autoCapitalize="sentences"
-          selectionColor={c.primary}
+          selectionColor={palette.lime}
           keyboardAppearance="dark"
           accessibilityLabel="What did you eat?"
-          style={[type.bodyLarge, { color: c.onSurface, minHeight: 72, paddingHorizontal: Gutter, paddingVertical: 16, textAlignVertical: 'top' }]}
+          style={[type.body, { color: palette.text, minHeight: 72, paddingHorizontal: Gutter, paddingVertical: 16, textAlignVertical: 'top' }]}
         />
         <Hairline />
         <NumberRow label="Calories" value={caloriesText} onChange={(v) => { setCaloriesText(digits(v, 5)); setError(null); }} suffix="kcal" error={caloriesError} />
@@ -107,14 +107,14 @@ export function CreatePostScreen() {
         <Hairline />
         <NumberRow label="Fat (optional)" value={fatText} onChange={(v) => { setFatText(digits(v, 3)); setError(null); }} suffix="g" error={macroError} />
         <Hairline />
-        <T v="bodySmall" color={c.onSurfaceVariant} style={{ paddingHorizontal: Gutter, paddingVertical: 12 }}>
+        <T v="bodyS" color={palette.textMuted} style={{ paddingHorizontal: Gutter, paddingVertical: 12 }}>
           Tip: a full plate is often 500 to 800 kcal, and a palm-sized portion of meat or fish is about 25 g of protein.
         </T>
-        {error && <T color={c.error} style={{ paddingHorizontal: Gutter }}>{error}</T>}
+        {error && <T color={palette.error} style={{ paddingHorizontal: Gutter }}>{error}</T>}
       </ScrollView>
 
       <View style={{ paddingHorizontal: Gutter, paddingVertical: 12, gap: 8 }}>
-        <T v="bodySmall" color={c.onSurfaceVariant} center>
+        <T v="bodyS" color={palette.textMuted} center>
           {friends === 0 ? 'Only you will see this until you add friends.' : `Shared with your ${friends} ${plural(friends, 'friend')}.`}
         </T>
         <PrimaryButton label="Post meal" enabled={canPost} loading={busy} onPress={post} />
@@ -126,10 +126,10 @@ export function CreatePostScreen() {
 function PhotoSource({ icon, label, onPress }: { icon: IconName; label: string; onPress: () => void }) {
   return (
     <PressableScale onPress={onPress} label={label} style={{ alignItems: 'center', padding: 12 }}>
-      <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: c.background, alignItems: 'center', justifyContent: 'center' }}>
-        <Icon name={icon} color={c.primary} />
+      <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: palette.ink, alignItems: 'center', justifyContent: 'center' }}>
+        <Icon name={icon} color={palette.lime} />
       </View>
-      <T v="labelLarge" style={{ marginTop: 8 }}>{label}</T>
+      <T v="label" style={{ marginTop: 8 }}>{label}</T>
     </PressableScale>
   );
 }
@@ -139,21 +139,21 @@ function NumberRow({ label, value, onChange, suffix, error }: { label: string; v
   return (
     <View style={{ paddingHorizontal: Gutter, paddingVertical: 14 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-        <T v="bodyLarge" style={{ flex: 1 }}>{label}</T>
+        <T v="body" style={{ flex: 1 }}>{label}</T>
         <TextInput
           value={value}
           onChangeText={onChange}
           placeholder="0"
-          placeholderTextColor={c.onSurfaceVariant}
+          placeholderTextColor={palette.textMuted}
           keyboardType="number-pad"
-          selectionColor={c.primary}
+          selectionColor={palette.lime}
           keyboardAppearance="dark"
           accessibilityLabel={label}
-          style={[type.titleMedium, { color: c.onSurface, textAlign: 'right', width: 120, paddingVertical: 4 }]}
+          style={[type.titleS, { color: palette.text, textAlign: 'right', width: 120, paddingVertical: 4 }]}
         />
-        <T v="titleMedium" color={c.onSurfaceVariant}> {suffix}</T>
+        <T v="titleS" color={palette.textMuted}> {suffix}</T>
       </View>
-      {error ? <T v="bodySmall" color={c.error} style={{ marginTop: 4 }}>{error}</T> : null}
+      {error ? <T v="bodyS" color={palette.error} style={{ marginTop: 4 }}>{error}</T> : null}
     </View>
   );
 }

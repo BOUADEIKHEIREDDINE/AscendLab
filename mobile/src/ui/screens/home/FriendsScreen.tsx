@@ -5,7 +5,7 @@ import { PublicProfile } from '../../../data/social';
 import { meStore, SocialRepository } from '../../../data/socialRepo';
 import { useStore } from '../../../lib/store';
 import { goBack, useNav } from '../../../navigation/types';
-import { c, Gutter } from '../../theme';
+import { palette, Gutter } from '../../theme';
 import { haptics } from '../../haptics';
 import { Avatar, Button, Hairline, IconButton, PageHeader, PrimaryButton, Screen, T, TextField } from '../../components/core';
 import { Dialog, toast } from '../../components/overlays';
@@ -50,13 +50,13 @@ export function FriendsScreen() {
       <PageHeader title="Friends" onBack={() => goBack(nav)} />
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingHorizontal: Gutter, paddingVertical: 8, gap: 16 }}>
         <View style={{ gap: 12, paddingVertical: 8 }}>
-          <T v="labelLarge" color={c.primary}>Your friend code</T>
-          {me == null ? <ActivityIndicator color={c.primary} /> : (
+          <T v="label" color={palette.lime}>Your friend code</T>
+          {me == null ? <ActivityIndicator color={palette.lime} /> : (
             <>
               <T center style={{ fontFamily: 'monospace', fontSize: 36, lineHeight: 44, letterSpacing: 4 }}>
                 {me.code.slice(0, 3)} {me.code.slice(3)}
               </T>
-              <T color={c.onSurfaceVariant}>Friends type this code to add you. You'll then see each other's meals.</T>
+              <T color={palette.textMuted}>Friends type this code to add you. You'll then see each other's meals.</T>
               <View style={{ flexDirection: 'row', gap: 12 }}>
                 <Button label="Copy" icon="content-copy" style={{ flex: 1 }}
                   onPress={async () => { await Clipboard.setStringAsync(me.code); toast('Code copied'); }} />
@@ -69,7 +69,7 @@ export function FriendsScreen() {
 
         <Hairline />
         <View style={{ gap: 12, paddingVertical: 8 }}>
-          <T v="labelLarge" color={c.primary}>Add a friend</T>
+          <T v="label" color={palette.lime}>Add a friend</T>
           <TextField
             label="Their code"
             placeholder="ABC123"
@@ -79,13 +79,13 @@ export function FriendsScreen() {
             autoCorrect={false}
             returnKeyType="done"
           />
-          {addMessage && <T color={addMessage.ok ? c.primary : c.error}>{addMessage.text}</T>}
+          {addMessage && <T color={addMessage.ok ? palette.lime : palette.error}>{addMessage.text}</T>}
           <PrimaryButton label="Add friend" enabled={code.length === 6} loading={adding} onPress={addFriend} />
         </View>
 
         <Hairline />
         <View style={{ gap: 12, paddingVertical: 8 }}>
-          <T v="labelLarge" color={c.primary}>Your name in the feed</T>
+          <T v="label" color={palette.lime}>Your name in the feed</T>
           <TextField value={name} onChangeText={(t) => setName(t.slice(0, 30))} autoCapitalize="words" returnKeyType="done" accessibilityLabel="Your name in the feed" />
           {changed && (
             <View style={{ alignItems: 'flex-end' }}>
@@ -98,15 +98,15 @@ export function FriendsScreen() {
         </View>
 
         <Hairline />
-        <T v="labelLarge" color={c.primary}>Your friends{friends ? ` (${friends.length})` : ''}</T>
-        {loadError && <T color={c.error}>{loadError}</T>}
-        {friends == null ? <ActivityIndicator color={c.primary} />
-          : friends.length === 0 ? <T color={c.onSurfaceVariant}>No friends yet. Share your code or add theirs above.</T>
+        <T v="label" color={palette.lime}>Your friends{friends ? ` (${friends.length})` : ''}</T>
+        {loadError && <T color={palette.error}>{loadError}</T>}
+        {friends == null ? <ActivityIndicator color={palette.lime} />
+          : friends.length === 0 ? <T color={palette.textMuted}>No friends yet. Share your code or add theirs above.</T>
             : friends.map((f) => (
               <View key={f.uid} style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                 <Avatar name={f.name} seed={f.uid} />
-                <T v="bodyLarge" style={{ flex: 1 }}>{f.name}</T>
-                <IconButton name="person-remove" label={`Remove ${f.name}`} color={c.onSurfaceVariant} onPress={() => setRemoving(f)} />
+                <T v="body" style={{ flex: 1 }}>{f.name}</T>
+                <IconButton name="person-remove" label={`Remove ${f.name}`} color={palette.textMuted} onPress={() => setRemoving(f)} />
               </View>
             ))}
         <View style={{ height: 8 }} />

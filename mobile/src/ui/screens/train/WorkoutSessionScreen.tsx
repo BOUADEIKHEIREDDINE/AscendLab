@@ -12,7 +12,7 @@ import {
 } from '../../../data/training';
 import { useStore } from '../../../lib/store';
 import { goBack, useNav } from '../../../navigation/types';
-import { c, colors, Gutter, type } from '../../theme';
+import { palette, Gutter, type } from '../../theme';
 import { haptics } from '../../haptics';
 import { Button, digits, Hairline, Icon, IconButton, PrimaryButton, ProgressBar, Screen, T, TextField, Toggle } from '../../components/core';
 import { ActionMenu, Dialog, toast } from '../../components/overlays';
@@ -75,7 +75,7 @@ export function WorkoutSessionScreen() {
     <Screen keyboard edges={['top', 'bottom']}>
       <View style={{ flexDirection: 'row', alignItems: 'center', paddingLeft: 4, paddingRight: 16, paddingTop: 8 }}>
         <IconButton name="keyboard-arrow-down" label="Minimize" onPress={() => goBack(nav)} />
-        <T v="titleLarge" lines={1} style={{ flex: 1 }}>{w.title}</T>
+        <T v="title" lines={1} style={{ flex: 1 }}>{w.title}</T>
         <Button kind="filled" label="Finish" onPress={() => setFinishing(true)} />
       </View>
       <View style={{ flexDirection: 'row', paddingHorizontal: 20, paddingVertical: 8 }}>
@@ -92,7 +92,7 @@ export function WorkoutSessionScreen() {
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={{ paddingBottom: 24 }}
         ListHeaderComponent={w.exercises.length === 0
-          ? <T v="bodyLarge" color={c.onSurfaceVariant} style={{ padding: Gutter }}>Add your first exercise to get going.</T>
+          ? <T v="body" color={palette.textMuted} style={{ padding: Gutter }}>Add your first exercise to get going.</T>
           : w.warmUp && w.warmUp.length > 0 ? <WarmUpCard lines={w.warmUp} /> : undefined}
         renderItem={({ item, index }) => (
           <View>
@@ -112,7 +112,7 @@ export function WorkoutSessionScreen() {
         ListFooterComponent={
           <View style={{ paddingHorizontal: Gutter, paddingVertical: 16, gap: 8 }}>
             <Button kind="filled" label="Add exercise" icon="add" onPress={() => setPicking(true)} style={{ height: 52 }} />
-            <Button kind="text" label="Discard workout" color={c.error} onPress={() => setConfirmDiscard(true)} />
+            <Button kind="text" label="Discard workout" color={palette.ember} onPress={() => setConfirmDiscard(true)} />
           </View>
         }
       />
@@ -123,12 +123,12 @@ export function WorkoutSessionScreen() {
       {/* Live personal-record alert: floats over the header like a toast, so the sets never move. */}
       {prBanner && (
         <Animated.View pointerEvents="none" style={{
-          position: 'absolute', top: 0, left: 0, right: 0, backgroundColor: colors.apricot, flexDirection: 'row', alignItems: 'center',
+          position: 'absolute', top: 0, left: 0, right: 0, backgroundColor: palette.gold, flexDirection: 'row', alignItems: 'center',
           paddingHorizontal: Gutter, paddingVertical: 12, gap: 12, opacity: banner,
           transform: [{ translateY: banner.interpolate({ inputRange: [0, 1], outputRange: [-60, 0] }) }],
         }}>
-          <Icon name="emoji-events" color={colors.midnightBlue} />
-          <T v="titleSmall" color={colors.midnightBlue} style={{ flex: 1 }}>{prBanner}</T>
+          <Icon name="emoji-events" color={palette.onLime} />
+          <T v="titleS" color={palette.onLime} style={{ flex: 1 }}>{prBanner}</T>
         </Animated.View>
       )}
 
@@ -204,9 +204,9 @@ export function WorkoutSessionScreen() {
 /** The session's optional warm-up, before the first exercise. */
 function WarmUpCard({ lines }: { lines: string[] }) {
   return (
-    <View style={{ marginHorizontal: Gutter, marginTop: 12, padding: 12, borderRadius: 12, backgroundColor: c.surfaceContainer, gap: 4 }}>
-      <T v="titleSmall">Warm-up (optional)</T>
-      {lines.map((line) => <T key={line} v="bodySmall" color={c.onSurfaceVariant}>• {line}</T>)}
+    <View style={{ marginHorizontal: Gutter, marginTop: 12, padding: 12, borderRadius: 12, backgroundColor: palette.surface, gap: 4 }}>
+      <T v="titleS">Warm-up (optional)</T>
+      {lines.map((line) => <T key={line} v="bodyS" color={palette.textMuted}>• {line}</T>)}
     </View>
   );
 }
@@ -216,8 +216,8 @@ const restText = (sec: number) => (sec % 60 === 0 ? `${sec / 60} min` : `${Math.
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <View style={{ flex: 1 }}>
-      <T v="labelMedium" color={c.onSurfaceVariant}>{label}</T>
-      <T v="titleMedium">{value}</T>
+      <T v="label" color={palette.textMuted}>{label}</T>
+      <T v="titleS">{value}</T>
     </View>
   );
 }
@@ -225,10 +225,10 @@ function Stat({ label, value }: { label: string; value: string }) {
 function RestBar({ secondsLeft, total }: { secondsLeft: number; total: number }) {
   const shift = (ms: number | null) => TrainRepository.update((w) => ({ ...w, restEndsAt: ms == null ? null : (w.restEndsAt ?? Date.now()) + ms }));
   return (
-    <View style={{ backgroundColor: c.primaryContainer, paddingHorizontal: Gutter, paddingVertical: 8 }}>
+    <View style={{ backgroundColor: palette.limeContainer, paddingHorizontal: Gutter, paddingVertical: 8 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-        <Icon name="timer" color={c.primary} />
-        <T v="titleMedium" color={c.primary} style={{ flex: 1 }}>  Rest  {clock(secondsLeft)}</T>
+        <Icon name="timer" color={palette.lime} />
+        <T v="titleS" color={palette.lime} style={{ flex: 1 }}>  Rest  {clock(secondsLeft)}</T>
         <Button kind="text" label="−15" onPress={() => shift(-15_000)} compact />
         <Button kind="text" label="+15" onPress={() => shift(15_000)} compact />
         <Button kind="text" label="Skip" onPress={() => shift(null)} compact />
@@ -262,18 +262,18 @@ function ExerciseBlock({ ex, index, previous, records, units, onOpen, onRecord, 
       <View style={{ flexDirection: 'row', alignItems: 'center', paddingLeft: Gutter, paddingRight: 4 }}>
         <View style={{ flex: 1, alignItems: 'flex-start' }}>
           <Pressable onPress={onOpen} accessibilityRole="link" style={{ paddingVertical: 4 }}>
-            <T v="titleMedium" color={c.primary}>{ex.name}</T>
+            <T v="titleS" color={palette.lime}>{ex.name}</T>
           </Pressable>
-          {ex.tag && <T v="labelSmall" color={c.primary}>{ex.tag === 'swapped' ? 'swapped for this workout' : 'added'}</T>}
+          {ex.tag && <T v="bodyS" color={palette.lime}>{ex.tag === 'swapped' ? 'swapped for this workout' : 'added'}</T>}
         </View>
         <IconButton name="more-vert" label="More" onPress={() => setMenu(true)} />
       </View>
       {plan && (
         <View style={{ paddingHorizontal: Gutter, paddingBottom: 4, gap: 2 }}>
-          <T v="bodySmall" color={c.onSurfaceVariant}>
+          <T v="bodyS" color={palette.textMuted}>
             {plan.sets} × {plan.repMin}–{plan.repMax} reps to failure · rest {restText(plan.restSec)}
           </T>
-          {plan.note && <T v="bodySmall" color={plan.findWeight ? colors.apricot : c.primary}>{plan.note}</T>}
+          {plan.note && <T v="bodyS" color={plan.findWeight ? palette.gold : palette.lime}>{plan.note}</T>}
         </View>
       )}
       <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: Gutter - 8, paddingVertical: 4 }}>
@@ -372,7 +372,7 @@ function ExerciseBlock({ ex, index, previous, records, units, onOpen, onRecord, 
 }
 
 function Header({ text, width, flex }: { text: string; width?: number; flex?: number }) {
-  return <T v="labelSmall" color={c.onSurfaceVariant} center style={{ width, flex }}>{text}</T>;
+  return <T v="bodyS" color={palette.textMuted} center style={{ width, flex }}>{text}</T>;
 }
 
 function SetRow({ number, set, previous, weightHint, repsHint, onChange, onToggle, onRemove, onType }: {
@@ -381,13 +381,13 @@ function SetRow({ number, set, previous, weightHint, repsHint, onChange, onToggl
 }) {
   const [menu, setMenu] = useState(false);
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: Gutter - 8, paddingVertical: 4, backgroundColor: set.done ? c.primaryContainer : c.background }}>
+    <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: Gutter - 8, paddingVertical: 4, backgroundColor: set.done ? palette.limeContainer : palette.ink }}>
       {/* Tap the set number to change its type (W / F / D). */}
       <Pressable onPress={() => { haptics.tick(); setMenu(true); }} accessibilityLabel={`Set ${number} type`}
         style={{ width: 36, alignItems: 'center', paddingVertical: 8, borderRadius: 8 }}>
         <SetBadge type={set.type} normalIndex={number} />
       </Pressable>
-      <T color={c.onSurfaceVariant} center style={{ flex: 1.4 }}>{previous}</T>
+      <T color={palette.textMuted} center style={{ flex: 1.4 }}>{previous}</T>
       <NumberBox value={set.weight} hint={weightHint} decimal onChange={(v) => onChange({ ...set, weight: v })} label={`Set ${number} weight`} />
       <NumberBox value={set.reps} hint={repsHint} onChange={(v) => onChange({ ...set, reps: v })} label={`Set ${number} reps`} />
       <Pressable
@@ -397,8 +397,8 @@ function SetRow({ number, set, previous, weightHint, repsHint, onChange, onToggl
         accessibilityLabel={set.done ? `Mark set ${number} not done` : `Mark set ${number} done`}
         style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}
       >
-        <View style={{ width: 30, height: 30, borderRadius: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: set.done ? c.primary : c.surfaceContainerHigh, transform: [{ scale: set.done ? 1 : 0.9 }] }}>
-          <Icon name="check" size={20} color={set.done ? c.onPrimary : c.onSurfaceVariant} />
+        <View style={{ width: 30, height: 30, borderRadius: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: set.done ? palette.lime : palette.surfaceHigh, transform: [{ scale: set.done ? 1 : 0.9 }] }}>
+          <Icon name="check" size={20} color={set.done ? palette.onLime : palette.textMuted} />
         </View>
       </Pressable>
       <ActionMenu visible={menu} onDismiss={() => setMenu(false)} items={[
@@ -418,11 +418,11 @@ function NumberBox({ value, hint, decimal, onChange, label }: { value: string; h
         placeholder={hint}
         placeholderTextColor="rgba(169,182,194,0.6)"
         keyboardType={decimal ? 'decimal-pad' : 'number-pad'}
-        selectionColor={c.primary}
+        selectionColor={palette.lime}
         keyboardAppearance="dark"
         selectTextOnFocus
         accessibilityLabel={label}
-        style={[type.titleSmall, { color: c.onSurface, textAlign: 'center', backgroundColor: c.surfaceContainer, borderRadius: 8, paddingVertical: 8 },
+        style={[type.titleS, { color: palette.text, textAlign: 'center', backgroundColor: palette.surface, borderRadius: 8, paddingVertical: 8 },
           Platform.OS === 'web' && ({ outlineStyle: 'none' } as object)]}
       />
     </View>
@@ -477,20 +477,20 @@ function FinishDialog({ w, units, now, onDismiss }: { w: ActiveWorkout; units: U
         <Stat label="Volume" value={WorkoutMath.formatVolume(volumeKg(w, units), units)} />
         <View style={{ flex: 0.6 }}><Stat label="Sets" value={`${done}`} /></View>
       </View>
-      {pending > 0 && <T v="bodySmall" color={colors.apricot}>{pending} set{pending === 1 ? '' : 's'} not ticked off won't be saved.</T>}
+      {pending > 0 && <T v="bodyS" color={palette.ember}>{pending} set{pending === 1 ? '' : 's'} not ticked off won't be saved.</T>}
       <TextField label="How did it go?" placeholder="New best on bench!" value={caption} onChangeText={(t) => setCaption(t.slice(0, 300))} multiline autoCapitalize="sentences" />
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
         <View style={{ flex: 1 }}>
-          <T v="bodyLarge">Post to feed</T>
-          <T v="bodySmall" color={c.onSurfaceVariant}>Your friends see this workout</T>
+          <T v="body">Post to feed</T>
+          <T v="bodyS" color={palette.textMuted}>Your friends see this workout</T>
         </View>
         <Toggle value={share} onChange={setShare} label="Post to feed" />
       </View>
       {applied && (
         <View style={{ gap: 8 }}>
-          <T v="titleSmall">You changed this routine. Keep the changes for next time?</T>
+          <T v="titleS">You changed this routine. Keep the changes for next time?</T>
           {changes.map((ch, i) => (
-            <T key={i} v="bodySmall" color={c.onSurfaceVariant}>
+            <T key={i} v="bodyS" color={palette.textMuted}>
               {ch.kind === 'replace' ? `⇄ ${ExerciseLibrary.find(ch.fromId)?.name ?? ch.fromId} → ${ch.toName}` : `+ Added ${ch.toName}`}
             </T>
           ))}
@@ -499,7 +499,7 @@ function FinishDialog({ w, units, now, onDismiss }: { w: ActiveWorkout; units: U
           <Button label="Only this workout" enabled={!busy && done > 0} onPress={() => save(false)} />
         </View>
       )}
-      {error && <T color={c.error}>{error}</T>}
+      {error && <T color={palette.error}>{error}</T>}
     </Dialog>
   );
 }

@@ -99,15 +99,15 @@ export function StoryScreen() {
           {post && (
             <View style={{ flexDirection: 'row', alignItems: 'center', paddingLeft: 12, paddingRight: 4, paddingTop: 10 }}>
               <Avatar name={post.authorName} seed={post.uid} size={34} />
-              <T v="titleSmall" color="#FFFFFF" style={{ marginLeft: 10 }}>{post.authorName}</T>
-              <T v="bodySmall" color={withAlpha('#FFFFFF', 0.7)} style={{ flex: 1 }}>{'  '}{timeAgo(post.createdAt.getTime(), true)}</T>
+              <T v="titleS" color="#FFFFFF" style={{ marginLeft: 10 }}>{post.authorName}</T>
+              <T v="bodyS" color={withAlpha('#FFFFFF', 0.7)} style={{ flex: 1 }}>{'  '}{timeAgo(post.createdAt.getTime(), true)}</T>
               <IconButton name="close" label="Close" color="#FFFFFF" onPress={close} />
             </View>
           )}
         </View>
 
         {caption && (
-          <T v="bodyLarge" color="#FFFFFF" lines={2} style={{ position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: 20, paddingVertical: 26 }}>
+          <T v="body" color="#FFFFFF" lines={2} style={{ position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: 20, paddingVertical: 26 }}>
             {caption}
           </T>
         )}

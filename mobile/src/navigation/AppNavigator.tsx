@@ -2,7 +2,7 @@
 import React, { ComponentType } from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator, NativeStackNavigationOptions } from '@react-navigation/native-stack';
-import { c } from '../ui/theme';
+import { palette } from '../ui/theme';
 import { haptics } from '../ui/haptics';
 import { Icon, IconName } from '../ui/components/core';
 import { RootPages, TabPages, Tabs } from './types';
@@ -35,7 +35,7 @@ import { EditGoalsScreen } from '../ui/screens/profile/EditGoalsScreen';
 
 const screenOptions: NativeStackNavigationOptions = {
   headerShown: false,
-  contentStyle: { backgroundColor: c.background },
+  contentStyle: { backgroundColor: palette.ink },
   // Pages slide in from the right when moving forward and back out when returning.
   animation: 'slide_from_right',
 };
@@ -95,11 +95,11 @@ function MainTabs() {
       screenOptions={{
         headerShown: false,
         // Same colour as the page with a hairline on top, instead of a raised slab.
-        tabBarStyle: { backgroundColor: c.background, borderTopColor: c.outline, borderTopWidth: 0.5, elevation: 0 },
-        tabBarActiveTintColor: c.primary,
-        tabBarInactiveTintColor: c.onSurfaceVariant,
+        tabBarStyle: { backgroundColor: palette.ink, borderTopColor: palette.outline, borderTopWidth: 0.5, elevation: 0 },
+        tabBarActiveTintColor: palette.lime,
+        tabBarInactiveTintColor: palette.textMuted,
         tabBarLabelStyle: { fontSize: 12, fontWeight: '600' },
-        sceneStyle: { backgroundColor: c.background },
+        sceneStyle: { backgroundColor: palette.ink },
       }}
       screenListeners={{ tabPress: () => haptics.tick() }}
     >

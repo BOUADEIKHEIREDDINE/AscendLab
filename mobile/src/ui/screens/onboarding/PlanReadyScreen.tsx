@@ -4,7 +4,7 @@ import { hasEverythingForPlan, PlanCalculator } from '../../../data/profile';
 import { useStore } from '../../../lib/store';
 import { finishOnboarding, useNav } from '../../../navigation/types';
 import { draftStore, Onboarding } from '../../../state/session';
-import { c, colors } from '../../theme';
+import { palette } from '../../theme';
 import { Appear, Icon, Screen, T } from '../../components/core';
 import { OnboardingScaffold } from '../../components/onboarding';
 import { CalorieCard, MacroCard, WeekCard } from '../../components/plan';
@@ -48,7 +48,7 @@ function BuildingPlan({ onDone }: { onDone: () => void }) {
 
   return (
     <Screen edges={['top', 'bottom']} style={{ paddingHorizontal: 32, justifyContent: 'center' }}>
-      <T v="headlineMedium">Building your plan</T>
+      <T v="headline">Building your plan</T>
       <View style={{ height: 28 }} />
       {BUILD_STEPS.map((label, i) => (
         <Appear key={label} index={i}>
@@ -56,14 +56,14 @@ function BuildingPlan({ onDone }: { onDone: () => void }) {
             <View style={{ width: 28, height: 28, alignItems: 'center', justifyContent: 'center' }}>
               {i < done ? (
                 <Appear>
-                  <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: c.primary, alignItems: 'center', justifyContent: 'center' }}>
-                    <Icon name="check" size={18} color={c.onPrimary} />
+                  <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: palette.lime, alignItems: 'center', justifyContent: 'center' }}>
+                    <Icon name="check" size={18} color={palette.onLime} />
                   </View>
                 </Appear>
-              ) : i === done ? <ActivityIndicator color={c.primary} />
-                : <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: c.outlineVariant }} />}
+              ) : i === done ? <ActivityIndicator color={palette.lime} />
+                : <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: palette.hairline }} />}
             </View>
-            <T v="bodyLarge" color={i <= done ? c.onSurface : c.onSurfaceVariant} style={{ flex: 1 }}>{label}</T>
+            <T v="body" color={i <= done ? palette.text : palette.textMuted} style={{ flex: 1 }}>{label}</T>
           </View>
         </Appear>
       ))}
@@ -94,9 +94,9 @@ function PlanResult() {
     >
       {/* Apricot is the brand's milestone accent: used here to celebrate the finished setup. */}
       <Appear index={1}>
-        <View style={{ flexDirection: 'row', alignSelf: 'flex-start', alignItems: 'center', gap: 6, backgroundColor: colors.apricot, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 6 }}>
-          <Icon name="emoji-events" size={18} color={colors.midnightBlue} />
-          <T v="labelLarge" color={colors.midnightBlue}>Setup complete</T>
+        <View style={{ flexDirection: 'row', alignSelf: 'flex-start', alignItems: 'center', gap: 6, backgroundColor: palette.gold, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 6 }}>
+          <Icon name="emoji-events" size={18} color={palette.onLime} />
+          <T v="label" color={palette.onLime}>Setup complete</T>
         </View>
       </Appear>
       <Appear index={2}><CalorieCard targets={targets} goal={draft.goal!} /></Appear>

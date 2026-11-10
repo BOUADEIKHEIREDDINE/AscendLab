@@ -8,7 +8,7 @@ import { profileStore } from '../../data/profileRepo';
 import { FeedPost, gapLabel, isMeal, isOnTarget, MEAL, plural, Standing } from '../../data/social';
 import { WorkoutInfo, WorkoutMath } from '../../data/training';
 import { useStore } from '../../lib/store';
-import { c, colors, Gutter, withAlpha } from '../theme';
+import { palette, Gutter, withAlpha } from '../theme';
 import { haptics } from '../haptics';
 import { timeAgo } from '../format';
 import { Avatar, Icon, IconButton, SectionTitle, T } from './core';
@@ -16,7 +16,7 @@ import { ActionMenu } from './overlays';
 
 export function MealPhoto({ photo, style }: { photo: string; style?: StyleProp<ViewStyle> }) {
   return (
-    <View style={[{ backgroundColor: c.surfaceContainer, overflow: 'hidden' }, style]}>
+    <View style={[{ backgroundColor: palette.surface, overflow: 'hidden' }, style]}>
       <Image source={{ uri: MealPhotos.uri(photo) }} style={{ width: '100%', height: '100%' }} resizeMode="cover" accessibilityLabel="Meal photo" />
     </View>
   );
@@ -32,15 +32,15 @@ export function MealCover({ post, style }: { post: FeedPost; style?: StyleProp<V
   return (
     <LinearGradient colors={['#1C3A3A', '#101820', '#2A2420']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
       style={[{ alignItems: 'center', justifyContent: 'center', padding: 28 }, style]}>
-      <T v="labelLarge" color={c.primary} style={{ letterSpacing: 2 }}>{MEAL[post.mealType].label.toUpperCase()}</T>
-      <T v="displayLarge" color="#FFFFFF">{formatKcal(post.calories)}</T>
-      <T v="titleMedium" color={withAlpha('#FFFFFF', 0.7)}>kcal</T>
-      {post.description.trim() ? <T v="titleMedium" color="#FFFFFF" center lines={2} style={{ marginTop: 18 }}>{post.description}</T> : null}
+      <T v="label" color={palette.lime} style={{ letterSpacing: 2 }}>{MEAL[post.mealType].label.toUpperCase()}</T>
+      <T v="displayL" color="#FFFFFF">{formatKcal(post.calories)}</T>
+      <T v="titleS" color={withAlpha('#FFFFFF', 0.7)}>kcal</T>
+      {post.description.trim() ? <T v="titleS" color="#FFFFFF" center lines={2} style={{ marginTop: 18 }}>{post.description}</T> : null}
       {macros.length > 0 && (
         <View style={{ flexDirection: 'row', gap: 8, marginTop: 14, flexWrap: 'wrap', justifyContent: 'center' }}>
           {macros.map((m) => (
             <View key={m} style={{ backgroundColor: withAlpha('#FFFFFF', 0.12), borderRadius: 999, paddingHorizontal: 10, paddingVertical: 5 }}>
-              <T v="labelMedium" color="#FFFFFF">{m}</T>
+              <T v="label" color="#FFFFFF">{m}</T>
             </View>
           ))}
         </View>
@@ -52,8 +52,8 @@ export function MealCover({ post, style }: { post: FeedPost; style?: StyleProp<V
 function CoverStat({ value, label, flex, color = '#FFFFFF' }: { value: string; label: string; flex: number; color?: string }) {
   return (
     <View style={{ flex }}>
-      <T v="titleLarge" color={color} lines={1}>{value}</T>
-      <T v="labelMedium" color={withAlpha('#FFFFFF', 0.7)}>{label}</T>
+      <T v="title" color={color} lines={1}>{value}</T>
+      <T v="label" color={withAlpha('#FFFFFF', 0.7)}>{label}</T>
     </View>
   );
 }
@@ -65,23 +65,23 @@ export function WorkoutCover({ w, style }: { w: WorkoutInfo; style?: StyleProp<V
     <LinearGradient colors={['#15302B', '#101820', '#1C2934']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
       style={[{ padding: 24, justifyContent: 'space-between' }, style]}>
       <View>
-        <T v="labelLarge" color={c.primary} style={{ letterSpacing: 2 }}>WORKOUT</T>
-        <T v="headlineMedium" color="#FFFFFF" lines={2}>{w.title}</T>
+        <T v="label" color={palette.lime} style={{ letterSpacing: 2 }}>WORKOUT</T>
+        <T v="headline" color="#FFFFFF" lines={2}>{w.title}</T>
       </View>
       <View style={{ flexDirection: 'row' }}>
         <CoverStat value={WorkoutMath.formatDuration(w.durationSec)} label="time" flex={1} />
         <CoverStat value={WorkoutMath.formatVolume(w.volumeKg, units)} label="volume" flex={1.3} />
         <CoverStat value={`${w.sets}`} label="sets" flex={0.7} />
-        {w.records > 0 && <CoverStat value={`${w.records}`} label={w.records === 1 ? 'record' : 'records'} flex={0.9} color={colors.apricot} />}
+        {w.records > 0 && <CoverStat value={`${w.records}`} label={w.records === 1 ? 'record' : 'records'} flex={0.9} color={palette.gold} />}
       </View>
       <View style={{ gap: 6 }}>
         {w.exercises.slice(0, 4).map((line, i) => (
           <View key={i} style={{ flexDirection: 'row', alignItems: 'center' }}>
             <T color="#FFFFFF" lines={1} style={{ flex: 1 }}>{line.sets} × {line.name}</T>
-            <T v="bodySmall" color={withAlpha('#FFFFFF', 0.7)}>{line.best}</T>
+            <T v="bodyS" color={withAlpha('#FFFFFF', 0.7)}>{line.best}</T>
           </View>
         ))}
-        {w.exercises.length > 4 && <T v="bodySmall" color={withAlpha('#FFFFFF', 0.7)}>+ {w.exercises.length - 4} more</T>}
+        {w.exercises.length > 4 && <T v="bodyS" color={withAlpha('#FFFFFF', 0.7)}>+ {w.exercises.length - 4} more</T>}
       </View>
     </LinearGradient>
   );
@@ -142,8 +142,8 @@ export function PostCard({ post, myUid, onLike, onDelete, onComment, style }: {
       <View style={{ flexDirection: 'row', alignItems: 'center', paddingLeft: 12, paddingRight: 4, paddingTop: 6, paddingBottom: 8 }}>
         <Avatar name={post.authorName} seed={post.uid} size={34} />
         <View style={{ flex: 1, marginLeft: 10 }}>
-          <T v="titleSmall" lines={1}>{post.authorName}</T>
-          <T v="bodySmall" color={c.onSurfaceVariant}>{post.workout ? 'Workout' : MEAL[post.mealType].label}</T>
+          <T v="titleS" lines={1}>{post.authorName}</T>
+          <T v="bodyS" color={palette.textMuted}>{post.workout ? 'Workout' : MEAL[post.mealType].label}</T>
         </View>
         {post.uid === myUid && <IconButton name="more-horiz" label="More" onPress={() => setMenu(true)} />}
       </View>
@@ -163,7 +163,7 @@ export function PostCard({ post, myUid, onLike, onDelete, onComment, style }: {
           style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}
         >
           <Animated.View style={{ transform: [{ scale: heart }] }}>
-            <Icon name={liked ? 'favorite' : 'favorite-border'} size={26} color={liked ? colors.like : c.onSurface} />
+            <Icon name={liked ? 'favorite' : 'favorite-border'} size={26} color={liked ? palette.like : palette.text} />
           </Animated.View>
         </Pressable>
         {onComment && <IconButton name="mc:comment-outline" label="Comment" onPress={() => { haptics.tick(); onComment(); }} />}
@@ -171,15 +171,15 @@ export function PostCard({ post, myUid, onLike, onDelete, onComment, style }: {
         <View style={{ flex: 1 }} />
         {isMeal(post) && post.photo && (
           // With a photo the numbers aren't on the picture, so they sit here.
-          <T v="labelLarge">
-            <T v="labelLarge" color={c.primary}>{formatKcal(post.calories)} kcal</T>
-            {post.protein > 0 ? <T v="labelLarge" color={c.onSurfaceVariant}>  ·  {post.protein} g protein</T> : null}
+          <T v="label">
+            <T v="label" color={palette.lime}>{formatKcal(post.calories)} kcal</T>
+            {post.protein > 0 ? <T v="label" color={palette.textMuted}>  ·  {post.protein} g protein</T> : null}
           </T>
         )}
       </View>
 
       <View style={{ paddingHorizontal: 14, gap: 4 }}>
-        {post.likes.length > 0 && <T v="titleSmall">{post.likes.length} {plural(post.likes.length, 'like')}</T>}
+        {post.likes.length > 0 && <T v="titleS">{post.likes.length} {plural(post.likes.length, 'like')}</T>}
         {caption.trim() ? (
           <T>
             <T style={{ fontWeight: '600' }}>{post.authorName}</T>
@@ -187,11 +187,11 @@ export function PostCard({ post, myUid, onLike, onDelete, onComment, style }: {
           </T>
         ) : null}
         {onComment && post.commentCount > 0 && (
-          <T color={c.onSurfaceVariant} onPress={onComment}>
+          <T color={palette.textMuted} onPress={onComment}>
             {post.commentCount === 1 ? 'View 1 comment' : `View all ${post.commentCount} comments`}
           </T>
         )}
-        <T v="labelSmall" color={c.onSurfaceVariant}>{timeAgo(post.createdAt.getTime())}</T>
+        <T v="bodyS" color={palette.textMuted}>{timeAgo(post.createdAt.getTime())}</T>
       </View>
 
       <ActionMenu visible={menu} onDismiss={() => setMenu(false)} items={[{ label: 'Delete', icon: 'delete-outline', danger: true, onPress: onDelete }]} />
@@ -205,23 +205,23 @@ export function RaceCard({ today, yesterdayWinner, myUid }: { today: Standing[];
     <View>
       <SectionTitle text="Closest to goal today" />
       {yesterdayWinner && (
-        <T v="bodySmall" color={colors.apricot} style={{ paddingHorizontal: Gutter, paddingVertical: 2 }}>
+        <T v="bodyS" color={palette.gold} style={{ paddingHorizontal: Gutter, paddingVertical: 2 }}>
           Yesterday: {yesterdayWinner.uid === myUid ? 'you' : yesterdayWinner.name} won, {gapLabel(yesterdayWinner.eaten - yesterdayWinner.target)}
         </T>
       )}
-      {today.length === 0 && <T color={c.onSurfaceVariant} style={{ paddingHorizontal: Gutter, paddingVertical: 10 }}>No meals logged yet today.</T>}
+      {today.length === 0 && <T color={palette.textMuted} style={{ paddingHorizontal: Gutter, paddingVertical: 10 }}>No meals logged yet today.</T>}
       {today.map((s, i) => {
         const isMe = s.uid === myUid;
         const gap = s.eaten - s.target;
         return (
           <View key={s.uid} style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: Gutter, paddingVertical: 8 }}>
-            <T v="titleMedium" color={i === 0 ? colors.apricot : c.onSurfaceVariant} style={{ width: 22 }}>{i + 1}</T>
+            <T v="titleS" color={i === 0 ? palette.gold : palette.textMuted} style={{ width: 22 }}>{i + 1}</T>
             <Avatar name={s.name} seed={s.uid} size={32} />
             <View style={{ flex: 1, marginLeft: 12 }}>
-              <T v="bodyLarge" lines={1} style={isMe && { fontWeight: '600' }}>{isMe ? 'You' : s.name}</T>
-              <T v="bodySmall" color={c.onSurfaceVariant}>{formatKcal(s.eaten)} of {formatKcal(s.target)} kcal</T>
+              <T v="body" lines={1} style={isMe && { fontWeight: '600' }}>{isMe ? 'You' : s.name}</T>
+              <T v="bodyS" color={palette.textMuted}>{formatKcal(s.eaten)} of {formatKcal(s.target)} kcal</T>
             </View>
-            <T v="labelLarge" color={isOnTarget(gap) ? c.primary : c.onSurfaceVariant}>{gapLabel(gap)}</T>
+            <T v="label" color={isOnTarget(gap) ? palette.lime : palette.textMuted}>{gapLabel(gap)}</T>
           </View>
         );
       })}

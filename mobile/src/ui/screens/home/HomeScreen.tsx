@@ -6,7 +6,7 @@ import { feedLive, meStore, SocialRepository } from '../../../data/socialRepo';
 import { createStore, useNow, useStore } from '../../../lib/store';
 import { useNav } from '../../../navigation/types';
 import { prepareFeed, targetsNow } from '../../../state/session';
-import { c, colors, Gutter } from '../../theme';
+import { palette, Gutter } from '../../theme';
 import { Avatar, Hairline, Icon, IconButton, PressableScale, Screen, SkeletonCard, T } from '../../components/core';
 import { BottomSheet } from '../../components/overlays';
 import { PostCard, RaceCard } from '../../components/feed';
@@ -83,21 +83,21 @@ export function HomeScreen() {
       {me != null && me.friends.length === 0 && (
         <>
           <PressableScale onPress={() => nav.navigate('Friends')} style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: Gutter, paddingVertical: 14 }}>
-            <Icon name="person-add-alt" color={c.primary} />
+            <Icon name="person-add-alt" color={palette.lime} />
             <View style={{ flex: 1, marginLeft: 14 }}>
-              <T v="titleSmall">Find your friends</T>
-              <T v="bodySmall" color={c.onSurfaceVariant}>See their meals and workouts here, and race to your goals.</T>
+              <T v="titleS">Find your friends</T>
+              <T v="bodyS" color={palette.textMuted}>See their meals and workouts here, and race to your goals.</T>
             </View>
           </PressableScale>
           <Hairline />
         </>
       )}
-      {feed.error && <T color={c.error} style={{ paddingHorizontal: Gutter, paddingVertical: 12 }}>{feed.error}</T>}
+      {feed.error && <T color={palette.error} style={{ paddingHorizontal: Gutter, paddingVertical: 12 }}>{feed.error}</T>}
       {feed.loading && <><SkeletonCard /><SkeletonCard /></>}
       {!feed.loading && feed.posts.length === 0 && !feed.error && (
         <View style={{ padding: 40, alignItems: 'center' }}>
-          <T v="titleMedium">Welcome to your feed</T>
-          <T color={c.onSurfaceVariant} center style={{ marginTop: 6 }}>Meals and workouts from you and your friends show up here.</T>
+          <T v="titleS">Welcome to your feed</T>
+          <T color={palette.textMuted} center style={{ marginTop: 6 }}>Meals and workouts from you and your friends show up here.</T>
         </View>
       )}
     </View>
@@ -123,7 +123,7 @@ export function HomeScreen() {
       />
       <BottomSheet visible={raceOpen} onDismiss={() => setRaceOpen(false)}>
         <RaceCard today={standings} yesterdayWinner={yesterday.length > 1 ? yesterday[0] : null} myUid={myUid} />
-        <T v="bodySmall" color={c.onSurfaceVariant} style={{ paddingHorizontal: Gutter, paddingVertical: 12 }}>
+        <T v="bodyS" color={palette.textMuted} style={{ paddingHorizontal: Gutter, paddingVertical: 12 }}>
           Whoever ends the day closest to their own calorie goal wins.
         </T>
       </BottomSheet>
@@ -139,25 +139,25 @@ function StoryBubble({ person, isMe, allSeen, onPress, onAdd }: {
   person: StoryPerson; isMe: boolean; allSeen: boolean; onPress: () => void; onAdd: () => void;
 }) {
   const progress = person.target > 0 ? Math.min(person.eaten / person.target, 1) : 0;
-  const fresh = person.target > 0 && person.eaten > person.target ? colors.apricot : c.primary;
+  const fresh = person.target > 0 && person.eaten > person.target ? palette.ember : palette.lime;
   return (
     <PressableScale onPress={onPress} style={{ width: 76, alignItems: 'center' }}
       label={`${person.name}, ${person.eaten} of ${person.target} kilocalories today`}>
       <View style={{ width: 72, height: 72, alignItems: 'center', justifyContent: 'center' }}>
         {person.posts.length === 0 ? <Ring size={72} stroke={3} progress={0} color={fresh} />
-          : allSeen ? <Ring size={72} stroke={3} progress={1} color={c.outline} round={false} />
+          : allSeen ? <Ring size={72} stroke={3} progress={1} color={palette.outline} round={false} />
             : <Ring size={72} stroke={3} progress={Math.max(progress, 0.04)} color={fresh} />}
         <Avatar name={person.avatarName} seed={person.uid} size={60} />
         {isMe && (
           <Pressable onPress={onAdd} accessibilityLabel="Log a meal" hitSlop={6}
-            style={{ position: 'absolute', right: 0, bottom: 0, width: 24, height: 24, borderRadius: 12, backgroundColor: c.background, padding: 2 }}>
-            <View style={{ flex: 1, borderRadius: 10, backgroundColor: c.primary, alignItems: 'center', justifyContent: 'center' }}>
-              <Icon name="add" size={16} color={c.onPrimary} />
+            style={{ position: 'absolute', right: 0, bottom: 0, width: 24, height: 24, borderRadius: 12, backgroundColor: palette.ink, padding: 2 }}>
+            <View style={{ flex: 1, borderRadius: 10, backgroundColor: palette.lime, alignItems: 'center', justifyContent: 'center' }}>
+              <Icon name="add" size={16} color={palette.onLime} />
             </View>
           </Pressable>
         )}
       </View>
-      <T v="labelMedium" lines={1} style={{ marginTop: 4 }}>{isMe ? person.name : person.name.split(' ')[0]}</T>
+      <T v="label" lines={1} style={{ marginTop: 4 }}>{isMe ? person.name : person.name.split(' ')[0]}</T>
     </PressableScale>
   );
 }

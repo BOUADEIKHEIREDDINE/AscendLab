@@ -11,7 +11,7 @@ import { DEFAULT_TARGET, restSecFor } from '../../../data/progress';
 import type { Slot } from '../../../lib/program-generator/program';
 import { useStore } from '../../../lib/store';
 import { goBack, useNav, useParams } from '../../../navigation/types';
-import { c, Gutter } from '../../theme';
+import { palette, Gutter } from '../../theme';
 import { Button, Hairline, IconButton, PageHeader, PrimaryButton, Screen, T, TextField } from '../../components/core';
 import { ActionMenu, toast } from '../../components/overlays';
 import { AlternativesSheet, ExercisePicker, SetBadge, Stepper, VolumeNoticeNote } from './TrainComponents';
@@ -30,8 +30,8 @@ export function RoutineEditorScreen() {
       <PageHeader title={routineId == null ? 'New routine' : 'Edit routine'} onBack={() => goBack(nav)} />
       {!original ? (
         state.error || (!state.loading && !program)
-          ? <T color={c.error} style={{ padding: 24 }}>{state.error ?? 'This program no longer exists.'}</T>
-          : <ActivityIndicator color={c.primary} style={{ padding: 32 }} />
+          ? <T color={palette.error} style={{ padding: 24 }}>{state.error ?? 'This program no longer exists.'}</T>
+          : <ActivityIndicator color={palette.lime} style={{ padding: 32 }} />
       ) : (
         <RoutineForm program={program} original={original.routine} onDone={() => goBack(nav)} />
       )}
@@ -81,7 +81,7 @@ function RoutineForm({ program, original, onDone }: { program: Program | null; o
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 8 }}>
         <View style={{ paddingHorizontal: Gutter, paddingTop: 8, paddingBottom: 12, gap: 8 }}>
           <TextField label="Routine name" placeholder="Push day" value={name} onChangeText={(t) => setName(t.slice(0, 40))} autoCapitalize="sentences" />
-          <T v="bodySmall" color={c.onSurfaceVariant}>
+          <T v="bodyS" color={palette.textMuted}>
             In {program?.name ?? 'this program'} · {exercises.length} exercise{exercises.length === 1 ? '' : 's'} · {exercises.reduce((n, x) => n + x.sets, 0)} sets
           </T>
         </View>
@@ -181,12 +181,12 @@ function ExerciseSection({ ex, first, last, onSwap, onSets, onReps, onMoveUp, on
       <View style={{ paddingVertical: 12 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', paddingLeft: Gutter, paddingRight: 4 }}>
           <View style={{ flex: 1, alignItems: 'flex-start' }}>
-            <T v="titleMedium" color={c.primary} lines={2} style={{ paddingVertical: 4 }}>{ex.name}</T>
+            <T v="titleS" color={palette.lime} lines={2} style={{ paddingVertical: 4 }}>{ex.name}</T>
           </View>
           <IconButton name="more-vert" label="More" onPress={() => setMenu(true)} />
         </View>
         <View style={{ paddingHorizontal: Gutter, paddingBottom: 4 }}>
-          <T v="bodySmall" color={c.onSurfaceVariant}>
+          <T v="bodyS" color={palette.textMuted}>
             {planned ? `${ex.sets} × ${target} reps to failure · rest ${restText(rest)}` : `${ex.sets} × ${ex.reps} reps`}
           </T>
         </View>
@@ -198,10 +198,10 @@ function ExerciseSection({ ex, first, last, onSwap, onSets, onReps, onMoveUp, on
         {Array.from({ length: ex.sets }, (_, i) => (
           <View key={i} style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: Gutter - 8, paddingVertical: 4 }}>
             <View style={{ width: 36, alignItems: 'center', paddingVertical: 8 }}><SetBadge type="NORMAL" normalIndex={i + 1} /></View>
-            <View style={{ flex: 1, marginHorizontal: 4, height: 40, borderRadius: 8, backgroundColor: c.surfaceContainer, alignItems: 'center', justifyContent: 'center' }}>
-              <T v="titleSmall" color={c.onSurfaceVariant}>{target}</T>
+            <View style={{ flex: 1, marginHorizontal: 4, height: 40, borderRadius: 8, backgroundColor: palette.surface, alignItems: 'center', justifyContent: 'center' }}>
+              <T v="titleS" color={palette.textMuted}>{target}</T>
             </View>
-            <IconButton name="close" label={`Remove set ${i + 1}`} color={c.onSurfaceVariant} disabled={ex.sets <= 1} onPress={() => onSets(ex.sets - 1)} />
+            <IconButton name="close" label={`Remove set ${i + 1}`} color={palette.textMuted} disabled={ex.sets <= 1} onPress={() => onSets(ex.sets - 1)} />
           </View>
         ))}
         {!planned && (
@@ -222,5 +222,5 @@ function ExerciseSection({ ex, first, last, onSwap, onSets, onReps, onMoveUp, on
 }
 
 function Header({ text, width, flex }: { text: string; width?: number; flex?: number }) {
-  return <T v="labelSmall" color={c.onSurfaceVariant} center style={{ width, flex }}>{text}</T>;
+  return <T v="bodyS" color={palette.textMuted} center style={{ width, flex }}>{text}</T>;
 }

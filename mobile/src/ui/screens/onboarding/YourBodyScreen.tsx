@@ -4,7 +4,7 @@ import { ACTIVITY, ACTIVITY_LEVELS, ActivityLevel, BodyChecks, Convert, formatNu
 import { useStore } from '../../../lib/store';
 import { useNav } from '../../../navigation/types';
 import { draftStore, Onboarding } from '../../../state/session';
-import { c } from '../../theme';
+import { palette } from '../../theme';
 import { Appear, digits, ErrorText, HelpNote, IconName, SectionLabel, Segmented, T, TextField } from '../../components/core';
 import { ChoiceCard, OnboardingScaffold } from '../../components/onboarding';
 
@@ -71,7 +71,7 @@ export function YourBodyScreen() {
     >
       <Appear index={1}>
         <View style={{ gap: 8 }}>
-          <T v="labelLarge" color={c.onSurfaceVariant}>Units</T>
+          <T v="label" color={palette.textMuted}>Units</T>
           <Segmented<Units>
             options={[{ key: 'METRIC', label: 'kg · cm' }, { key: 'IMPERIAL', label: 'lb · ft' }]}
             selected={units}
@@ -114,7 +114,7 @@ export function YourBodyScreen() {
       <Appear index={5}><HelpNote text="Your details stay private to your account. You can change them later in Settings." /></Appear>
 
       <Appear index={6}><SectionLabel text="How active is your normal day?" /></Appear>
-      <Appear index={7}><T color={c.onSurfaceVariant}>Don't count workouts here, just your usual day.</T></Appear>
+      <Appear index={7}><T color={palette.textMuted}>Don't count workouts here, just your usual day.</T></Appear>
       {ACTIVITY_LEVELS.map((level, i) => (
         <Appear key={level} index={8 + i}>
           <ChoiceCard

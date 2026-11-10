@@ -6,7 +6,7 @@ import React, { useEffect, useState } from 'react';
 import { AccessibilityInfo, View } from 'react-native';
 import { Image } from 'expo-image';
 import { useIsFocused } from '@react-navigation/native';
-import { c } from '../theme';
+import { palette } from '../theme';
 import { T } from './core';
 
 const FRAME_MS = 1000;
@@ -40,8 +40,8 @@ export function ExerciseAnimation({ images, name }: { images: string[]; name: st
   if (images.length === 0) return null;
   if (failed) {
     return (
-      <View style={{ ...BOX, aspectRatio: 4 / 3, borderRadius: 12, backgroundColor: c.surfaceContainer, alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-        <T color={c.onSurfaceVariant} center>Photos need an internet connection.</T>
+      <View style={{ ...BOX, aspectRatio: 4 / 3, borderRadius: 12, backgroundColor: palette.surface, alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+        <T color={palette.textMuted} center>Photos need an internet connection.</T>
       </View>
     );
   }

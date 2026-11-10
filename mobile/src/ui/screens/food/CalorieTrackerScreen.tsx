@@ -12,7 +12,7 @@ import { historyLive } from '../../../data/trainRepo';
 import { useNow, useStore } from '../../../lib/store';
 import { useNav } from '../../../navigation/types';
 import { prepareFeed } from '../../../state/session';
-import { c, colors, Gutter } from '../../theme';
+import { palette, Gutter } from '../../theme';
 import { haptics } from '../../haptics';
 import { formatDate } from '../../format';
 import { Button, CountingNumber, Hairline, Icon, IconButton, IconName, ProgressBar, Screen, SectionTitle, T, TabHeader } from '../../components/core';
@@ -80,8 +80,8 @@ export function CalorieTrackerScreen() {
 function SideNumber({ value, label }: { value: number; label: string }) {
   return (
     <View style={{ flex: 1, alignItems: 'center' }}>
-      <CountingNumber value={value} v="titleLarge" />
-      <T color={c.onSurfaceVariant}>{label}</T>
+      <CountingNumber value={value} v="title" />
+      <T color={palette.textMuted}>{label}</T>
     </View>
   );
 }
@@ -93,9 +93,9 @@ function CalorieGauge({ eaten, target }: { eaten: number; target: number }) {
   return (
     <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}
       accessible accessibilityLabel={over ? `${eaten - target} kilocalories over your goal` : `${target - eaten} kilocalories remaining`}>
-      <Ring size={size} stroke={12} start={135} sweep={270} progress={target > 0 ? eaten / target : 0} color={over ? colors.apricot : c.primary} />
-      <CountingNumber value={over ? eaten - target : Math.max(target - eaten, 0)} v="displaySmall" />
-      <T color={c.onSurfaceVariant}>{over ? 'Over' : 'Remaining'}</T>
+      <Ring size={size} stroke={12} start={135} sweep={270} progress={target > 0 ? eaten / target : 0} color={over ? palette.ember : palette.lime} />
+      <CountingNumber value={over ? eaten - target : Math.max(target - eaten, 0)} v="displayM" />
+      <T color={palette.textMuted}>{over ? 'Over' : 'Remaining'}</T>
     </View>
   );
 }
@@ -103,9 +103,9 @@ function CalorieGauge({ eaten, target }: { eaten: number; target: number }) {
 function MacroBar({ label, grams, target }: { label: string; grams: number; target: number }) {
   return (
     <View style={{ flex: 1, alignItems: 'center', gap: 6 }}>
-      <T color={c.onSurfaceVariant}>{label}</T>
+      <T color={palette.textMuted}>{label}</T>
       <View style={{ alignSelf: 'stretch' }}><ProgressBar progress={grams / Math.max(target, 1)} duration={800} /></View>
-      <T v="labelLarge">{grams} / {target} g</T>
+      <T v="label">{grams} / {target} g</T>
     </View>
   );
 }
@@ -115,21 +115,21 @@ const MEAL_ICON: Record<MealType, IconName> = { BREAKFAST: 'free-breakfast', LUN
 /** One meal: a ring around its icon showing calories against that meal's budget, then its foods. */
 function MealSection({ type, items, budget, onAdd }: { type: MealType; items: FeedPost[]; budget: number; onAdd: () => void }) {
   const eaten = items.reduce((a, m) => a + m.calories, 0);
-  const fill = budget > 0 && eaten > budget * 1.15 ? colors.apricot : c.primary;
+  const fill = budget > 0 && eaten > budget * 1.15 ? palette.ember : palette.lime;
   return (
     <View>
       <Pressable onPress={() => { haptics.tick(); onAdd(); }} accessibilityRole="button" accessibilityLabel={`Add to ${MEAL[type].label}`}
-        style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', paddingLeft: Gutter, paddingRight: 12, paddingVertical: 14, backgroundColor: pressed ? c.surfaceContainer : 'transparent' })}>
+        style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', paddingLeft: Gutter, paddingRight: 12, paddingVertical: 14, backgroundColor: pressed ? palette.surface : 'transparent' })}>
         <View style={{ width: 56, height: 56, alignItems: 'center', justifyContent: 'center' }}>
           <Ring size={56} stroke={5} progress={budget > 0 ? eaten / budget : 0} color={fill} duration={800} />
-          <Icon name={MEAL_ICON[type]} size={24} color={c.onSurfaceVariant} />
+          <Icon name={MEAL_ICON[type]} size={24} color={palette.textMuted} />
         </View>
         <View style={{ flex: 1, marginLeft: 16 }}>
-          <T v="titleMedium">{MEAL[type].label}</T>
-          <T color={c.onSurfaceVariant}>{budget > 0 ? `${formatKcal(eaten)} / ${formatKcal(budget)} kcal` : `${formatKcal(eaten)} kcal`}</T>
+          <T v="titleS">{MEAL[type].label}</T>
+          <T color={palette.textMuted}>{budget > 0 ? `${formatKcal(eaten)} / ${formatKcal(budget)} kcal` : `${formatKcal(eaten)} kcal`}</T>
         </View>
-        <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: c.primary, alignItems: 'center', justifyContent: 'center' }}>
-          <Icon name="add" color={c.onPrimary} />
+        <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: palette.lime, alignItems: 'center', justifyContent: 'center' }}>
+          <Icon name="add" color={palette.onLime} />
         </View>
       </Pressable>
       {items.map((meal) => <FoodLine key={meal.id} meal={meal} />)}
@@ -146,10 +146,10 @@ function FoodLine({ meal }: { meal: FeedPost }) {
       {meal.photo && <MealPhoto photo={meal.photo} style={{ width: 32, height: 32, borderRadius: 12, marginRight: 10 }} />}
       <View style={{ flex: 1 }}>
         <T lines={1}>{meal.description.trim() || MEAL[meal.mealType].label}</T>
-        {macros ? <T v="bodySmall" color={c.onSurfaceVariant}>{macros}</T> : null}
+        {macros ? <T v="bodyS" color={palette.textMuted}>{macros}</T> : null}
       </View>
-      <T v="labelLarge">{formatKcal(meal.calories)} kcal</T>
-      <IconButton name="close" size={18} color={c.onSurfaceVariant} label={`Remove ${meal.description}`} onPress={() => SocialRepository.deletePost(meal)} />
+      <T v="label">{formatKcal(meal.calories)} kcal</T>
+      <IconButton name="close" size={18} color={palette.textMuted} label={`Remove ${meal.description}`} onPress={() => SocialRepository.deletePost(meal)} />
     </View>
   );
 }

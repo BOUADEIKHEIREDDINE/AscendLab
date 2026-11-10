@@ -7,7 +7,7 @@ import { activeProgramOf, activeStore, historyLive, TrainRepository, trainLive }
 import { doneSets, nextRoutine, Routine, setCount, WorkoutMath } from '../../../data/training';
 import { useStore } from '../../../lib/store';
 import { useNav } from '../../../navigation/types';
-import { c, Gutter, radius } from '../../theme';
+import { palette, Gutter, radius } from '../../theme';
 import { haptics } from '../../haptics';
 import { relativeDay } from '../../format';
 import { Button, Hairline, Icon, IconButton, PressableScale, Screen, SectionTitle, SkeletonCard, T, TabHeader } from '../../components/core';
@@ -53,10 +53,10 @@ export function TrainingPlanScreen() {
       {active && (
         <>
           <PressableScale onPress={() => nav.navigate('WorkoutSession')} style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: Gutter, paddingVertical: 12 }}>
-            <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: c.primary }} />
+            <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: palette.lime }} />
             <View style={{ flex: 1, marginLeft: 12 }}>
-              <T v="titleMedium">{active.title}</T>
-              <T v="bodySmall" color={c.onSurfaceVariant}>In progress · {doneSets(active)} sets done</T>
+              <T v="titleS">{active.title}</T>
+              <T v="bodyS" color={palette.textMuted}>In progress · {doneSets(active)} sets done</T>
             </View>
             <Button kind="filled" label="Resume" onPress={() => nav.navigate('WorkoutSession')} />
           </PressableScale>
@@ -69,7 +69,7 @@ export function TrainingPlanScreen() {
       <View style={{ flexDirection: 'row', alignItems: 'center', paddingLeft: Gutter, paddingRight: 8, paddingTop: 16 }}>
         <View style={{ flex: 1, alignItems: 'flex-start' }}>
           <PressableScale onPress={() => setProgramMenu(true)} label="Change program" style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 6 }}>
-            <T v="titleLarge" lines={1}>{program?.name ?? (state.loading && !state.error ? 'Loading…' : 'No program yet')}</T>
+            <T v="title" lines={1}>{program?.name ?? (state.loading && !state.error ? 'Loading…' : 'No program yet')}</T>
             <Icon name="arrow-drop-down" />
           </PressableScale>
         </View>
@@ -81,14 +81,14 @@ export function TrainingPlanScreen() {
       </View>
       {splitLabel && (
         <View style={{ flexDirection: 'row', alignItems: 'center', paddingLeft: Gutter, paddingRight: 8 }}>
-          <T v="bodyMedium" color={c.onSurfaceVariant} style={{ flex: 1 }}>Your plan: {splitLabel}</T>
+          <T v="body" color={palette.textMuted} style={{ flex: 1 }}>Your plan: {splitLabel}</T>
           {splits.length > 1 && <Button kind="text" label="Change split" icon="swap-horiz" onPress={() => setSplitMenu(true)} compact />}
         </View>
       )}
-      {state.error && <T color={c.error} style={{ paddingHorizontal: Gutter, paddingVertical: 8 }}>{state.error}</T>}
+      {state.error && <T color={palette.error} style={{ paddingHorizontal: Gutter, paddingVertical: 8 }}>{state.error}</T>}
       {state.loading && state.programs.length === 0 && !state.error ? <><SkeletonCard /><SkeletonCard /></>
         : (!program || program.routines.length === 0) && (
-          <T color={c.onSurfaceVariant} style={{ paddingHorizontal: Gutter, paddingVertical: 12 }}>
+          <T color={palette.textMuted} style={{ paddingHorizontal: Gutter, paddingVertical: 12 }}>
             {!program ? 'Create a program to group your routines.' : 'No routines yet. Tap + Routine to build one.'}
           </T>
         )}
@@ -102,12 +102,12 @@ export function TrainingPlanScreen() {
         <PressableScale key={h.id} onPress={() => nav.navigate('WorkoutDetail', { workoutId: h.id })}
           style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: Gutter, paddingVertical: 10 }}>
           <View style={{ flex: 1 }}>
-            <T v="bodyLarge">{h.title}</T>
-            <T v="bodySmall" color={c.onSurfaceVariant}>{relativeDay(h.finishedAt)}</T>
+            <T v="body">{h.title}</T>
+            <T v="bodyS" color={palette.textMuted}>{relativeDay(h.finishedAt)}</T>
           </View>
           <View style={{ alignItems: 'flex-end' }}>
             <T>{WorkoutMath.formatDuration(h.durationSec)}</T>
-            <T v="bodySmall" color={c.onSurfaceVariant}>
+            <T v="bodyS" color={palette.textMuted}>
               {setCount(h)} sets · {WorkoutMath.formatVolume(h.volumeKg, units)}{h.records > 0 ? ` · ${h.records} PR` : ''}
             </T>
           </View>
@@ -152,8 +152,8 @@ export function TrainingPlanScreen() {
       {/* One outlined card per split, the current one highlighted, so the options read apart. */}
       <BottomSheet visible={splitMenu} onDismiss={() => setSplitMenu(false)}>
         <View style={{ paddingHorizontal: Gutter, paddingBottom: 8, gap: 12 }}>
-          <T v="titleLarge">Choose your split</T>
-          <T v="bodySmall" color={c.onSurfaceVariant}>Both fit your training days. Pick the one you prefer.</T>
+          <T v="title">Choose your split</T>
+          <T v="bodyS" color={palette.textMuted}>Both fit your training days. Pick the one you prefer.</T>
           {splits.map((o) => {
             const current = o.split === currentSplit;
             return (
@@ -169,16 +169,16 @@ export function TrainingPlanScreen() {
                 }}
                 style={({ pressed }) => ({
                   flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16, borderRadius: radius.md, borderWidth: current ? 2 : 1,
-                  borderColor: current ? c.primary : c.outline,
-                  backgroundColor: current ? c.primaryContainer : pressed ? c.surfaceContainerHigh : 'transparent',
+                  borderColor: current ? palette.lime : palette.outline,
+                  backgroundColor: current ? palette.limeContainer : pressed ? palette.surfaceHigh : 'transparent',
                 })}
               >
                 <View style={{ flex: 1, gap: 4 }}>
-                  <T v="titleMedium">{o.label}</T>
-                  <T v="bodySmall" color={c.onSurfaceVariant}>{o.description}</T>
-                  {current && <T v="labelSmall" color={c.primary}>Your current split</T>}
+                  <T v="titleS">{o.label}</T>
+                  <T v="bodyS" color={palette.textMuted}>{o.description}</T>
+                  {current && <T v="bodyS" color={palette.lime}>Your current split</T>}
                 </View>
-                {current ? <Icon name="check-circle" color={c.primary} /> : <Icon name="chevron-right" color={c.onSurfaceVariant} />}
+                {current ? <Icon name="check-circle" color={palette.lime} /> : <Icon name="chevron-right" color={palette.textMuted} />}
               </Pressable>
             );
           })}
@@ -258,19 +258,19 @@ function RoutineRow({ routine, next, onStart, onOpen, onEdit, onDelete }: {
     <PressableScale onPress={onOpen} style={{ flexDirection: 'row', alignItems: 'center', paddingLeft: Gutter, paddingRight: 8, paddingVertical: 12 }}>
       <View style={{ flex: 1 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          <T v="titleMedium">{routine.name}</T>
+          <T v="titleS">{routine.name}</T>
           {next && (
-            <View style={{ backgroundColor: c.primary, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 }}>
-              <T v="labelSmall" color={c.onPrimary}>Up next</T>
+            <View style={{ backgroundColor: palette.lime, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 }}>
+              <T v="bodyS" color={palette.onLime}>Up next</T>
             </View>
           )}
         </View>
-        <T v="bodySmall" color={c.onSurfaceVariant} lines={2}>
+        <T v="bodyS" color={palette.textMuted} lines={2}>
           {routine.exercises.length === 0 ? 'No exercises yet' : routine.exercises.map((x) => x.name).join(', ')}
         </T>
       </View>
       <Button kind={next ? 'filled' : 'tonal'} label="Start" onPress={onStart} enabled={routine.exercises.length > 0} style={{ marginLeft: 12 }} compact />
-      <IconButton name="more-vert" label="More" color={c.onSurfaceVariant} onPress={() => setMenu(true)} />
+      <IconButton name="more-vert" label="More" color={palette.textMuted} onPress={() => setMenu(true)} />
       <ActionMenu visible={menu} onDismiss={() => setMenu(false)} items={[
         { label: 'Edit', icon: 'edit', onPress: onEdit },
         { label: 'Delete', icon: 'delete-outline', danger: true, onPress: onDelete },

@@ -5,7 +5,7 @@ import { Comment, FeedPost } from '../../../data/social';
 import { feedLive, listenComments, listenPost, meStore, SocialRepository } from '../../../data/socialRepo';
 import { useLiveQuery, useStore } from '../../../lib/store';
 import { goBack, useNav, useParams } from '../../../navigation/types';
-import { c, Gutter, type } from '../../theme';
+import { palette, Gutter, type } from '../../theme';
 import { haptics } from '../../haptics';
 import { timeAgo } from '../../format';
 import { Avatar, Hairline, IconButton, PageHeader, Screen, SkeletonCard, T } from '../../components/core';
@@ -71,7 +71,7 @@ export function CommentsScreen() {
               </>
             ) : feed.loading ? <SkeletonCard /> : null}
             {comments == null ? <SkeletonCard />
-              : comments.length === 0 ? <T color={c.onSurfaceVariant} style={{ paddingHorizontal: Gutter, paddingVertical: 20 }}>No comments yet. Say something nice.</T> : null}
+              : comments.length === 0 ? <T color={palette.textMuted} style={{ paddingHorizontal: Gutter, paddingVertical: 20 }}>No comments yet. Say something nice.</T> : null}
           </View>
         }
         renderItem={({ item }) => (
@@ -91,28 +91,28 @@ export function CommentsScreen() {
             <MealPhoto photo={photo} style={{ width: 72, height: 72, borderRadius: 10 }} />
             <Pressable onPress={() => setPhoto(null)} accessibilityLabel="Remove photo"
               style={{ position: 'absolute', top: -8, right: -8, width: 28, height: 28, borderRadius: 14, backgroundColor: 'rgba(16,24,32,0.85)', alignItems: 'center', justifyContent: 'center' }}>
-              <T v="labelLarge">×</T>
+              <T v="label">×</T>
             </Pressable>
           </View>
         </View>
       )}
-      {error && <T v="bodySmall" color={c.error} style={{ paddingHorizontal: Gutter }}>{error}</T>}
+      {error && <T v="bodyS" color={palette.error} style={{ paddingHorizontal: Gutter }}>{error}</T>}
       <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, paddingTop: 4, paddingBottom: 8, gap: 4 }}>
-        {preparing ? <View style={{ width: 44, alignItems: 'center' }}><ActivityIndicator color={c.primary} /></View>
-          : <IconButton name="image" label="Add a photo" color={c.primary} onPress={pick} disabled={post == null} />}
+        {preparing ? <View style={{ width: 44, alignItems: 'center' }}><ActivityIndicator color={palette.lime} /></View>
+          : <IconButton name="image" label="Add a photo" color={palette.lime} onPress={pick} disabled={post == null} />}
         <TextInput
           value={text}
           onChangeText={(t) => { setText(t.slice(0, 500)); setError(null); }}
           placeholder="Add a comment…"
-          placeholderTextColor={c.onSurfaceVariant}
+          placeholderTextColor={palette.textMuted}
           multiline
           autoCapitalize="sentences"
-          selectionColor={c.primary}
+          selectionColor={palette.lime}
           keyboardAppearance="dark"
           accessibilityLabel="Add a comment"
-          style={[type.bodyLarge, { flex: 1, color: c.onSurface, backgroundColor: c.surfaceContainer, borderRadius: 24, paddingHorizontal: 16, paddingTop: 12, paddingBottom: 12, minHeight: 48, maxHeight: 120 }]}
+          style={[type.body, { flex: 1, color: palette.text, backgroundColor: palette.surface, borderRadius: 24, paddingHorizontal: 16, paddingTop: 12, paddingBottom: 12, minHeight: 48, maxHeight: 120 }]}
         />
-        <IconButton name="send" label="Send" color={canSend ? c.primary : c.onSurfaceVariant} onPress={send} disabled={!canSend} />
+        <IconButton name="send" label="Send" color={canSend ? palette.lime : palette.textMuted} onPress={send} disabled={!canSend} />
       </View>
     </Screen>
   );
@@ -124,14 +124,14 @@ function CommentRow({ comment, isMine, canDelete, onDelete }: { comment: Comment
     <View style={{ flexDirection: 'row', paddingLeft: Gutter, paddingRight: 4, paddingVertical: 10 }}>
       <Avatar name={comment.authorName} seed={comment.uid} size={32} />
       <View style={{ flex: 1, marginLeft: 12, gap: 6 }}>
-        <T v="bodySmall">
-          <T v="bodySmall" style={{ fontWeight: '600' }}>{isMine ? 'You' : comment.authorName}</T>
-          <T v="bodySmall" color={c.onSurfaceVariant}>{'  '}{timeAgo(comment.createdAt.getTime(), true)}</T>
+        <T v="bodyS">
+          <T v="bodyS" style={{ fontWeight: '600' }}>{isMine ? 'You' : comment.authorName}</T>
+          <T v="bodyS" color={palette.textMuted}>{'  '}{timeAgo(comment.createdAt.getTime(), true)}</T>
         </T>
         {comment.text.trim() ? <T>{comment.text}</T> : null}
         {comment.photo && <MealPhoto photo={comment.photo} style={{ width: 180, height: 180, borderRadius: 12 }} />}
       </View>
-      {canDelete && <IconButton name="close" size={16} color={c.onSurfaceVariant} label="Comment options" onPress={() => setMenu(true)} />}
+      {canDelete && <IconButton name="close" size={16} color={palette.textMuted} label="Comment options" onPress={() => setMenu(true)} />}
       <ActionMenu visible={menu} onDismiss={() => setMenu(false)} items={[{ label: 'Delete comment', icon: 'delete-outline', danger: true, onPress: onDelete }]} />
     </View>
   );

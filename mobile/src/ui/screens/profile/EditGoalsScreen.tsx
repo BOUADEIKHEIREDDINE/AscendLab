@@ -8,7 +8,7 @@ import { formatKcal, hasEverythingForPlan, PlanCalculator, UserProfile } from '.
 import { ProfileRepository, profileStore } from '../../../data/profileRepo';
 import { useStore } from '../../../lib/store';
 import { goBack, useNav } from '../../../navigation/types';
-import { c } from '../../theme';
+import { palette } from '../../theme';
 import { Appear, Screen, T } from '../../components/core';
 import { OnboardingScaffold } from '../../components/onboarding';
 import { CalorieCard, WeekCard } from '../../components/plan';
@@ -18,7 +18,7 @@ export function EditGoalsScreen() {
   const saved = useStore(profileStore);
   useEffect(() => { if (!profileStore.get()) ProfileRepository.load(); }, []);
   if (!hasEverythingForPlan(saved)) {
-    return <Screen style={{ alignItems: 'center', justifyContent: 'center' }}><ActivityIndicator color={c.primary} /></Screen>;
+    return <Screen style={{ alignItems: 'center', justifyContent: 'center' }}><ActivityIndicator color={palette.lime} /></Screen>;
   }
   return <EditGoalsContent original={saved} />;
 }
@@ -54,7 +54,7 @@ function EditGoalsContent({ original }: { original: UserProfile }) {
         <>
           <Appear index={18}><CalorieCard targets={after} goal={edited.goal!} /></Appear>
           {after.calories !== before.calories && (
-            <Appear><View><T color={c.onSurfaceVariant}>Before: {formatKcal(before.calories)} kcal a day</T></View></Appear>
+            <Appear><View><T color={palette.textMuted}>Before: {formatKcal(before.calories)} kcal a day</T></View></Appear>
           )}
           <Appear index={19}><WeekCard week={week} /></Appear>
         </>

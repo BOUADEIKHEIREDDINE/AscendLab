@@ -5,7 +5,7 @@ import { activeProgramOf, TrainRepository, trainLive } from '../../../data/train
 import { Program } from '../../../data/training';
 import { useStore } from '../../../lib/store';
 import { goBack, useNav } from '../../../navigation/types';
-import { c, Gutter } from '../../theme';
+import { palette, Gutter } from '../../theme';
 import { haptics } from '../../haptics';
 import { Hairline, IconButton, PageHeader, PrimaryButton, Screen, T } from '../../components/core';
 import { ActionMenu, Dialog } from '../../components/overlays';
@@ -24,7 +24,7 @@ export function ProgramsScreen() {
     <Screen>
       <PageHeader title="Programs" onBack={() => goBack(nav)} />
       <ScrollView contentContainerStyle={{ paddingVertical: 8, gap: 14 }}>
-        <T color={c.onSurfaceVariant} style={{ paddingHorizontal: Gutter }}>
+        <T color={palette.textMuted} style={{ paddingHorizontal: Gutter }}>
           A program groups the routines you rotate through. The selected one shows on the Train tab.
         </T>
         <View>
@@ -39,12 +39,12 @@ export function ProgramsScreen() {
                   accessibilityState={{ selected: on }}
                   style={{ flexDirection: 'row', alignItems: 'center', paddingLeft: 16, paddingRight: 4, paddingVertical: 6, gap: 16 }}
                 >
-                  <View style={{ width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: on ? c.primary : c.onSurfaceVariant, alignItems: 'center', justifyContent: 'center' }}>
-                    {on && <View style={{ width: 11, height: 11, borderRadius: 6, backgroundColor: c.primary }} />}
+                  <View style={{ width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: on ? palette.lime : palette.textMuted, alignItems: 'center', justifyContent: 'center' }}>
+                    {on && <View style={{ width: 11, height: 11, borderRadius: 6, backgroundColor: palette.lime }} />}
                   </View>
                   <View style={{ flex: 1 }}>
-                    <T v="bodyLarge">{p.name}</T>
-                    <T v="bodySmall" color={c.onSurfaceVariant} lines={1}>
+                    <T v="body">{p.name}</T>
+                    <T v="bodyS" color={palette.textMuted} lines={1}>
                       {p.routines.length === 0 ? 'No routines' : p.routines.map((r) => r.name).join(' · ')}
                     </T>
                   </View>

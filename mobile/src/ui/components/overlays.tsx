@@ -3,7 +3,7 @@ import React, { ReactNode, useEffect, useState } from 'react';
 import { Animated, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { createStore, useStore } from '../../lib/store';
-import { c, Gutter, radius } from '../theme';
+import { palette, Gutter, radius } from '../theme';
 import { Button, Icon, IconName, T } from './core';
 import { haptics } from '../haptics';
 
@@ -18,15 +18,15 @@ export function Dialog({ visible, onDismiss, title, icon, children, confirm, dis
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onDismiss} statusBarTranslucent>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
         <Pressable onPress={onDismiss} style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'center', padding: 24 }} accessibilityLabel="Close dialog">
-          <Pressable onPress={() => undefined} style={{ backgroundColor: c.surfaceContainerHigh, borderRadius: 28, padding: 24, gap: 16, maxWidth: 520, width: '100%', alignSelf: 'center' }}>
-            {icon && <View style={{ alignItems: 'center' }}><Icon name={icon} color={confirm?.danger ? c.error : c.primary} /></View>}
-            <T v="headlineSmall" center={!!icon}>{title}</T>
+          <Pressable onPress={() => undefined} style={{ backgroundColor: palette.surfaceHigh, borderRadius: 28, padding: 24, gap: 16, maxWidth: 520, width: '100%', alignSelf: 'center' }}>
+            {icon && <View style={{ alignItems: 'center' }}><Icon name={icon} color={confirm?.danger ? palette.error : palette.lime} /></View>}
+            <T v="title" center={!!icon}>{title}</T>
             {children}
             <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 4, flexWrap: 'wrap' }}>
               {dismiss && <Button kind="text" label={dismiss.label} onPress={dismiss.onPress} enabled={dismiss.enabled ?? true} />}
               {confirm && (
                 <Button kind="text" label={confirm.label} onPress={confirm.onPress} enabled={confirm.enabled ?? true}
-                  loading={confirm.loading} color={confirm.danger ? c.error : undefined} />
+                  loading={confirm.loading} color={confirm.danger ? palette.error : undefined} />
               )}
             </View>
           </Pressable>
@@ -42,9 +42,9 @@ export function BottomSheet({ visible, onDismiss, children }: { visible: boolean
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onDismiss} statusBarTranslucent>
       <Pressable onPress={onDismiss} style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)' }} accessibilityLabel="Close" />
-      <View style={{ backgroundColor: c.surfaceContainer, borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingBottom: insets.bottom + 8, maxHeight: '80%' }}>
+      <View style={{ backgroundColor: palette.surface, borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingBottom: insets.bottom + 8, maxHeight: '80%' }}>
         <View style={{ alignItems: 'center', paddingVertical: 12 }}>
-          <View style={{ width: 32, height: 4, borderRadius: 2, backgroundColor: c.outline }} />
+          <View style={{ width: 32, height: 4, borderRadius: 2, backgroundColor: palette.outline }} />
         </View>
         <ScrollView>{children}</ScrollView>
       </View>
@@ -58,17 +58,17 @@ export interface MenuItem { label: string; onPress: () => void; danger?: boolean
 export function ActionMenu({ visible, onDismiss, items, title }: { visible: boolean; onDismiss: () => void; items: MenuItem[]; title?: string }) {
   return (
     <BottomSheet visible={visible} onDismiss={onDismiss}>
-      {title ? <T v="titleSmall" color={c.onSurfaceVariant} style={{ paddingHorizontal: Gutter, paddingBottom: 8 }}>{title}</T> : null}
+      {title ? <T v="titleS" color={palette.textMuted} style={{ paddingHorizontal: Gutter, paddingBottom: 8 }}>{title}</T> : null}
       {items.map((item, i) => (
         <Pressable
           key={`${item.label}-${i}`}
           onPress={() => { haptics.tick(); onDismiss(); setTimeout(item.onPress, Platform.OS === 'ios' ? 350 : 0); }}
           accessibilityRole="button"
-          style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 16, paddingHorizontal: Gutter, minHeight: 52, backgroundColor: pressed ? c.surfaceContainerHigh : 'transparent' })}
+          style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 16, paddingHorizontal: Gutter, minHeight: 52, backgroundColor: pressed ? palette.surfaceHigh : 'transparent' })}
         >
-          {item.leading ?? (item.icon ? <Icon name={item.icon} color={item.danger ? c.error : c.onSurfaceVariant} /> : item.checked !== undefined
-            ? <View style={{ width: 24 }}>{item.checked && <Icon name="check" color={c.primary} />}</View> : null)}
-          <T v="bodyLarge" color={item.danger ? c.error : c.onSurface} style={{ flex: 1 }}>{item.label}</T>
+          {item.leading ?? (item.icon ? <Icon name={item.icon} color={item.danger ? palette.error : palette.textMuted} /> : item.checked !== undefined
+            ? <View style={{ width: 24 }}>{item.checked && <Icon name="check" color={palette.lime} />}</View> : null)}
+          <T v="body" color={item.danger ? palette.error : palette.text} style={{ flex: 1 }}>{item.label}</T>
         </Pressable>
       ))}
     </BottomSheet>
@@ -97,8 +97,8 @@ export function ToastHost() {
   if (!current) return null;
   return (
     <Animated.View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, bottom: insets.bottom + 90, alignItems: 'center', opacity }}>
-      <View accessibilityLiveRegion="polite" style={{ backgroundColor: c.onSurface, borderRadius: radius.lg, paddingHorizontal: 18, paddingVertical: 10, maxWidth: '85%' }}>
-        <T color={c.background}>{current.text}</T>
+      <View accessibilityLiveRegion="polite" style={{ backgroundColor: palette.text, borderRadius: radius.lg, paddingHorizontal: 18, paddingVertical: 10, maxWidth: '85%' }}>
+        <T color={palette.ink}>{current.text}</T>
       </View>
     </Animated.View>
   );
