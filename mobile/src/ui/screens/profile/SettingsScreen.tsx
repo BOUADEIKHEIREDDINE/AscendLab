@@ -9,6 +9,7 @@ import { signOut } from '../../../state/session';
 import { palette, withAlpha } from '../../theme';
 import { Appear, Hairline, Icon, IconName, PageHeader, Screen, Segmented, T, TextField } from '../../components/core';
 import { Dialog } from '../../components/overlays';
+import { ShapeGallery } from '../../shapes/ShapeGallery';
 
 function goalSummary(p: UserProfile): string | null {
   if (!p.goal || !p.daysPerWeek || !p.place) return null;
@@ -20,6 +21,7 @@ export function SettingsScreen() {
   const nav = useNav();
   const p = useStore(profileStore);
   const [showDelete, setShowDelete] = useState(false);
+  const [gallery, setGallery] = useState(false);
   useEffect(() => { if (!profileStore.get()) ProfileRepository.load(); }, []);
 
   return (
@@ -71,8 +73,15 @@ export function SettingsScreen() {
             <SettingRow icon="delete-forever" title="Delete account" subtitle="Permanently remove your account and data" danger onPress={() => setShowDelete(true)} />
           </Section>
         </Appear>
+
+        {__DEV__ && (
+          <Section title="Developer">
+            <SettingRow icon="category" title="Shape gallery" subtitle="Every shape, morphs and loaders" onPress={() => setGallery(true)} />
+          </Section>
+        )}
       </ScrollView>
 
+      {__DEV__ && <ShapeGallery visible={gallery} onDismiss={() => setGallery(false)} />}
       {showDelete && <DeleteAccountDialog onDismiss={() => setShowDelete(false)} onDeleted={() => signOut(nav)} />}
     </Screen>
   );
