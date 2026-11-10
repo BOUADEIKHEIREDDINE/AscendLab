@@ -1,80 +1,114 @@
 <p align="center">
-  <img src="app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png" width="96" alt="AscendLab icon" />
+  <img src="mobile/assets/icon.png" width="96" alt="AscendLab icon" />
 </p>
 
 <h1 align="center">AscendLab</h1>
 
 <p align="center"><b>Training made simple.</b></p>
 
-AscendLab is an Android fitness and nutrition app that helps everyone progress at their own pace: a training plan, a calorie tracker and a progress feed, without intimidating visuals or pressure to perform.
-
-> **Status:** the app structure is in place. Every page is a styled placeholder that lists what it will hold and links to the pages it leads to; the features themselves are not built yet.
+AscendLab is a fitness and nutrition app that helps everyone progress at their own pace: a training
+plan built around you, a calorie and macro diary, and a feed to share meals and workouts with
+friends. There are no intimidating visuals and no pressure to perform. It runs on iPhone, Android
+and the web.
 
 ## Screenshots
 
-| Welcome | Sign up | Plan ready | Home |
+| Welcome | Log in | Home | Food |
 | :---: | :---: | :---: | :---: |
-| <img src="docs/screenshots/01-welcome.png" width="200" /> | <img src="docs/screenshots/02-sign-up.png" width="200" /> | <img src="docs/screenshots/06-plan-ready.png" width="200" /> | <img src="docs/screenshots/07-home.png" width="200" /> |
-| **Training plan** | **Workout session** | **Calorie tracker** | **Profile** |
-| <img src="docs/screenshots/08-training-plan.png" width="200" /> | <img src="docs/screenshots/09-workout-session.png" width="200" /> | <img src="docs/screenshots/11-calorie-tracker.png" width="200" /> | <img src="docs/screenshots/17-profile.png" width="200" /> |
+| <img src="docs/screenshots/welcome.png" width="200" alt="Welcome" /> | <img src="docs/screenshots/log-in.png" width="200" alt="Log in" /> | <img src="docs/screenshots/home.png" width="200" alt="Home feed" /> | <img src="docs/screenshots/food.png" width="200" alt="Food: Fuel Bloom and macros" /> |
+| **Train** | **Live workout** | **Profile** | **Statistics** |
+| <img src="docs/screenshots/train.png" width="200" alt="Train" /> | <img src="docs/screenshots/live-workout.png" width="200" alt="Live workout" /> | <img src="docs/screenshots/profile.png" width="200" alt="Profile" /> | <img src="docs/screenshots/statistics.png" width="200" alt="Statistics" /> |
 
-## Pages
+## Features
 
-| Section | Pages |
-| --- | --- |
-| Onboarding (shown once) | Welcome · Sign up / Log in · Choose your version · Your body · Your goals · Your plan is ready |
-| Home tab | Home (Today + Feed) · Create post |
-| Train tab | Training plan · Workout session · Exercise detail |
-| Food tab | Calorie tracker · Add food · Nutrition planner · Meal detail |
-| Profile tab | Profile and progress · Settings |
+- **Onboarding:** a few questions about your body, goal, level, training days and place. The app
+  then builds your calorie and macro targets and a training split.
+- **Train:** a generated program with routines and the routine that's up next. A live workout mode
+  shows last time's sets, a rest timer, personal-record alerts, exercise swaps and alternatives.
+  You also get history, statistics, a calendar and a library of 700+ exercises with photos and
+  instructions.
+- **Food:** a daily diary by meal (breakfast, lunch, dinner, snacks) with calories, protein, carbs
+  and fat, an estimate of calories burned in workouts, and a nutrition planner.
+- **Home:** meals and workouts from you and your friends, with likes, comments, stories and a
+  daily "closest to goal" race.
+- **Profile:** workouts per week, week streak, a body-weight trend, a comparison with friends, and
+  settings.
 
-## Visual identity: "Daily Ascent"
+## Design: "Ascent Expressive"
 
-Energy, clarity and steady progress. The logo is a geometric **A** whose cut-outs form ascending steps: progress, one step at a time.
+AscendLab is about climbing one small step at a time, so **progress is shape**. Every number
+lives in a tile, and tiles carry shapes from one shared family (cookies, bursts, clovers,
+pebbles, soft triangles) that **morph to show state**. For example, the Food tab's *Fuel Bloom*
+is spiky when you have a lot left to eat, turns into a smooth circle when you reach your goal
+("Summit reached"), and becomes an ember burst when you go over.
 
-| Role | Color | Code |
+| Role | Token | Code |
 | --- | --- | --- |
-| Main background | Midnight blue | `#101820` |
-| Cards and surfaces | Slate blue | `#1C2934` |
-| Primary accent and progress | Mint green | `#75E2BE` |
-| Primary text | Soft white | `#F4F7FA` |
-| Secondary text | Light gray | `#A9B6C2` |
-| Occasional accent, milestones | Apricot | `#FFB987` |
+| Background | `ink` | `#0A0B0E` |
+| Tiles and surfaces | `surface` / `surfaceHigh` | `#14161B` / `#1D2027` |
+| Primary action and main progress | `lime` | `#D4FF4F` |
+| Over budget, burned, destructive | `ember` | `#FF6B3D` |
+| Milestones (PRs, streaks) | `gold` | `#FFC94A` |
+| Protein · carbs · fat | `protein` · `carbs` · `fat` | `#FF8A5B` · `#FFD25E` · `#8FB8FF` |
 
-- Dark-only theme, Roboto with bold headings and tabular numbers.
-- Rounded cards, airy layout, one clearly visible primary action per screen.
-- Progress is shown with a number and a label, never with color alone.
+- **Space Grotesk** for numbers and display text, **Inter** for UI text, tabular numbers everywhere.
+- **Tiles for numbers, rows for lists.** Dashboards are bento grids of tiles; long lists sit
+  on grouped surfaces.
+- **One lime thing per screen is the hero.** Everything else uses tonal surfaces and the data colours.
+- Spring motion and haptics, with reduce-motion respected, and progress always shown with a
+  number and a label, never with colour or shape alone.
 
-The theme lives in [`ui/theme/`](app/src/main/java/com/ascendlab/app/ui/theme).
+The full system is in [`docs/DESIGN_SYSTEM.md`](docs/DESIGN_SYSTEM.md). The tokens live in
+[`mobile/src/ui/theme.ts`](mobile/src/ui/theme.ts) and the shapes in
+[`mobile/src/ui/shapes/`](mobile/src/ui/shapes). Notes on the redesign are in
+[`docs/REDESIGN_NOTES.md`](docs/REDESIGN_NOTES.md).
 
-## iOS (and Android and web): Expo app
+## Run it
 
-The [`mobile/`](mobile) folder holds a full port of the app built with Expo and React Native. It runs
-on iPhone, Android and the web, uses the same Firebase project and has the same features. See
-[`mobile/README.md`](mobile/README.md) to run it.
-
-## Tech stack (Kotlin app)
-
-- Kotlin, Jetpack Compose, Material 3
-- Navigation Compose with a bottom tab bar (Home, Train, Food, Profile)
-- Min SDK 24, target SDK 35
-
-## Build and run
-
-Open the project in Android Studio and run the `app` configuration, or from the command line:
+The app lives in [`mobile/`](mobile) and is built with Expo and React Native.
 
 ```bash
-./gradlew :app:installDebug
+cd mobile
+npm install
+cp .env.example .env.local   # then fill in the Firebase web config
+npx expo start               # scan the QR code with Expo Go, or press w for the web
 ```
+
+[`mobile/README.md`](mobile/README.md) covers the Firebase setup, Google sign-in (which needs a
+development build) and the local Firebase emulators.
+
+## Checks
+
+```bash
+cd mobile
+npx tsc --noEmit
+npx expo lint
+npm test
+```
+
+## Tech stack
+
+- Expo, React Native and TypeScript, running on iOS, Android and the web
+- React Navigation (native stack and bottom tabs) with a custom floating tab dock
+- Firebase Authentication and Cloud Firestore
+- `react-native-svg` for the shapes and charts, and React Native `Animated` for the motion
+- Inter and Space Grotesk through `@expo-google-fonts`
 
 ## Project structure
 
 ```
-app/src/main/java/com/ascendlab/app/
-├── MainActivity.kt
+mobile/src/
+├── data/        # Models and Firebase repositories
+├── lib/         # Firebase setup, store, goal engine and program generator
+├── state/       # Onboarding draft and session helpers
+├── navigation/  # Pages, params, tab stacks
 └── ui/
-    ├── components/   # Shared composables (placeholder page template)
-    ├── navigation/   # Routes, tabs and the nav host
-    ├── screens/      # One package per section: onboarding, home, train, food, profile
-    └── theme/        # Colors, typography, shapes
+    ├── theme.ts     # Ascent Expressive tokens
+    ├── motion.ts    # Springs and reduce-motion
+    ├── shapes/      # The polar shape family, morphs, loaders
+    ├── components/  # Core components, dock, Fuel Bloom, workout pieces, charts, feed
+    └── screens/     # One folder per tab: onboarding, home, train, food, profile
 ```
+
+`app/` holds the first version of AscendLab, a native Android app in Kotlin and Jetpack Compose.
+The Expo app has replaced it and uses the same Firebase project.

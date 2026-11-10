@@ -63,7 +63,7 @@ src/
 ├── lib/         # Firebase setup, small observable store, error messages
 ├── state/       # Onboarding draft and session helpers
 ├── navigation/  # Pages, params, tab stacks
-└── ui/          # Theme ("Daily Ascent"), shared components, screens per tab
+└── ui/          # Theme ("Ascent Expressive"), shapes, shared components, screens per tab
 ```
 
 ## Differences from the Android app

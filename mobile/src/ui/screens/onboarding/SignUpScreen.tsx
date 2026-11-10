@@ -70,8 +70,8 @@ export function SignUpScreen() {
     <Screen keyboard edges={['top', 'bottom']}>
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingHorizontal: 24, paddingVertical: 16, gap: 16 }}>
         {nav.canGoBack() && (
-          <View style={{ marginLeft: -12 }}>
-            <IconButton name={Platform.OS === 'ios' ? 'arrow-back-ios-new' : 'arrow-back'} size={Platform.OS === 'ios' ? 20 : 24} label="Back" onPress={() => nav.goBack()} />
+          <View>
+            <IconButton variant="tonal" name={Platform.OS === 'ios' ? 'arrow-back-ios-new' : 'arrow-back'} size={Platform.OS === 'ios' ? 18 : 22} label="Back" onPress={() => nav.goBack()} />
           </View>
         )}
         {/* The heading changes when switching between sign up and log in. */}
