@@ -8,7 +8,7 @@ import { Animated, StyleProp, View, ViewStyle } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { SpringToken } from '../theme';
 import { springTo, useReduceMotion, useSpringNumber } from '../motion';
-import { lerpSpec, pathLength, samplePoints, ShapeSpec, smoothPath, specKey } from './polar';
+import { lerpSpec, shapeGeometry, ShapeGeometry, ShapeSpec, specKey } from './polar';
 import { ShapeName, toSpec } from './library';
 
 /** The current spec, springing to `target` whenever it changes (instant with reduce motion). */
@@ -32,14 +32,9 @@ export function useMorphSpec(target: ShapeSpec, { token = 'slow', from }: { toke
   return reduce ? target : spec;
 }
 
-export interface ShapeGeometry { d: string; length: number; points: [number, number][] }
-
-/** Path, outline length and sample points for a spec in a `size` box, inset by `inset`. */
+/** Path, outline length and sample points for a spec in a `size` box (cached for named shapes). */
 export function useShapeGeometry(spec: ShapeSpec, size: number, inset: number): ShapeGeometry {
-  return useMemo(() => {
-    const points = samplePoints(spec, size / 2 - inset, size / 2, size / 2);
-    return { d: smoothPath(points), length: pathLength(points), points };
-  }, [spec, size, inset]);
+  return useMemo(() => shapeGeometry(spec, size, inset), [spec, size, inset]);
 }
 
 export function ExpressiveShape({

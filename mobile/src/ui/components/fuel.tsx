@@ -210,6 +210,7 @@ export function MealTile({ type, eaten, budget, onOpen, onAdd, width }: {
   const over = budget > 0 && eaten > budget * 1.15;
   const shapeSize = Math.min(width * 0.5, 84);
   return (
+    <View style={{ width }}>
     <PressableScale onPress={onOpen} label={`${MEAL[type].label}: ${formatKcal(eaten)} of ${formatKcal(budget)} kilocalories`}
       style={{ width, minHeight: width, borderRadius: radius.lg, backgroundColor: palette.surface, padding: space.tilePad, justifyContent: 'space-between' }}>
       <ExpressiveShape shape={mealShape[type]} size={shapeSize} fill={tone(over ? palette.ember : palette.lime, 0.12)}
@@ -220,9 +221,11 @@ export function MealTile({ type, eaten, budget, onOpen, onAdd, width }: {
         <T v="titleS">{MEAL[type].label}</T>
         <T v="bodyS" color={palette.textMuted}>{budget > 0 ? `${formatKcal(eaten)} / ${formatKcal(budget)} kcal` : `${formatKcal(eaten)} kcal`}</T>
       </View>
-      <View style={{ position: 'absolute', top: 10, right: 10 }}>
-        <IconButton variant="filled" name="add" label={`Add to ${MEAL[type].label}`} onPress={onAdd} size={20} />
-      </View>
     </PressableScale>
+    {/* A sibling of the tile, not nested in it: one pressable never contains another. */}
+    <View style={{ position: 'absolute', top: 10, right: 10 }}>
+      <IconButton variant="filled" name="add" label={`Add to ${MEAL[type].label}`} onPress={onAdd} size={20} />
+    </View>
+    </View>
   );
 }

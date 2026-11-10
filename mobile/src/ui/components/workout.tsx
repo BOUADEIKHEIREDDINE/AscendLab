@@ -6,13 +6,14 @@ import { palette, radius, space, tone } from '../theme';
 import { haptics } from '../haptics';
 import { fadeTo, springTo, useReduceMotion, useSpringNumber } from '../motion';
 import { ExpressiveShape } from '../shapes/ExpressiveShape';
-import { ShapeSpec } from '../shapes/polar';
+import { markStatic, ShapeSpec } from '../shapes/polar';
 import { ShapeName } from '../shapes/library';
 import { Icon, T } from './core';
 import { ShapeConfetti } from './confetti';
 
 /** A rounded square in the polar family, so it can morph into a cookie. */
 const squircle: ShapeSpec = { lobes: 4, depth: 0.09, sharpness: 1, rotation: -Math.PI / 2 + Math.PI / 4, wobble: 0 };
+markStatic([squircle]);
 
 /** The set-done check: a rounded square that morphs into a lime cookie12 with a check. */
 export function SetCheck({ done, onPress, label }: { done: boolean; onPress: () => void; label: string }) {

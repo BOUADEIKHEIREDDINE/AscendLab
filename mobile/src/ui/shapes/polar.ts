@@ -22,7 +22,8 @@ export interface ShapeSpec {
 
 export type Point = [number, number];
 
-export const SAMPLES = 144;
+/** Points sampled around each shape. 96 keeps even the spiky bursts smooth at the sizes we draw. */
+export const SAMPLES = 96;
 
 const cosWave = (lobes: number, theta: number, rotation: number, sharpness: number) =>
   Math.pow((Math.cos(lobes * (theta - rotation)) + 1) / 2, sharpness);
@@ -74,10 +75,41 @@ export function smoothPath(points: Point[], closed = true): string {
   return closed ? d + ' Z' : d;
 }
 
+export interface ShapeGeometry { d: string; length: number; points: Point[] }
+
+// Geometry for the named (static) shapes is cached: lists draw the same few shapes at the same
+// sizes over and over. Mid-morph specs are one-offs, so they are never cached.
+const staticKeys = new Set<string>();
+const cache = new Map<string, ShapeGeometry>();
+const CACHE_LIMIT = 400;
+
+/** Marks specs as static (the named shapes), so their geometry is cached. */
+export function markStatic(specs: ShapeSpec[]): void {
+  specs.forEach((s) => staticKeys.add(specKey(s)));
+}
+
+function computeGeometry(spec: ShapeSpec, size: number, inset: number): ShapeGeometry {
+  const points = samplePoints(spec, size / 2 - inset, size / 2, size / 2);
+  return { d: smoothPath(points), length: pathLength(points), points };
+}
+
+/** Path, outline length and sample points for a spec in a `size` box, inset by `inset`. */
+export function shapeGeometry(spec: ShapeSpec, size: number, inset = 0): ShapeGeometry {
+  const key = specKey(spec);
+  if (!staticKeys.has(key)) return computeGeometry(spec, size, inset);
+  const k = `${key}@${size}/${inset}`;
+  let geo = cache.get(k);
+  if (!geo) {
+    if (cache.size >= CACHE_LIMIT) cache.clear();
+    geo = computeGeometry(spec, size, inset);
+    cache.set(k, geo);
+  }
+  return geo;
+}
+
 /** The shape's outline for a box of `size` × `size`, inset by `inset` (e.g. half the stroke). */
 export function shapePath(spec: ShapeSpec, size: number, inset = 0): string {
-  const r = size / 2 - inset;
-  return smoothPath(samplePoints(spec, r, size / 2, size / 2));
+  return shapeGeometry(spec, size, inset).d;
 }
 
 /** Length of the closed polyline through the points (close enough to the smooth curve). */

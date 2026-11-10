@@ -55,7 +55,12 @@ export function TrainingPlanScreen() {
       <TabHeader title="Train" />
       {active && (
         <Tile span="2x1" onPress={() => nav.navigate('WorkoutSession')} label={`${active.title}, in progress. Resume`}
-          style={{ marginHorizontal: Gutter, marginBottom: space.tileGap, flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 14 }}>
+          style={{ marginHorizontal: Gutter, marginBottom: space.tileGap, flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 14 }}
+          overlay={(
+            <View pointerEvents="box-none" style={{ position: 'absolute', right: space.tilePad, top: 0, bottom: 0, justifyContent: 'center' }}>
+              <Button kind="tonal" label="Resume" compact onPress={() => nav.navigate('WorkoutSession')} />
+            </View>
+          )}>
           <ExpressiveShape shape="softTriangle" size={48} fill={tone(palette.lime, 0.18)}>
             <Icon name="fitness-center" size={20} color={palette.lime} />
           </ExpressiveShape>
@@ -64,7 +69,8 @@ export function TrainingPlanScreen() {
             <T v="titleS" lines={1}>{active.title}</T>
             <T v="bodyS" color={palette.textMuted}>{doneSets(active)} sets done</T>
           </View>
-          <Button kind="tonal" label="Resume" compact onPress={() => nav.navigate('WorkoutSession')} />
+          {/* Room for the Resume button, drawn over the tile as a sibling. */}
+          <View style={{ width: 92 }} />
         </Tile>
       )}
       {!active && <HeroButton label="Start empty workout" icon="add" onPress={() => start(null)} style={{ marginHorizontal: Gutter, marginVertical: 8 }} />}
@@ -254,7 +260,12 @@ function RoutineRow({ routine, next, onStart, onOpen, onEdit, onDelete }: {
 }) {
   const [menu, setMenu] = useState(false);
   return (
-    <Tile span="2x1" onPress={onOpen} label={routine.name} border={next ? palette.lime : undefined} style={{ gap: 10 }}>
+    <Tile span="2x1" onPress={onOpen} label={routine.name} border={next ? palette.lime : undefined} style={{ gap: 10 }}
+      overlay={(
+        <View pointerEvents="box-none" style={{ position: 'absolute', right: space.tilePad, bottom: space.tilePad }}>
+          <SplitButton label="Start" kind="tonal" onPress={onStart} onMenu={() => setMenu(true)} enabled={routine.exercises.length > 0} menuLabel={`More for ${routine.name}`} />
+        </View>
+      )}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
         <T v="titleS" style={{ flexShrink: 1 }} lines={1}>{routine.name}</T>
         {next && (
@@ -266,9 +277,9 @@ function RoutineRow({ routine, next, onStart, onOpen, onEdit, onDelete }: {
       <T v="bodyS" color={palette.textMuted} lines={2}>
         {routine.exercises.length === 0 ? 'No exercises yet' : routine.exercises.map((x) => x.name).join(', ')}
       </T>
-      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+      {/* 40 high: the Start split button sits over this row as a sibling of the tile. */}
+      <View style={{ flexDirection: 'row', alignItems: 'center', height: 40 }}>
         <T v="bodyS" color={palette.textFaint} style={{ flex: 1 }}>{routine.exercises.length} exercise{routine.exercises.length === 1 ? '' : 's'}</T>
-        <SplitButton label="Start" kind="tonal" onPress={onStart} onMenu={() => setMenu(true)} enabled={routine.exercises.length > 0} menuLabel={`More for ${routine.name}`} />
       </View>
       <ActionMenu visible={menu} onDismiss={() => setMenu(false)} items={[
         { label: 'Start', icon: 'play-arrow', onPress: onStart },

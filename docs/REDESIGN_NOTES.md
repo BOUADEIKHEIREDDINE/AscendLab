@@ -48,12 +48,31 @@ the tile's + still goes straight to logging.
 - **Icons** are still the standard Material set (default size 22). `@expo/vector-icons` has no
   "Rounded" Material family; switching would need Material Symbols.
 
+## Follow-up fixes
+
+- **No pressable inside a pressable.** `Tile` has an `overlay` slot: buttons that belong on a
+  tappable tile (Resume on the active workout, Start ▾ on routines) are drawn over it as an
+  absolutely positioned sibling, with a spacer keeping the layout identical. The meal tile + and
+  the story-bubble + are siblings of their tile/bubble. A `ListRow` with both `onPress` and a
+  `trailing` control renders the control beside the pressable instead of inside it. The web
+  build no longer logs the `<button>` inside `<button>` warning.
+- **Faster shapes.** Shapes are sampled at 96 points (was 144). Geometry for the named shapes
+  (and the set-check squircle) is cached by spec + size + inset via `markStatic()` and
+  `shapeGeometry()` in `shapes/polar.ts`; mid-morph specs are never cached. A large render
+  (240 px, 14 px stroke, emberBurst included) and mid-morph frames stay smooth.
+
+## Screenshots (web, emulator test account)
+
+| Food | Train | Live workout | Profile |
+| :---: | :---: | :---: | :---: |
+| <img src="screenshots/redesign/food.png" width="200" /> | <img src="screenshots/redesign/train.png" width="200" /> | <img src="screenshots/redesign/live-workout.png" width="200" /> | <img src="screenshots/redesign/profile.png" width="200" /> |
+
 ## Checked
 
 - `npx tsc --noEmit` and `npx expo lint` pass with no errors or warnings in `mobile/src/ui`.
 - The web build was run against the local Firebase emulators with the e2e test account: Welcome,
-  Home, Food (incl. the meal sheet), Train (incl. mini player), live workout (set ticked, rest
-  pill) and Profile render without console errors. Shapes were also rendered to an image to
+  Home, Food (incl. the meal sheet and logging a meal), Train (incl. mini player), live workout
+  (set ticked, rest pill) and Profile render without console errors or warnings. Shapes were also rendered to an image to
   check that they are smooth, morphs included.
 
 ## Left to do
@@ -63,10 +82,6 @@ the tile's + still goes straight to logging.
 - **TabHeader collapse on scroll** (small centred title over a 90% ink bar) is not built.
 - **Shared-element "tile scales into the page"** transition and spring timing for native-stack
   transitions are not built (native-stack animations are platform-driven).
-- **Web-only warning**: nested pressables (e.g. the + on a meal tile, Resume inside the active
-  workout tile, SplitButton inside a routine tile) render as `<button>` inside `<button>` on web.
-  It works, but React logs a DOM-nesting warning. The old app already had one such case (the
-  story +). Fix by making the outer tile a non-button `View` with an absolute pressable layer.
 - **Logo and app icon** are still the mint "Daily Ascent" artwork (`assets/`); they need new
   lime-on-ink exports.
 - **Light theme**: move screens from static `palette` to `useTheme()`.

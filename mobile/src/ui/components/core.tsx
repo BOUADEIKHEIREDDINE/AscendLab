@@ -6,7 +6,7 @@
  */
 import React, { createContext, ReactNode, useContext, useEffect, useRef, useState } from 'react';
 import {
-  Animated, Easing, KeyboardAvoidingView, Platform, Pressable, StyleProp, Text, TextInput, TextInputProps, TextStyle,
+  Animated, Easing, KeyboardAvoidingView, Platform, Pressable, StyleProp, StyleSheet, Text, TextInput, TextInputProps, TextStyle,
   View, ViewStyle,
 } from 'react-native';
 import { SafeAreaView, Edge } from 'react-native-safe-area-context';
@@ -330,9 +330,16 @@ export type TileSpan = '1x1' | '2x1' | '2x2' | 'auto';
  * A surface tile: 1×1 (square), 2×1 (wide) or 2×2 (hero). Heights are minimums, so tiles grow
  * with large font settings instead of clipping. Outside a Bento it simply fills its parent.
  */
-export function Tile({ span = '1x1', children, onPress, background = palette.surface, style, label, center, padding = space.tilePad, border }: {
+const OUTER_KEYS = ['margin', 'marginHorizontal', 'marginVertical', 'marginTop', 'marginBottom', 'marginLeft', 'marginRight', 'flex', 'flexGrow', 'flexBasis', 'alignSelf'] as const;
+
+/**
+ * Buttons inside a pressable tile go in `overlay`: they are drawn over the tile as a sibling
+ * (absolutely positioned), never nested inside the tile's own pressable. Leave room for them in
+ * the tile's content (e.g. a spacer) so the layout looks the same.
+ */
+export function Tile({ span = '1x1', children, onPress, background = palette.surface, style, label, center, padding = space.tilePad, border, overlay }: {
   span?: TileSpan; children?: ReactNode; onPress?: () => void; background?: string; style?: StyleProp<ViewStyle>; label?: string;
-  center?: boolean; padding?: number; border?: string;
+  center?: boolean; padding?: number; border?: string; overlay?: ReactNode;
 }) {
   const bento = useContext(BentoWidth);
   const col = bento > 0 ? (bento - space.tileGap) / 2 : 0;
@@ -343,8 +350,23 @@ export function Tile({ span = '1x1', children, onPress, background = palette.sur
     width, minHeight, borderRadius: span === '2x2' ? radius.xl : radius.lg, backgroundColor: background, padding, overflow: 'hidden',
     borderWidth: border ? 2 : 0, borderColor: border,
   }, center && { alignItems: 'center', justifyContent: 'center' }, style];
-  if (onPress) return <PressableScale onPress={onPress} label={label} style={box}>{children}</PressableScale>;
-  return <View style={box} accessible={!!label} accessibilityLabel={label}>{children}</View>;
+  const surface = onPress
+    ? <PressableScale onPress={onPress} label={label} style={box}>{children}</PressableScale>
+    : <View style={box} accessible={!!label} accessibilityLabel={label}>{children}</View>;
+  if (!overlay) return surface;
+  // Margins and flex belong to the wrapper, so the overlay lines up with the tile.
+  const flat = (StyleSheet.flatten(box) ?? {}) as Record<string, unknown>;
+  const outer: Record<string, unknown> = { width: flat.width };
+  for (const k of OUTER_KEYS) if (flat[k] !== undefined) { outer[k] = flat[k]; }
+  const inner = [box, Object.fromEntries(OUTER_KEYS.map((k) => [k, undefined])), { width: flat.width != null ? '100%' : undefined }] as StyleProp<ViewStyle>;
+  return (
+    <View style={outer as ViewStyle}>
+      {onPress
+        ? <PressableScale onPress={onPress} label={label} style={inner}>{children}</PressableScale>
+        : <View style={inner} accessible={!!label} accessibilityLabel={label}>{children}</View>}
+      <View pointerEvents="box-none" style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }}>{overlay}</View>
+    </View>
+  );
 }
 
 /** Tile header: small icon + overline, muted. */
@@ -391,7 +413,9 @@ export function ListRow({ icon, iconColor, title, subtitle, trailing, onPress, d
   enabled?: boolean; chevron?: boolean; leading?: ReactNode; label?: string;
 }) {
   const tint = danger ? palette.ember : enabled ? palette.text : palette.textFaint;
-  return (
+  // A tappable row with its own trailing control: the control sits beside the pressable, not inside it.
+  const split = !!onPress && trailing != null;
+  const row = (
     <Pressable
       onPress={onPress && (() => { haptics.tick(); onPress(); })}
       disabled={!onPress || !enabled}
@@ -399,8 +423,8 @@ export function ListRow({ icon, iconColor, title, subtitle, trailing, onPress, d
       accessibilityLabel={label}
       accessibilityState={{ disabled: !enabled }}
       style={({ pressed }) => ({
-        flexDirection: 'row', alignItems: 'center', paddingHorizontal: space.tilePad, paddingVertical: 12, gap: 14, minHeight: 60,
-        backgroundColor: pressed ? palette.surfaceHigh : 'transparent',
+        flexDirection: 'row', alignItems: 'center', paddingLeft: space.tilePad, paddingRight: split ? 4 : space.tilePad, paddingVertical: 12, gap: 14, minHeight: 60,
+        backgroundColor: pressed ? palette.surfaceHigh : 'transparent', flex: split ? 1 : undefined,
       })}
     >
       {leading ?? (icon ? (
@@ -412,9 +436,16 @@ export function ListRow({ icon, iconColor, title, subtitle, trailing, onPress, d
         <T v="titleS" color={tint} lines={2}>{title}</T>
         {subtitle ? <T v="bodyS" color={enabled ? palette.textMuted : palette.textFaint}>{subtitle}</T> : null}
       </View>
-      {trailing}
+      {!split && trailing}
       {chevron ?? (onPress && enabled && !trailing) ? <Icon name="chevron-right" color={palette.textMuted} /> : null}
     </Pressable>
+  );
+  if (!split) return row;
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', paddingRight: space.tilePad - 8 }}>
+      {row}
+      {trailing}
+    </View>
   );
 }
 

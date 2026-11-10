@@ -139,20 +139,23 @@ function StoryBubble({ person, isMe, allSeen, onPress, onAdd }: {
   const progress = person.target > 0 ? Math.min(person.eaten / person.target, 1) : 0;
   const fresh = person.target > 0 && person.eaten > person.target ? palette.ember : palette.lime;
   return (
-    <PressableScale onPress={onPress} style={{ width: 78, alignItems: 'center' }}
-      label={`${person.name}, ${person.eaten} of ${person.target} kilocalories today`}>
-      <StoryRing size={74} progress={person.posts.length === 0 ? 0 : Math.max(progress, 0.04)} color={fresh} seen={allSeen}>
-        <Avatar name={person.avatarName} seed={person.uid} size={58} />
-        {isMe && (
-          <Pressable onPress={onAdd} accessibilityLabel="Log a meal" hitSlop={6}
-            style={{ position: 'absolute', right: 0, bottom: 0, width: 26, height: 26, borderRadius: 13, backgroundColor: palette.ink, padding: 2 }}>
-            <View style={{ flex: 1, borderRadius: 11, backgroundColor: palette.lime, alignItems: 'center', justifyContent: 'center' }}>
-              <Icon name="add" size={16} color={palette.onLime} />
-            </View>
-          </Pressable>
-        )}
-      </StoryRing>
-      <T v="label" lines={1} style={{ marginTop: 4 }}>{isMe ? person.name : person.name.split(' ')[0]}</T>
-    </PressableScale>
+    <View style={{ width: 78 }}>
+      <PressableScale onPress={onPress} style={{ width: 78, alignItems: 'center' }}
+        label={`${person.name}, ${person.eaten} of ${person.target} kilocalories today`}>
+        <StoryRing size={74} progress={person.posts.length === 0 ? 0 : Math.max(progress, 0.04)} color={fresh} seen={allSeen}>
+          <Avatar name={person.avatarName} seed={person.uid} size={58} />
+        </StoryRing>
+        <T v="label" lines={1} style={{ marginTop: 4 }}>{isMe ? person.name : person.name.split(' ')[0]}</T>
+      </PressableScale>
+      {/* The + is a sibling of the bubble, placed over its corner, not nested in it. */}
+      {isMe && (
+        <Pressable onPress={onAdd} accessibilityRole="button" accessibilityLabel="Log a meal" hitSlop={6}
+          style={{ position: 'absolute', left: 2 + 74 - 26, top: 74 - 26, width: 26, height: 26, borderRadius: 13, backgroundColor: palette.ink, padding: 2 }}>
+          <View style={{ flex: 1, borderRadius: 11, backgroundColor: palette.lime, alignItems: 'center', justifyContent: 'center' }}>
+            <Icon name="add" size={16} color={palette.onLime} />
+          </View>
+        </Pressable>
+      )}
+    </View>
   );
 }

@@ -1,6 +1,6 @@
 /** The named shapes (DESIGN_SYSTEM §3.2) and the meal shapes (§3.3). */
 import type { MealType } from '../../data/social';
-import { ShapeSpec } from './polar';
+import { markStatic, ShapeSpec } from './polar';
 
 const UP = -Math.PI / 2;
 
@@ -17,6 +17,8 @@ export const shapes = {
   flower: { lobes: 6, depth: 0.16, sharpness: 1.4, rotation: UP, wobble: 0 },
   gem: { lobes: 5, depth: 0.12, sharpness: 1.2, rotation: UP, wobble: 0 },
 } satisfies Record<string, ShapeSpec>;
+
+markStatic(Object.values(shapes));
 
 export type ShapeName = keyof typeof shapes;
 
