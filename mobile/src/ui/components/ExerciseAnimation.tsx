@@ -6,7 +6,7 @@ import React, { useEffect, useState } from 'react';
 import { AccessibilityInfo, View } from 'react-native';
 import { Image } from 'expo-image';
 import { useIsFocused } from '@react-navigation/native';
-import { palette } from '../theme';
+import { palette, radius } from '../theme';
 import { T } from './core';
 
 const FRAME_MS = 1000;
@@ -40,7 +40,7 @@ export function ExerciseAnimation({ images, name }: { images: string[]; name: st
   if (images.length === 0) return null;
   if (failed) {
     return (
-      <View style={{ ...BOX, aspectRatio: 4 / 3, borderRadius: 12, backgroundColor: palette.surface, alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+      <View style={{ ...BOX, aspectRatio: 4 / 3, borderRadius: radius.md, backgroundColor: palette.surface, alignItems: 'center', justifyContent: 'center', padding: 16 }}>
         <T color={palette.textMuted} center>Photos need an internet connection.</T>
       </View>
     );
@@ -54,7 +54,7 @@ export function ExerciseAnimation({ images, name }: { images: string[]; name: st
     return (
       <View style={{ ...BOX, maxWidth: 720, flexDirection: 'row', gap: 8 }} accessible accessibilityLabel={`${name}: start and end position`}>
         {images.slice(0, 2).map((uri, i) => (
-          <View key={i} style={{ flex: 1, aspectRatio: 4 / 3, borderRadius: 12, overflow: 'hidden', backgroundColor: '#fff' }}>
+          <View key={i} style={{ flex: 1, aspectRatio: 4 / 3, borderRadius: radius.md, overflow: 'hidden', backgroundColor: palette.photoMat }}>
             {photo(uri, true, i)}
           </View>
         ))}
@@ -63,7 +63,7 @@ export function ExerciseAnimation({ images, name }: { images: string[]; name: st
   }
   // Every photo stays mounted so the flip never waits for a download; only the current one shows.
   return (
-    <View style={{ ...BOX, aspectRatio: 4 / 3, borderRadius: 12, overflow: 'hidden', backgroundColor: '#fff' }}
+    <View style={{ ...BOX, aspectRatio: 4 / 3, borderRadius: radius.md, overflow: 'hidden', backgroundColor: palette.photoMat }}
       accessible accessibilityRole="image" accessibilityLabel={`${name}: start and end position`}>
       {images.map((uri, i) => photo(uri, i === frame, i))}
     </View>

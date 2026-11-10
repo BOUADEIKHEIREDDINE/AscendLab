@@ -3,7 +3,7 @@
  * Editing goes through the ⋮ menu, like Hevy.
  */
 import React, { useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, View } from 'react-native';
+import { Pressable, ScrollView, View } from 'react-native';
 import { Convert, formatNumber } from '../../../data/profile';
 import { profileStore } from '../../../data/profileRepo';
 import { DEFAULT_TARGET, restSecFor } from '../../../data/progress';
@@ -14,6 +14,7 @@ import { goBack, useNav, useParams } from '../../../navigation/types';
 import { palette, Gutter } from '../../theme';
 import { haptics } from '../../haptics';
 import { Hairline, IconButton, PageHeader, PrimaryButton, Screen, T } from '../../components/core';
+import { ShapeLoader } from '../../shapes/ShapeLoader';
 import { ActionMenu, Dialog } from '../../components/overlays';
 import { SetBadge } from './TrainComponents';
 
@@ -43,7 +44,7 @@ export function RoutineDetailScreen() {
     return (
       <Screen>
         <PageHeader title="Routine" onBack={() => goBack(nav)} />
-        {state.loading ? <ActivityIndicator color={palette.lime} style={{ padding: 32 }} />
+        {state.loading ? <View style={{ padding: 32, alignItems: 'center' }}><ShapeLoader /></View>
           : <T color={palette.textMuted} style={{ padding: Gutter }}>This routine no longer exists.</T>}
       </Screen>
     );

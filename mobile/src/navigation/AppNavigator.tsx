@@ -117,7 +117,7 @@ export function AppNavigator({ start }: { start: StartPage }) {
       <Root.Screen name="Main" component={MainTabs} options={{ animation: 'fade' }} />
       {/* The live workout takes the whole screen, like a dedicated training mode. */}
       <Root.Screen name="WorkoutSession" component={WorkoutSessionScreen} options={{ animation: 'slide_from_bottom', gestureEnabled: false }} />
-      <Root.Screen name="Story" component={StoryScreen} options={{ animation: 'fade', contentStyle: { backgroundColor: '#000' } }} />
+      <Root.Screen name="Story" component={StoryScreen} options={{ animation: 'fade', contentStyle: { backgroundColor: palette.overlayBackground } }} />
       <Root.Screen name="ExerciseDetail" component={ExerciseDetailScreen} />
       <Root.Screen name="WorkoutDetail" component={WorkoutDetailScreen} />
     </Root.Navigator>

@@ -1,13 +1,13 @@
 import React, { ReactNode, useEffect, useState } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import { AuthRepository } from '../../../data/authRepo';
 import { Convert, GOAL, PLACE, UserProfile, Units } from '../../../data/profile';
 import { ProfileRepository, profileStore } from '../../../data/profileRepo';
 import { useStore } from '../../../lib/store';
 import { goBack, useNav } from '../../../navigation/types';
 import { signOut } from '../../../state/session';
-import { palette, withAlpha } from '../../theme';
-import { Appear, Hairline, Icon, IconName, PageHeader, Screen, Segmented, T, TextField } from '../../components/core';
+import { palette, space } from '../../theme';
+import { Appear, Icon, IconName, ListGroup, ListRow, PageHeader, Screen, Segmented, T, TextField } from '../../components/core';
 import { Dialog } from '../../components/overlays';
 import { ShapeGallery } from '../../shapes/ShapeGallery';
 
@@ -27,23 +27,20 @@ export function SettingsScreen() {
   return (
     <Screen>
       <PageHeader title="Settings" onBack={() => goBack(nav)} />
-      <ScrollView contentContainerStyle={{ paddingVertical: 8, gap: 20 }}>
+      <ScrollView contentContainerStyle={{ paddingTop: 8, paddingBottom: 32, gap: 24 }}>
         <Appear index={0}>
           <Section title="Your plan">
             <SettingRow icon="flag" title="Edit goals" subtitle={(p && goalSummary(p)) ?? 'Goal, training days and place'} onPress={() => nav.navigate('EditGoals')} />
             {p?.heightCm != null && p.weightKg != null && p.age != null && (
-              <>
-                <Hairline inset={56} />
                 <SettingRow icon="person" title="Your body"
                   subtitle={`${p.age} years · ${Convert.formatHeight(p.heightCm, p.units)} · ${Convert.formatWeight(p.weightKg, p.units)}`} />
-              </>
             )}
           </Section>
         </Appear>
 
         <Appear index={1}>
           <Section title="Units">
-            <View style={{ padding: 16, gap: 10 }}>
+            <View style={{ padding: space.tilePad, gap: 12 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
                 <Icon name="straighten" color={palette.textMuted} />
                 <T v="body">Weight and height</T>
@@ -61,7 +58,6 @@ export function SettingsScreen() {
         <Appear index={2}>
           <Section title="Coming soon">
             <SettingRow icon="notifications" title="Notifications" subtitle="Reminders for workouts and meals" enabled={false} />
-            <Hairline inset={56} />
             <SettingRow icon="language" title="Language" subtitle="English" enabled={false} />
           </Section>
         </Appear>
@@ -69,7 +65,6 @@ export function SettingsScreen() {
         <Appear index={3}>
           <Section title="Account">
             <SettingRow icon="logout" title="Log out" subtitle={AuthRepository.currentEmail ?? 'Signed in'} onPress={() => signOut(nav)} />
-            <Hairline inset={56} />
             <SettingRow icon="delete-forever" title="Delete account" subtitle="Permanently remove your account and data" danger onPress={() => setShowDelete(true)} />
           </Section>
         </Appear>
@@ -128,9 +123,9 @@ function DeleteAccountDialog({ onDismiss, onDeleted }: { onDismiss: () => void; 
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <View style={{ gap: 8 }}>
-      <T v="label" color={palette.lime} style={{ paddingLeft: 16 }}>{title}</T>
-      <View>{children}</View>
+    <View style={{ gap: 10 }}>
+      <T v="overline" color={palette.textMuted} style={{ paddingLeft: space.gutter + 4 }}>{title}</T>
+      <ListGroup>{children}</ListGroup>
     </View>
   );
 }
@@ -138,22 +133,8 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 function SettingRow({ icon, title, subtitle, onPress, enabled = true, danger }: {
   icon: IconName; title: string; subtitle: string; onPress?: () => void; enabled?: boolean; danger?: boolean;
 }) {
-  const tint = danger ? palette.ember : !enabled ? withAlpha(palette.textMuted, 0.5) : palette.text;
   return (
-    <Pressable
-      onPress={onPress}
-      disabled={!onPress || !enabled}
-      accessibilityRole={onPress ? 'button' : undefined}
-      style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, gap: 16, minHeight: 72, backgroundColor: pressed ? palette.surface : 'transparent' })}
-    >
-      <Icon name={icon} color={danger ? tint : palette.textMuted} />
-      <View style={{ flex: 1 }}>
-        <T v="body" color={tint}>{title}</T>
-        <T color={palette.textMuted} style={{ opacity: enabled ? 1 : 0.5 }}>{subtitle}</T>
-      </View>
-      {!enabled ? <T v="label" color={palette.textMuted}>Soon</T>
-        : onPress ? <Icon name="keyboard-arrow-right" color={palette.textMuted} /> : null}
-    </Pressable>
+    <ListRow icon={icon} title={title} subtitle={subtitle} onPress={onPress} enabled={enabled} danger={danger}
+      trailing={!enabled ? <T v="label" color={palette.textFaint}>Soon</T> : undefined} />
   );
 }
-

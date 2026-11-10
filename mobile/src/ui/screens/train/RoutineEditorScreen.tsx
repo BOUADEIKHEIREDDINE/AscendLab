@@ -1,6 +1,6 @@
 /** Create a routine (routineId null) or edit one, inside a program. */
 import React, { useState } from 'react';
-import { ActivityIndicator, ScrollView, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import { TrainRepository, trainLive } from '../../../data/trainRepo';
 import { ProfileRepository, profileStore } from '../../../data/profileRepo';
 import { engineLevel } from '../../../data/profile';
@@ -13,6 +13,7 @@ import { useStore } from '../../../lib/store';
 import { goBack, useNav, useParams } from '../../../navigation/types';
 import { palette, Gutter } from '../../theme';
 import { Button, Hairline, IconButton, PageHeader, PrimaryButton, Screen, T, TextField } from '../../components/core';
+import { ShapeLoader } from '../../shapes/ShapeLoader';
 import { ActionMenu, toast } from '../../components/overlays';
 import { AlternativesSheet, ExercisePicker, SetBadge, Stepper, VolumeNoticeNote } from './TrainComponents';
 
@@ -31,7 +32,7 @@ export function RoutineEditorScreen() {
       {!original ? (
         state.error || (!state.loading && !program)
           ? <T color={palette.error} style={{ padding: 24 }}>{state.error ?? 'This program no longer exists.'}</T>
-          : <ActivityIndicator color={palette.lime} style={{ padding: 32 }} />
+          : <View style={{ padding: 32, alignItems: 'center' }}><ShapeLoader /></View>
       ) : (
         <RoutineForm program={program} original={original.routine} onDone={() => goBack(nav)} />
       )}

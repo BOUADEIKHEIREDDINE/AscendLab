@@ -1,14 +1,15 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, FlatList, Pressable, TextInput, View } from 'react-native';
+import { FlatList, Pressable, TextInput, View } from 'react-native';
 import { MealPhotos } from '../../../data/mealPhotos';
 import { Comment, FeedPost } from '../../../data/social';
 import { feedLive, listenComments, listenPost, meStore, SocialRepository } from '../../../data/socialRepo';
 import { useLiveQuery, useStore } from '../../../lib/store';
 import { goBack, useNav, useParams } from '../../../navigation/types';
-import { palette, Gutter, type } from '../../theme';
+import { palette, Gutter, type, withAlpha } from '../../theme';
 import { haptics } from '../../haptics';
 import { timeAgo } from '../../format';
 import { Avatar, Hairline, IconButton, PageHeader, Screen, SkeletonCard, T } from '../../components/core';
+import { ShapeLoader } from '../../shapes/ShapeLoader';
 import { MealPhoto, PostCard } from '../../components/feed';
 import { ActionMenu } from '../../components/overlays';
 
@@ -90,7 +91,7 @@ export function CommentsScreen() {
           <View>
             <MealPhoto photo={photo} style={{ width: 72, height: 72, borderRadius: 10 }} />
             <Pressable onPress={() => setPhoto(null)} accessibilityLabel="Remove photo"
-              style={{ position: 'absolute', top: -8, right: -8, width: 28, height: 28, borderRadius: 14, backgroundColor: 'rgba(16,24,32,0.85)', alignItems: 'center', justifyContent: 'center' }}>
+              style={{ position: 'absolute', top: -8, right: -8, width: 28, height: 28, borderRadius: 14, backgroundColor: withAlpha(palette.ink, 0.85), alignItems: 'center', justifyContent: 'center' }}>
               <T v="label">×</T>
             </Pressable>
           </View>
@@ -98,7 +99,7 @@ export function CommentsScreen() {
       )}
       {error && <T v="bodyS" color={palette.error} style={{ paddingHorizontal: Gutter }}>{error}</T>}
       <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, paddingTop: 4, paddingBottom: 8, gap: 4 }}>
-        {preparing ? <View style={{ width: 44, alignItems: 'center' }}><ActivityIndicator color={palette.lime} /></View>
+        {preparing ? <View style={{ width: 44, alignItems: 'center' }}><ShapeLoader size={28} /></View>
           : <IconButton name="image" label="Add a photo" color={palette.lime} onPress={pick} disabled={post == null} />}
         <TextInput
           value={text}

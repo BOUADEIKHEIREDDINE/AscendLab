@@ -1,14 +1,15 @@
 /** Log a meal: it counts toward today's total and is shared with friends in the feed. */
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, ScrollView, TextInput, View } from 'react-native';
+import { ScrollView, TextInput, View } from 'react-native';
 import { MealPhotos, PhotoResult } from '../../../data/mealPhotos';
 import { MEAL, MEAL_TYPES, MealType, mealTypeForNow, plural } from '../../../data/social';
 import { meStore, SocialRepository } from '../../../data/socialRepo';
 import { useStore } from '../../../lib/store';
 import { goBack, useNav, useParams } from '../../../navigation/types';
-import { palette, Gutter, type } from '../../theme';
+import { palette, Gutter, type, withAlpha } from '../../theme';
 import { haptics } from '../../haptics';
 import { Chip, digits, Hairline, Icon, IconButton, IconName, PageHeader, PressableScale, PrimaryButton, Screen, T } from '../../components/core';
+import { ShapeLoader } from '../../shapes/ShapeLoader';
 import { MealPhoto } from '../../components/feed';
 
 const MAX_MEAL_KCAL = 5000;
@@ -69,11 +70,11 @@ export function CreatePostScreen() {
           {photo ? (
             <>
               <MealPhoto photo={photo} style={{ width: '100%', height: '100%' }} />
-              <View style={{ position: 'absolute', top: 12, right: 12, backgroundColor: 'rgba(16,24,32,0.7)', borderRadius: 22 }}>
+              <View style={{ position: 'absolute', top: 12, right: 12, backgroundColor: withAlpha(palette.ink, 0.7), borderRadius: 22 }}>
                 <IconButton name="close" label="Remove photo" onPress={() => { haptics.tick(); setPhoto(null); }} />
               </View>
             </>
-          ) : processingPhoto ? <ActivityIndicator color={palette.lime} /> : (
+          ) : processingPhoto ? <ShapeLoader size={28} /> : (
             <View style={{ flexDirection: 'row', gap: 40 }}>
               <PhotoSource icon="photo-camera" label="Take photo" onPress={() => attachPhoto(MealPhotos.take)} />
               <PhotoSource icon="photo-library" label="Choose photo" onPress={() => attachPhoto(MealPhotos.pick)} />

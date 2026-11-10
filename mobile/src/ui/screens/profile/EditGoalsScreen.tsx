@@ -3,13 +3,14 @@
  * live, and saving regenerates the plan from the updated answers.
  */
 import React, { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { View } from 'react-native';
 import { formatKcal, hasEverythingForPlan, PlanCalculator, UserProfile } from '../../../data/profile';
 import { ProfileRepository, profileStore } from '../../../data/profileRepo';
 import { useStore } from '../../../lib/store';
 import { goBack, useNav } from '../../../navigation/types';
 import { palette } from '../../theme';
 import { Appear, Screen, T } from '../../components/core';
+import { ShapeLoader } from '../../shapes/ShapeLoader';
 import { OnboardingScaffold } from '../../components/onboarding';
 import { CalorieCard, WeekCard } from '../../components/plan';
 import { GoalsForm, goalsComplete } from '../onboarding/YourGoalsScreen';
@@ -18,7 +19,7 @@ export function EditGoalsScreen() {
   const saved = useStore(profileStore);
   useEffect(() => { if (!profileStore.get()) ProfileRepository.load(); }, []);
   if (!hasEverythingForPlan(saved)) {
-    return <Screen style={{ alignItems: 'center', justifyContent: 'center' }}><ActivityIndicator color={palette.lime} /></Screen>;
+    return <Screen style={{ alignItems: 'center', justifyContent: 'center' }}><ShapeLoader size={28} /></Screen>;
   }
   return <EditGoalsContent original={saved} />;
 }

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Keyboard, ScrollView, Share, View } from 'react-native';
+import { Keyboard, ScrollView, Share, View } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { PublicProfile } from '../../../data/social';
 import { meStore, SocialRepository } from '../../../data/socialRepo';
@@ -7,7 +7,8 @@ import { useStore } from '../../../lib/store';
 import { goBack, useNav } from '../../../navigation/types';
 import { palette, Gutter } from '../../theme';
 import { haptics } from '../../haptics';
-import { Avatar, Button, Hairline, IconButton, PageHeader, PrimaryButton, Screen, T, TextField } from '../../components/core';
+import { Avatar, Button, EmptyState, IconButton, ListGroup, ListRow, PageHeader, PrimaryButton, Screen, T, TextField, Tile, TileHeader } from '../../components/core';
+import { ShapeLoader } from '../../shapes/ShapeLoader';
 import { Dialog, toast } from '../../components/overlays';
 
 export function FriendsScreen() {
@@ -48,28 +49,27 @@ export function FriendsScreen() {
   return (
     <Screen keyboard>
       <PageHeader title="Friends" onBack={() => goBack(nav)} />
-      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingHorizontal: Gutter, paddingVertical: 8, gap: 16 }}>
-        <View style={{ gap: 12, paddingVertical: 8 }}>
-          <T v="label" color={palette.lime}>Your friend code</T>
-          {me == null ? <ActivityIndicator color={palette.lime} /> : (
+      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingHorizontal: Gutter, paddingTop: 8, paddingBottom: 32, gap: 10 }}>
+        <Tile span="2x1" style={{ gap: 12 }}>
+          <TileHeader icon="qr-code-2" text="Your friend code" />
+          {me == null ? <View style={{ alignItems: 'center' }}><ShapeLoader /></View> : (
             <>
-              <T center style={{ fontFamily: 'monospace', fontSize: 36, lineHeight: 44, letterSpacing: 4 }}>
+              <T v="mono" center color={palette.lime} style={{ fontSize: 36, lineHeight: 44, letterSpacing: 6 }}>
                 {me.code.slice(0, 3)} {me.code.slice(3)}
               </T>
               <T color={palette.textMuted}>Friends type this code to add you. You'll then see each other's meals.</T>
               <View style={{ flexDirection: 'row', gap: 12 }}>
-                <Button label="Copy" icon="content-copy" style={{ flex: 1 }}
+                <Button kind="tonal" label="Copy" icon="content-copy" style={{ flex: 1 }}
                   onPress={async () => { await Clipboard.setStringAsync(me.code); toast('Code copied'); }} />
-                <Button label="Share" icon="share" kind="filled" style={{ flex: 1 }}
+                <Button label="Share" icon="share" kind="tonal" style={{ flex: 1 }}
                   onPress={() => Share.share({ message: `Race me on AscendLab: add me with my friend code ${me.code}` }).catch(() => undefined)} />
               </View>
             </>
           )}
-        </View>
+        </Tile>
 
-        <Hairline />
-        <View style={{ gap: 12, paddingVertical: 8 }}>
-          <T v="label" color={palette.lime}>Add a friend</T>
+        <Tile span="2x1" style={{ gap: 12 }}>
+          <TileHeader icon="person-add-alt" text="Add a friend" />
           <TextField
             label="Their code"
             placeholder="ABC123"
@@ -81,11 +81,10 @@ export function FriendsScreen() {
           />
           {addMessage && <T color={addMessage.ok ? palette.lime : palette.error}>{addMessage.text}</T>}
           <PrimaryButton label="Add friend" enabled={code.length === 6} loading={adding} onPress={addFriend} />
-        </View>
+        </Tile>
 
-        <Hairline />
-        <View style={{ gap: 12, paddingVertical: 8 }}>
-          <T v="label" color={palette.lime}>Your name in the feed</T>
+        <Tile span="2x1" style={{ gap: 12 }}>
+          <TileHeader icon="badge" text="Your name in the feed" />
           <TextField value={name} onChangeText={(t) => setName(t.slice(0, 30))} autoCapitalize="words" returnKeyType="done" accessibilityLabel="Your name in the feed" />
           {changed && (
             <View style={{ alignItems: 'flex-end' }}>
@@ -95,20 +94,20 @@ export function FriendsScreen() {
               }} />
             </View>
           )}
-        </View>
+        </Tile>
 
-        <Hairline />
-        <T v="label" color={palette.lime}>Your friends{friends ? ` (${friends.length})` : ''}</T>
+        <T v="titleS" style={{ marginTop: 8 }}>Your friends{friends ? ` (${friends.length})` : ''}</T>
         {loadError && <T color={palette.error}>{loadError}</T>}
-        {friends == null ? <ActivityIndicator color={palette.lime} />
-          : friends.length === 0 ? <T color={palette.textMuted}>No friends yet. Share your code or add theirs above.</T>
-            : friends.map((f) => (
-              <View key={f.uid} style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                <Avatar name={f.name} seed={f.uid} />
-                <T v="body" style={{ flex: 1 }}>{f.name}</T>
-                <IconButton name="person-remove" label={`Remove ${f.name}`} color={palette.textMuted} onPress={() => setRemoving(f)} />
-              </View>
-            ))}
+        {friends == null ? <View style={{ alignItems: 'center' }}><ShapeLoader /></View>
+          : friends.length === 0 ? <EmptyState icon="groups" shape="clover" title="No friends yet" hint="Share your code or add theirs above." />
+            : (
+              <ListGroup style={{ marginHorizontal: 0 }}>
+                {friends.map((f) => (
+                  <ListRow key={f.uid} title={f.name} leading={<Avatar name={f.name} seed={f.uid} />}
+                    trailing={<IconButton name="person-remove" label={`Remove ${f.name}`} color={palette.textMuted} onPress={() => setRemoving(f)} />} />
+                ))}
+              </ListGroup>
+            )}
         <View style={{ height: 8 }} />
       </ScrollView>
 
