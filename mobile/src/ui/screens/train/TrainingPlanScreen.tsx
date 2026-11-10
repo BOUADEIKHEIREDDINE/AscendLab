@@ -198,7 +198,7 @@ export function TrainingPlanScreen() {
             // Saving updates the profile on the device at once, so the rebuild uses the new split.
             ProfileRepository.save({ ...profile, split: next.split }).catch(() => undefined);
             if (TrainRepository.rebuildFromPlan()) { haptics.confirm(); toast(`Switched to ${next.label}`); }
-            else toast('Finish your goals in Settings first');
+            else toast('Finish your goals in Settings first', 'info');
           },
         }}
       >
@@ -230,7 +230,7 @@ export function TrainingPlanScreen() {
           label: 'Rebuild', onPress: () => {
             setRebuilding(false);
             if (TrainRepository.rebuildFromPlan()) { haptics.confirm(); toast('New program built from your plan'); }
-            else toast('Finish your goals in Settings first');
+            else toast('Finish your goals in Settings first', 'info');
           },
         }}
       >

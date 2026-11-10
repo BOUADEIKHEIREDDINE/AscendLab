@@ -315,7 +315,7 @@ function ExerciseBlock({ ex, index, previous, records, units, onOpen, onRecord, 
                 done: nowDone,
               };
               if (nowDone && !filled.reps) return;
-              if (nowDone && plan?.findWeight && !warm && !filled.weight) { toast('Type the weight you used'); return; }
+              if (nowDone && plan?.findWeight && !warm && !filled.weight) { toast('Type the weight you used', 'info'); return; }
               if (nowDone && records) {
                 // Compare with history plus the sets already done today, so only real bests fire.
                 const today = ex.sets.filter((s, j) => j !== setIndex && s.done)

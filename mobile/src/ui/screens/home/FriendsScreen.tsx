@@ -91,7 +91,7 @@ export function FriendsScreen() {
             <View style={{ alignItems: 'flex-end' }}>
               <Button kind="text" label="Save name" onPress={async () => {
                 Keyboard.dismiss();
-                try { await SocialRepository.rename(name); toast('Name saved. New posts use it.'); } catch { toast("Couldn't save. Check your connection."); }
+                try { await SocialRepository.rename(name); toast('Name saved. New posts use it.'); } catch { toast("Couldn't save. Check your connection.", 'error'); }
               }} />
             </View>
           )}
@@ -122,7 +122,7 @@ export function FriendsScreen() {
             const f = removing;
             setRemoving(null);
             if (!f) return;
-            try { await SocialRepository.removeFriend(f.uid); } catch { toast("Couldn't remove. Check your connection."); }
+            try { await SocialRepository.removeFriend(f.uid); } catch { toast("Couldn't remove. Check your connection.", 'error'); }
             reload();
           },
         }}

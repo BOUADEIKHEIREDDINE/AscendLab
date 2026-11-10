@@ -16,12 +16,12 @@ export function useMorphSpec(target: ShapeSpec, { token = 'slow', from }: { toke
   const reduce = useReduceMotion();
   const [spec, setSpec] = useState<ShapeSpec>(from ?? target);
   const current = useRef(spec);
-  current.current = spec;
-  const anim = useRef(new Animated.Value(1)).current;
+  useEffect(() => { current.current = spec; });
+  const anim = useState(() => new Animated.Value(1))[0];
   const key = specKey(target);
   useEffect(() => {
     const start = current.current;
-    if (reduce || specKey(start) === key) { setSpec(target); return; }
+    if (reduce || specKey(start) === key) return;
     anim.setValue(0);
     const id = anim.addListener(({ value }) => setSpec(lerpSpec(start, target, value)));
     const a = springTo(anim, 1, token, false);
@@ -29,7 +29,7 @@ export function useMorphSpec(target: ShapeSpec, { token = 'slow', from }: { toke
     return () => { a.stop(); anim.removeListener(id); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key, reduce, token]);
-  return spec;
+  return reduce ? target : spec;
 }
 
 export interface ShapeGeometry { d: string; length: number; points: [number, number][] }

@@ -3,8 +3,8 @@ import React, { ComponentType } from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator, NativeStackNavigationOptions } from '@react-navigation/native-stack';
 import { palette } from '../ui/theme';
-import { haptics } from '../ui/haptics';
-import { Icon, IconName } from '../ui/components/core';
+import { IconName } from '../ui/components/core';
+import { TabDock } from '../ui/components/dock';
 import { RootPages, TabPages, Tabs } from './types';
 import { StartPage } from '../state/session';
 import { WelcomeScreen } from '../ui/screens/onboarding/WelcomeScreen';
@@ -92,20 +92,12 @@ const TAB_INFO: { name: keyof Tabs; label: string; icon: IconName; component: Co
 function MainTabs() {
   return (
     <Tab.Navigator
-      screenOptions={{
-        headerShown: false,
-        // Same colour as the page with a hairline on top, instead of a raised slab.
-        tabBarStyle: { backgroundColor: palette.ink, borderTopColor: palette.outline, borderTopWidth: 0.5, elevation: 0 },
-        tabBarActiveTintColor: palette.lime,
-        tabBarInactiveTintColor: palette.textMuted,
-        tabBarLabelStyle: { fontSize: 12, fontWeight: '600' },
-        sceneStyle: { backgroundColor: palette.ink },
-      }}
-      screenListeners={{ tabPress: () => haptics.tick() }}
+      // The floating dock replaces the default tab bar (it also hosts the workout mini player).
+      tabBar={(props) => <TabDock {...props} tabs={TAB_INFO.map(({ name, label, icon }) => ({ name, label, icon }))} />}
+      screenOptions={{ headerShown: false, sceneStyle: { backgroundColor: palette.ink } }}
     >
       {TAB_INFO.map((t) => (
-        <Tab.Screen key={t.name} name={t.name} component={t.component}
-          options={{ tabBarLabel: t.label, tabBarAccessibilityLabel: t.label, tabBarIcon: ({ color }) => <Icon name={t.icon} color={color} /> }} />
+        <Tab.Screen key={t.name} name={t.name} component={t.component} options={{ tabBarLabel: t.label, tabBarAccessibilityLabel: t.label }} />
       ))}
     </Tab.Navigator>
   );

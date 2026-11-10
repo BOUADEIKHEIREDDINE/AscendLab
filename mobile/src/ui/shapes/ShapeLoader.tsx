@@ -2,7 +2,7 @@
  * Replaces spinners: a shape that morphs cookie9 → clover → softTriangle → burst → circle
  * while rotating. With reduce motion it's a still cookie that gently fades.
  */
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Animated, Easing, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { palette } from '../theme';
@@ -17,8 +17,8 @@ const ease = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 
 
 export function ShapeLoader({ size = 40, color = palette.lime, label = 'Loading' }: { size?: number; color?: string; label?: string }) {
   const reduce = useReduceMotion();
-  const phase = useRef(new Animated.Value(0)).current;
-  const spin = useRef(new Animated.Value(0)).current;
+  const phase = useState(() => new Animated.Value(0))[0];
+  const spin = useState(() => new Animated.Value(0))[0];
   const [t, setT] = useState(0);
   useEffect(() => {
     if (reduce) return;

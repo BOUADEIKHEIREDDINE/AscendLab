@@ -24,14 +24,14 @@ export function WaveEdge({ width, height, level, color, amplitude = 6, wavelengt
   const reduce = useReduceMotion();
   const drift = useLoop(8000);
   const clamped = Math.min(Math.max(level, 0), 1);
-  const levelAnim = useRef(new Animated.Value(clamped)).current;
+  const levelAnim = useState(() => new Animated.Value(clamped))[0];
   useEffect(() => {
     if (reduce) { levelAnim.setValue(clamped); return; }
     springTo(levelAnim, clamped, 'slow').start();
   }, [clamped, reduce, levelAnim]);
 
   // Slosh: the amplitude jumps, then settles back with a bouncy spring.
-  const amp = useRef(new Animated.Value(amplitude)).current;
+  const amp = useState(() => new Animated.Value(amplitude))[0];
   const [shownAmp, setShownAmp] = useState(amplitude);
   const first = useRef(true);
   useEffect(() => {
