@@ -8,7 +8,7 @@ import { AuthRepository, AuthResult } from '../../../data/authRepo';
 import { ProfileRepository } from '../../../data/profileRepo';
 import { Onboarding } from '../../../state/session';
 import { finishOnboarding, useNav, useParams } from '../../../navigation/types';
-import { c } from '../../theme';
+import { palette } from '../../theme';
 import { Appear, Button, Hairline, IconButton, PrimaryButton, Screen, T, TextField } from '../../components/core';
 
 const EMAIL = /^[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)+$/;
@@ -70,15 +70,15 @@ export function SignUpScreen() {
     <Screen keyboard edges={['top', 'bottom']}>
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingHorizontal: 24, paddingVertical: 16, gap: 16 }}>
         {nav.canGoBack() && (
-          <View style={{ marginLeft: -12 }}>
-            <IconButton name={Platform.OS === 'ios' ? 'arrow-back-ios-new' : 'arrow-back'} size={Platform.OS === 'ios' ? 20 : 24} label="Back" onPress={() => nav.goBack()} />
+          <View>
+            <IconButton variant="tonal" name={Platform.OS === 'ios' ? 'arrow-back-ios-new' : 'arrow-back'} size={Platform.OS === 'ios' ? 18 : 22} label="Back" onPress={() => nav.goBack()} />
           </View>
         )}
         {/* The heading changes when switching between sign up and log in. */}
         <Appear key={isLogIn ? 'login' : 'signup'}>
           <View style={{ gap: 8 }}>
-            <T v="headlineMedium">{isLogIn ? 'Welcome back' : 'Create your account'}</T>
-            <T v="bodyLarge" color={c.onSurfaceVariant}>
+            <T v="headline">{isLogIn ? 'Welcome back' : 'Create your account'}</T>
+            <T v="body" color={palette.textMuted}>
               {isLogIn ? 'Log in to pick up where you left off.' : 'Your plan, your pace. It takes a minute.'}
             </T>
           </View>
@@ -111,11 +111,11 @@ export function SignUpScreen() {
           onSubmitEditing={submit}
           hint={isLogIn ? undefined : 'At least 6 characters'}
           right={<IconButton name={showPassword ? 'visibility-off' : 'visibility'} label={showPassword ? 'Hide password' : 'Show password'}
-            color={c.onSurfaceVariant} onPress={() => setShowPassword(!showPassword)} />}
+            color={palette.textMuted} onPress={() => setShowPassword(!showPassword)} />}
         />
 
-        {error && <T color={c.error}>{error}</T>}
-        {info && <T color={c.primary}>{info}</T>}
+        {error && <T color={palette.error}>{error}</T>}
+        {info && <T color={palette.lime}>{info}</T>}
 
         <PrimaryButton label={isLogIn ? 'Log in' : 'Sign up'} onPress={submit} loading={loading} />
         {isLogIn && <Button kind="text" label="Forgot password?" onPress={forgot} enabled={!loading} />}
@@ -124,7 +124,7 @@ export function SignUpScreen() {
           <>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
               <View style={{ flex: 1 }}><Hairline /></View>
-              <T v="labelLarge" color={c.onSurfaceVariant}>or</T>
+              <T v="label" color={palette.textMuted}>or</T>
               <View style={{ flex: 1 }}><Hairline /></View>
             </View>
             <Button

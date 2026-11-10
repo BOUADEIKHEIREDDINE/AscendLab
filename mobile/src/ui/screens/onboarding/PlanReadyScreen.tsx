@@ -1,11 +1,13 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { View } from 'react-native';
 import { hasEverythingForPlan, PlanCalculator } from '../../../data/profile';
 import { useStore } from '../../../lib/store';
 import { finishOnboarding, useNav } from '../../../navigation/types';
 import { draftStore, Onboarding } from '../../../state/session';
-import { c, colors } from '../../theme';
+import { palette } from '../../theme';
 import { Appear, Icon, Screen, T } from '../../components/core';
+import { ExpressiveShape } from '../../shapes/ExpressiveShape';
+import { ShapeLoader } from '../../shapes/ShapeLoader';
 import { OnboardingScaffold } from '../../components/onboarding';
 import { CalorieCard, MacroCard, WeekCard } from '../../components/plan';
 
@@ -48,22 +50,23 @@ function BuildingPlan({ onDone }: { onDone: () => void }) {
 
   return (
     <Screen edges={['top', 'bottom']} style={{ paddingHorizontal: 32, justifyContent: 'center' }}>
-      <T v="headlineMedium">Building your plan</T>
-      <View style={{ height: 28 }} />
+      <View style={{ alignItems: 'center', marginBottom: 28 }}><ShapeLoader size={96} label="Building your plan" /></View>
+      <T v="headline" center>Building your plan</T>
+      <View style={{ height: 24 }} />
       {BUILD_STEPS.map((label, i) => (
         <Appear key={label} index={i}>
           <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 10, gap: 16 }}>
             <View style={{ width: 28, height: 28, alignItems: 'center', justifyContent: 'center' }}>
               {i < done ? (
                 <Appear>
-                  <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: c.primary, alignItems: 'center', justifyContent: 'center' }}>
-                    <Icon name="check" size={18} color={c.onPrimary} />
-                  </View>
+                  <ExpressiveShape shape="cookie9" size={28} fill={palette.lime}>
+                    <Icon name="check" size={18} color={palette.onLime} />
+                  </ExpressiveShape>
                 </Appear>
-              ) : i === done ? <ActivityIndicator color={c.primary} />
-                : <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: c.outlineVariant }} />}
+              ) : i === done ? <ShapeLoader size={22} />
+                : <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: palette.hairline }} />}
             </View>
-            <T v="bodyLarge" color={i <= done ? c.onSurface : c.onSurfaceVariant} style={{ flex: 1 }}>{label}</T>
+            <T v="body" color={i <= done ? palette.text : palette.textMuted} style={{ flex: 1 }}>{label}</T>
           </View>
         </Appear>
       ))}
@@ -94,14 +97,16 @@ function PlanResult() {
     >
       {/* Apricot is the brand's milestone accent: used here to celebrate the finished setup. */}
       <Appear index={1}>
-        <View style={{ flexDirection: 'row', alignSelf: 'flex-start', alignItems: 'center', gap: 6, backgroundColor: colors.apricot, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 6 }}>
-          <Icon name="emoji-events" size={18} color={colors.midnightBlue} />
-          <T v="labelLarge" color={colors.midnightBlue}>Setup complete</T>
+        <View style={{ flexDirection: 'row', alignSelf: 'flex-start', alignItems: 'center', gap: 8, backgroundColor: palette.goldContainer, borderRadius: 999, paddingLeft: 6, paddingRight: 14, paddingVertical: 6 }}>
+          <ExpressiveShape shape="burst" size={26} fill={palette.gold}><Icon name="emoji-events" size={14} color={palette.onLime} /></ExpressiveShape>
+          <T v="label" color={palette.gold}>Setup complete</T>
         </View>
       </Appear>
-      <Appear index={2}><CalorieCard targets={targets} goal={draft.goal!} /></Appear>
-      <Appear index={3}><MacroCard targets={targets} /></Appear>
-      <Appear index={4}><WeekCard week={week} /></Appear>
+      <View style={{ gap: 10 }}>
+        <Appear index={2}><CalorieCard targets={targets} goal={draft.goal!} /></Appear>
+        <Appear index={3}><MacroCard targets={targets} /></Appear>
+        <Appear index={4}><WeekCard week={week} /></Appear>
+      </View>
     </OnboardingScaffold>
   );
 }

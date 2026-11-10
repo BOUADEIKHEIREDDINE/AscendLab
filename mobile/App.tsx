@@ -3,6 +3,9 @@ import { Image, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import * as SystemUI from 'expo-system-ui';
+import { useFonts } from 'expo-font';
+import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold } from '@expo-google-fonts/inter';
+import { SpaceGrotesk_500Medium, SpaceGrotesk_700Bold } from '@expo-google-fonts/space-grotesk';
 import { DarkTheme, NavigationContainer } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthRepository } from './src/data/authRepo';
@@ -12,15 +15,15 @@ import { auth } from './src/lib/firebase';
 import { AppNavigator } from './src/navigation/AppNavigator';
 import { Onboarding, StartPage, startFor } from './src/state/session';
 import { ToastHost } from './src/ui/components/overlays';
-import { c } from './src/ui/theme';
+import { palette, ThemeProvider } from './src/ui/theme';
 
 SplashScreen.preventAutoHideAsync().catch(() => undefined);
-// The app is always dark, so the window behind every page is midnight blue (no white flashes).
-SystemUI.setBackgroundColorAsync(c.background).catch(() => undefined);
+// The app is always dark, so the window behind every page is ink (no white flashes).
+SystemUI.setBackgroundColorAsync(palette.ink).catch(() => undefined);
 
 const navTheme = {
   ...DarkTheme,
-  colors: { ...DarkTheme.colors, background: c.background, card: c.background, primary: c.primary, text: c.onSurface, border: c.outline },
+  colors: { ...DarkTheme.colors, background: palette.ink, card: palette.ink, primary: palette.lime, text: palette.text, border: palette.outline },
 };
 
 /** Where to start: Welcome, Home, or back into onboarding for someone who stopped halfway. */
@@ -36,19 +39,26 @@ async function decideStart(): Promise<StartPage> {
 
 export default function App() {
   const [start, setStart] = useState<StartPage | null>(null);
+  // Space Grotesk for numbers and display, Inter for UI text. If loading fails we still
+  // start (the system font stands in) rather than keep the splash up forever.
+  const [fontsLoaded, fontError] = useFonts({
+    Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold, SpaceGrotesk_500Medium, SpaceGrotesk_700Bold,
+  });
+  const fontsReady = fontsLoaded || fontError != null;
 
   useEffect(() => {
     decideStart().then(setStart).catch(() => setStart('Welcome'));
   }, []);
   useEffect(() => {
-    if (start) SplashScreen.hideAsync().catch(() => undefined);
-  }, [start]);
+    if (start && fontsReady) SplashScreen.hideAsync().catch(() => undefined);
+  }, [start, fontsReady]);
 
   return (
-    <SafeAreaProvider style={{ backgroundColor: c.background }}>
+    <ThemeProvider>
+    <SafeAreaProvider style={{ backgroundColor: palette.ink }}>
       <StatusBar style="light" />
-      {start == null ? (
-        <View style={{ flex: 1, backgroundColor: c.background, alignItems: 'center', justifyContent: 'center' }}>
+      {start == null || !fontsReady ? (
+        <View style={{ flex: 1, backgroundColor: palette.ink, alignItems: 'center', justifyContent: 'center' }}>
           <Image source={require('./assets/logo.png')} style={{ width: '60%', height: undefined, aspectRatio: 1200 / 219 }} resizeMode="contain" accessibilityLabel="AscendLab" />
         </View>
       ) : (
@@ -58,5 +68,6 @@ export default function App() {
       )}
       <ToastHost />
     </SafeAreaProvider>
+    </ThemeProvider>
   );
 }

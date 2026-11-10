@@ -1,9 +1,12 @@
 /** Frame and controls shared by the onboarding pages and Edit goals. */
 import React, { ReactNode, useEffect, useState } from 'react';
 import { Animated, Keyboard, Platform, Pressable, ScrollView, View } from 'react-native';
-import { c, radius } from '../theme';
+import { palette, radius, tone } from '../theme';
 import { haptics } from '../haptics';
-import { Appear, Icon, IconButton, IconName, PrimaryButton, ProgressBar, Screen, T } from './core';
+import { Appear, Icon, IconButton, IconName, PrimaryButton, Screen, T } from './core';
+import { WavyProgress } from '../shapes/WavyProgress';
+import { ExpressiveShape } from '../shapes/ExpressiveShape';
+import { springTo } from '../motion';
 
 /** Number of question pages in onboarding (Choose version, Your body, Your goals). */
 export const ONBOARDING_STEPS = 3;
@@ -23,13 +26,13 @@ export function OnboardingScaffold({
   const guarded = (action: () => void) => () => { Keyboard.dismiss(); action(); };
   return (
     <Screen keyboard edges={['top', 'bottom']}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', paddingLeft: 4, paddingRight: 24, paddingTop: 8, minHeight: 52 }}>
-        {onBack ? <IconButton name={Platform.OS === 'ios' ? 'arrow-back-ios-new' : 'arrow-back'} size={Platform.OS === 'ios' ? 20 : 24} onPress={guarded(onBack)} label="Back" />
-          : <View style={{ width: 20 }} />}
+      <View style={{ flexDirection: 'row', alignItems: 'center', paddingLeft: 12, paddingRight: 24, paddingTop: 8, minHeight: 52 }}>
+        {onBack ? <IconButton variant="tonal" name={Platform.OS === 'ios' ? 'arrow-back-ios-new' : 'arrow-back'} size={Platform.OS === 'ios' ? 18 : 22} onPress={guarded(onBack)} label="Back" />
+          : <View style={{ width: 12 }} />}
         {step != null && (
           <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12, marginLeft: 8 }}>
-            <View style={{ flex: 1 }}><ProgressBar progress={step / ONBOARDING_STEPS} height={8} track={c.surfaceContainer} /></View>
-            <T v="labelMedium" color={c.onSurfaceVariant}>Step {step} of {ONBOARDING_STEPS}</T>
+            <View style={{ flex: 1 }}><WavyProgress progress={step / ONBOARDING_STEPS} label={`Step ${step} of ${ONBOARDING_STEPS}`} /></View>
+            <T v="label" color={palette.textMuted}>Step {step} of {ONBOARDING_STEPS}</T>
           </View>
         )}
       </View>
@@ -39,8 +42,8 @@ export function OnboardingScaffold({
       >
         <Appear index={0}>
           <View style={{ gap: 8 }}>
-            <T v="headlineMedium" center={centered}>{title}</T>
-            <T v="bodyLarge" color={c.onSurfaceVariant} center={centered}>{subtitle}</T>
+            <T v="headline" center={centered}>{title}</T>
+            <T v="body" color={palette.textMuted} center={centered}>{subtitle}</T>
           </View>
         </Appear>
         {children}
@@ -65,10 +68,10 @@ export function ChoiceCard({ selected, onPress, title, description, detail, icon
   useEffect(() => {
     if (selected) Animated.sequence([
       Animated.timing(scale, { toValue: 0.97, duration: 80, useNativeDriver: native }),
-      Animated.spring(scale, { toValue: 1, bounciness: 12, useNativeDriver: native }),
+      springTo(scale, 1, 'bouncy'),
     ]).start();
   }, [selected, scale, native]);
-  const tint = selected ? c.primary : c.onSurfaceVariant;
+  const tint = selected ? palette.lime : palette.textMuted;
   return (
     <Animated.View style={[{ transform: [{ scale }] }, style]}>
       <Pressable
@@ -77,32 +80,36 @@ export function ChoiceCard({ selected, onPress, title, description, detail, icon
         accessibilityState={{ selected }}
         accessibilityLabel={title}
         style={{
-          borderRadius: radius.md, borderWidth: selected ? 2 : 1, borderColor: selected ? c.primary : c.outlineVariant,
-          backgroundColor: selected ? c.primaryContainer : c.surfaceContainer, padding: selected ? 15 : 16, flexGrow: 1,
+          borderRadius: radius.lg, borderWidth: 2, borderColor: selected ? palette.lime : 'transparent',
+          backgroundColor: selected ? palette.limeContainer : palette.surface, padding: 16, flexGrow: 1,
         }}
       >
         {tall ? (
           <View style={{ alignItems: 'center', gap: 12, paddingVertical: 12 }}>
-            {icon && <Icon name={icon} size={56} color={tint} />}
-            <T v="titleLarge" center>{title}</T>
-            {description ? <T color={c.onSurfaceVariant} center>{description}</T> : null}
+            {icon && (
+              <ExpressiveShape shape={selected ? 'cookie9' : 'circle'} size={84} fill={selected ? palette.lime : tone(palette.lime, 0.08)} token="bouncy">
+                <Icon name={icon} size={40} color={selected ? palette.onLime : tint} />
+              </ExpressiveShape>
+            )}
+            <T v="title" center>{title}</T>
+            {description ? <T color={palette.textMuted} center>{description}</T> : null}
           </View>
         ) : (
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             {icon && (
-              <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: c.surfaceContainerHigh, alignItems: 'center', justifyContent: 'center', marginRight: 16 }}>
-                <Icon name={icon} size={26} color={tint} />
-              </View>
+              <ExpressiveShape shape={selected ? 'cookie9' : 'circle'} size={50} fill={selected ? palette.lime : palette.surfaceHigh} token="bouncy" style={{ marginRight: 16 }}>
+                <Icon name={icon} size={24} color={selected ? palette.onLime : tint} />
+              </ExpressiveShape>
             )}
             <View style={{ flex: 1, gap: 2, paddingRight: 28 }}>
-              <T v="titleMedium">{title}</T>
-              {description ? <T color={c.onSurfaceVariant}>{description}</T> : null}
-              {detail ? <T v="bodySmall" color={c.onSurfaceVariant} style={{ opacity: 0.8 }}>{detail}</T> : null}
+              <T v="titleS" color={selected ? palette.onLimeContainer : palette.text}>{title}</T>
+              {description ? <T color={palette.textMuted}>{description}</T> : null}
+              {detail ? <T v="bodyS" color={palette.textMuted} style={{ opacity: 0.8 }}>{detail}</T> : null}
             </View>
           </View>
         )}
         {/* The check mark shows "selected" without relying on colour alone. */}
-        {selected && <View style={{ position: 'absolute', top: 10, right: 10 }}><Icon name="check-circle" size={22} color={c.primary} label="Selected" /></View>}
+        {selected && <View style={{ position: 'absolute', top: 10, right: 10 }}><Icon name="check-circle" size={22} color={palette.lime} label="Selected" /></View>}
       </Pressable>
     </Animated.View>
   );

@@ -2,9 +2,9 @@
 import React, { ComponentType } from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator, NativeStackNavigationOptions } from '@react-navigation/native-stack';
-import { c } from '../ui/theme';
-import { haptics } from '../ui/haptics';
-import { Icon, IconName } from '../ui/components/core';
+import { palette } from '../ui/theme';
+import { IconName } from '../ui/components/core';
+import { TabDock } from '../ui/components/dock';
 import { RootPages, TabPages, Tabs } from './types';
 import { StartPage } from '../state/session';
 import { WelcomeScreen } from '../ui/screens/onboarding/WelcomeScreen';
@@ -35,7 +35,7 @@ import { EditGoalsScreen } from '../ui/screens/profile/EditGoalsScreen';
 
 const screenOptions: NativeStackNavigationOptions = {
   headerShown: false,
-  contentStyle: { backgroundColor: c.background },
+  contentStyle: { backgroundColor: palette.ink },
   // Pages slide in from the right when moving forward and back out when returning.
   animation: 'slide_from_right',
 };
@@ -92,20 +92,12 @@ const TAB_INFO: { name: keyof Tabs; label: string; icon: IconName; component: Co
 function MainTabs() {
   return (
     <Tab.Navigator
-      screenOptions={{
-        headerShown: false,
-        // Same colour as the page with a hairline on top, instead of a raised slab.
-        tabBarStyle: { backgroundColor: c.background, borderTopColor: c.outline, borderTopWidth: 0.5, elevation: 0 },
-        tabBarActiveTintColor: c.primary,
-        tabBarInactiveTintColor: c.onSurfaceVariant,
-        tabBarLabelStyle: { fontSize: 12, fontWeight: '600' },
-        sceneStyle: { backgroundColor: c.background },
-      }}
-      screenListeners={{ tabPress: () => haptics.tick() }}
+      // The floating dock replaces the default tab bar (it also hosts the workout mini player).
+      tabBar={(props) => <TabDock {...props} tabs={TAB_INFO.map(({ name, label, icon }) => ({ name, label, icon }))} />}
+      screenOptions={{ headerShown: false, sceneStyle: { backgroundColor: palette.ink } }}
     >
       {TAB_INFO.map((t) => (
-        <Tab.Screen key={t.name} name={t.name} component={t.component}
-          options={{ tabBarLabel: t.label, tabBarAccessibilityLabel: t.label, tabBarIcon: ({ color }) => <Icon name={t.icon} color={color} /> }} />
+        <Tab.Screen key={t.name} name={t.name} component={t.component} options={{ tabBarLabel: t.label, tabBarAccessibilityLabel: t.label }} />
       ))}
     </Tab.Navigator>
   );
@@ -125,7 +117,7 @@ export function AppNavigator({ start }: { start: StartPage }) {
       <Root.Screen name="Main" component={MainTabs} options={{ animation: 'fade' }} />
       {/* The live workout takes the whole screen, like a dedicated training mode. */}
       <Root.Screen name="WorkoutSession" component={WorkoutSessionScreen} options={{ animation: 'slide_from_bottom', gestureEnabled: false }} />
-      <Root.Screen name="Story" component={StoryScreen} options={{ animation: 'fade', contentStyle: { backgroundColor: '#000' } }} />
+      <Root.Screen name="Story" component={StoryScreen} options={{ animation: 'fade', contentStyle: { backgroundColor: palette.overlayBackground } }} />
       <Root.Screen name="ExerciseDetail" component={ExerciseDetailScreen} />
       <Root.Screen name="WorkoutDetail" component={WorkoutDetailScreen} />
     </Root.Navigator>

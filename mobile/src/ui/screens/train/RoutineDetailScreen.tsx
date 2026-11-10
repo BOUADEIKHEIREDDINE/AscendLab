@@ -3,7 +3,7 @@
  * Editing goes through the ⋮ menu, like Hevy.
  */
 import React, { useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, View } from 'react-native';
+import { Pressable, ScrollView, View } from 'react-native';
 import { Convert, formatNumber } from '../../../data/profile';
 import { profileStore } from '../../../data/profileRepo';
 import { DEFAULT_TARGET, restSecFor } from '../../../data/progress';
@@ -11,9 +11,10 @@ import { activeStore, historyLive, TrainRepository, trainLive } from '../../../d
 import { ExerciseLibrary, lastSets, LoggedSet, previousForSets, RoutineExercise } from '../../../data/training';
 import { useStore } from '../../../lib/store';
 import { goBack, useNav, useParams } from '../../../navigation/types';
-import { c, Gutter } from '../../theme';
+import { palette, Gutter, radius, space } from '../../theme';
 import { haptics } from '../../haptics';
-import { Hairline, IconButton, PageHeader, PrimaryButton, Screen, T } from '../../components/core';
+import { HeroButton, IconButton, PageHeader, Screen, T } from '../../components/core';
+import { ShapeLoader } from '../../shapes/ShapeLoader';
 import { ActionMenu, Dialog } from '../../components/overlays';
 import { SetBadge } from './TrainComponents';
 
@@ -43,8 +44,8 @@ export function RoutineDetailScreen() {
     return (
       <Screen>
         <PageHeader title="Routine" onBack={() => goBack(nav)} />
-        {state.loading ? <ActivityIndicator color={c.primary} style={{ padding: 32 }} />
-          : <T color={c.onSurfaceVariant} style={{ padding: Gutter }}>This routine no longer exists.</T>}
+        {state.loading ? <View style={{ padding: 32, alignItems: 'center' }}><ShapeLoader /></View>
+          : <T color={palette.textMuted} style={{ padding: Gutter }}>This routine no longer exists.</T>}
       </Screen>
     );
   }
@@ -53,20 +54,19 @@ export function RoutineDetailScreen() {
   return (
     <Screen>
       <PageHeader title={routine.name} onBack={() => goBack(nav)}
-        actions={<IconButton name="more-vert" label="More" onPress={() => setMenu(true)} />} />
-      <ScrollView contentContainerStyle={{ paddingBottom: 16 }}>
+        actions={<IconButton variant="tonal" name="more-vert" label="More" onPress={() => setMenu(true)} />} />
+      <ScrollView contentContainerStyle={{ paddingBottom: 32 }}>
         <View style={{ paddingHorizontal: Gutter, paddingTop: 4, paddingBottom: 12, gap: 12 }}>
-          <T v="bodySmall" color={c.onSurfaceVariant}>
+          <T v="bodyS" color={palette.textMuted}>
             In {program.name} · {routine.exercises.length} exercise{routine.exercises.length === 1 ? '' : 's'} · {sets} sets
           </T>
-          <PrimaryButton label="Start workout" icon="play-arrow" enabled={routine.exercises.length > 0}
+          <HeroButton label="Start workout" icon="play-arrow" enabled={routine.exercises.length > 0}
             onPress={() => { haptics.confirm(); if (active) setConfirmReplace(true); else start(); }} />
         </View>
         {routine.exercises.map((x, i) => (
           <ExerciseView key={`${x.exerciseId}-${i}`} ex={x} last={previous.get(ExerciseLibrary.key(x.exerciseId))} units={units}
             onOpen={() => nav.navigate('ExerciseDetail', { exerciseId: x.exerciseId, name: x.name })} />
         ))}
-        <Hairline />
       </ScrollView>
 
       <ActionMenu visible={menu} onDismiss={() => setMenu(false)} items={[
@@ -103,29 +103,28 @@ function ExerciseView({ ex, last, units, onOpen }: { ex: RoutineExercise; last: 
   const weight = (kg: number) => formatNumber(units === 'IMPERIAL' ? Convert.kgToLb(kg) : kg);
   const rows = previousForSets(last, ex.sets);
   return (
-    <View>
-      <Hairline />
+    <View style={{ marginHorizontal: Gutter, marginBottom: space.tileGap, borderRadius: radius.lg, backgroundColor: palette.surface }}>
       <View style={{ paddingVertical: 12 }}>
-        <View style={{ paddingHorizontal: Gutter, alignItems: 'flex-start' }}>
+        <View style={{ paddingHorizontal: space.tilePad, alignItems: 'flex-start' }}>
           <Pressable onPress={onOpen} accessibilityRole="link" style={{ paddingVertical: 4 }}>
-            <T v="titleMedium" color={c.primary}>{ex.name}</T>
+            <T v="titleS" color={palette.lime}>{ex.name}</T>
           </Pressable>
-          <T v="bodySmall" color={c.onSurfaceVariant}>
+          <T v="bodyS" color={palette.textMuted}>
             {rest != null ? `${ex.sets} × ${target} reps to failure · rest ${restText(rest)}` : `${ex.sets} × ${ex.reps} reps`}
           </T>
         </View>
-        <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: Gutter - 8, paddingTop: 8, paddingBottom: 4 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, paddingTop: 8, paddingBottom: 4 }}>
           <Header text="SET" width={36} />
           <Header text="PREVIOUS" flex={1.4} />
           <Header text="REPS" flex={1} />
         </View>
         {rows.map((p, i) => (
-          <View key={i} style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: Gutter - 8, paddingVertical: 8 }}>
+          <View key={i} style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, paddingVertical: 8 }}>
             <View style={{ width: 36, alignItems: 'center' }}><SetBadge type="NORMAL" normalIndex={i + 1} /></View>
-            <T color={p ? c.onSurface : c.onSurfaceVariant} center style={{ flex: 1.4 }}>
+            <T color={p ? palette.text : palette.textMuted} center style={{ flex: 1.4 }}>
               {p ? `${p.weightKg > 0 ? `${weight(p.weightKg)} ${unit} × ` : ''}${p.reps}` : '–'}
             </T>
-            <T color={c.onSurfaceVariant} center style={{ flex: 1 }}>{target}</T>
+            <T color={palette.textMuted} center style={{ flex: 1 }}>{target}</T>
           </View>
         ))}
       </View>
@@ -134,5 +133,5 @@ function ExerciseView({ ex, last, units, onOpen }: { ex: RoutineExercise; last: 
 }
 
 function Header({ text, width, flex }: { text: string; width?: number; flex?: number }) {
-  return <T v="labelSmall" color={c.onSurfaceVariant} center style={{ width, flex }}>{text}</T>;
+  return <T v="overline" color={palette.textMuted} center style={{ width, flex }}>{text}</T>;
 }

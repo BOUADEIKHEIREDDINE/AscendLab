@@ -9,7 +9,7 @@ import { isMeal } from '../../../data/social';
 import { feedLive } from '../../../data/socialRepo';
 import { useStore } from '../../../lib/store';
 import { goBack, useNav, useParams } from '../../../navigation/types';
-import { withAlpha } from '../../theme';
+import { palette, withAlpha } from '../../theme';
 import { haptics } from '../../haptics';
 import { timeAgo } from '../../format';
 import { Avatar, IconButton, T } from '../../components/core';
@@ -68,7 +68,7 @@ export function StoryScreen() {
   const caption = post && !(isMeal(post) && !post.photo) && post.description.trim() ? post.description : null;
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#000' }} {...swipe.panHandlers}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: palette.overlayBackground }} {...swipe.panHandlers}>
       <Pressable
         style={{ flex: 1 }}
         onPress={(e) => { haptics.tick(); if (e.nativeEvent.locationX > width / 3) next(); else previous(); }}
@@ -90,8 +90,8 @@ export function StoryScreen() {
             {posts.map((p, i) => {
               const fill = i < index ? 1 : i === index ? Math.min(Math.max(elapsed, 0), 1) : 0;
               return (
-                <View key={p.id} style={{ flex: 1, height: 3, borderRadius: 2, backgroundColor: withAlpha('#FFFFFF', 0.35), overflow: 'hidden' }}>
-                  <View style={{ width: `${fill * 100}%`, height: 3, backgroundColor: '#FFFFFF' }} />
+                <View key={p.id} style={{ flex: 1, height: 3, borderRadius: 2, backgroundColor: withAlpha(palette.overlayText, 0.35), overflow: 'hidden' }}>
+                  <View style={{ width: `${fill * 100}%`, height: 3, backgroundColor: palette.overlayText }} />
                 </View>
               );
             })}
@@ -99,15 +99,15 @@ export function StoryScreen() {
           {post && (
             <View style={{ flexDirection: 'row', alignItems: 'center', paddingLeft: 12, paddingRight: 4, paddingTop: 10 }}>
               <Avatar name={post.authorName} seed={post.uid} size={34} />
-              <T v="titleSmall" color="#FFFFFF" style={{ marginLeft: 10 }}>{post.authorName}</T>
-              <T v="bodySmall" color={withAlpha('#FFFFFF', 0.7)} style={{ flex: 1 }}>{'  '}{timeAgo(post.createdAt.getTime(), true)}</T>
-              <IconButton name="close" label="Close" color="#FFFFFF" onPress={close} />
+              <T v="titleS" color={palette.overlayText} style={{ marginLeft: 10 }}>{post.authorName}</T>
+              <T v="bodyS" color={withAlpha(palette.overlayText, 0.7)} style={{ flex: 1 }}>{'  '}{timeAgo(post.createdAt.getTime(), true)}</T>
+              <IconButton name="close" label="Close" color={palette.overlayText} onPress={close} />
             </View>
           )}
         </View>
 
         {caption && (
-          <T v="bodyLarge" color="#FFFFFF" lines={2} style={{ position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: 20, paddingVertical: 26 }}>
+          <T v="body" color={palette.overlayText} lines={2} style={{ position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: 20, paddingVertical: 26 }}>
             {caption}
           </T>
         )}

@@ -9,7 +9,7 @@ import { Sex, SEX_LABEL } from '../../../data/profile';
 import { useStore } from '../../../lib/store';
 import { useNav } from '../../../navigation/types';
 import { draftStore, Onboarding, signOut } from '../../../state/session';
-import { c } from '../../theme';
+import { palette } from '../../theme';
 import { haptics } from '../../haptics';
 import { Appear, Button, Icon, IconName, T } from '../../components/core';
 import { OnboardingScaffold } from '../../components/onboarding';
@@ -39,7 +39,7 @@ export function ChooseVersionScreen() {
         </View>
       </Appear>
       <Appear index={2}>
-        <T color={c.onSurfaceVariant} center>This makes your calorie target more accurate.</T>
+        <T color={palette.textMuted} center>This makes your calorie target more accurate.</T>
       </Appear>
       {/* First page after signing in, so offer a quiet way out for the wrong account. */}
       {email && (
@@ -70,13 +70,13 @@ function Figure({ sex, icon, selected }: { sex: Sex; icon: IconName; selected: S
           accessibilityLabel={SEX_LABEL[sex]}
           style={{
             width: 136, height: 136, borderRadius: 68, alignItems: 'center', justifyContent: 'center',
-            backgroundColor: isSelected ? c.primary : 'transparent', borderWidth: isSelected ? 0 : 2, borderColor: c.outline,
+            backgroundColor: isSelected ? palette.lime : 'transparent', borderWidth: isSelected ? 0 : 2, borderColor: palette.outline,
           }}
         >
-          <Icon name={icon} size={80} color={isSelected ? c.onPrimary : c.onSurface} />
+          <Icon name={icon} size={80} color={isSelected ? palette.onLime : palette.text} />
         </Pressable>
       </Animated.View>
-      <T v="titleLarge">{SEX_LABEL[sex]}</T>
+      <T v="title">{SEX_LABEL[sex]}</T>
     </View>
   );
 }
