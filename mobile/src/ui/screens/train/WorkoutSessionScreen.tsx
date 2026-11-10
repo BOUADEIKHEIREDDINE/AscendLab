@@ -1,6 +1,7 @@
 /** The live workout: a dedicated full-screen training mode without the tab bar. */
 import React, { useEffect, useMemo, useState } from 'react';
-import { Animated, FlatList, Platform, Pressable, TextInput, View } from 'react-native';
+import { Animated, FlatList, Modal, Platform, Pressable, ScrollView, TextInput, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Convert, engineLevel, formatNumber, UNIT, Units } from '../../../data/profile';
 import { ProfileRepository, profileStore } from '../../../data/profileRepo';
 import { activeProgramOf, activeStore, TrainRepository, trainLive } from '../../../data/trainRepo';
@@ -12,11 +13,13 @@ import {
 } from '../../../data/training';
 import { useStore } from '../../../lib/store';
 import { goBack, useNav } from '../../../navigation/types';
-import { palette, Gutter, type } from '../../theme';
+import { palette, Gutter, radius, space, type } from '../../theme';
 import { haptics } from '../../haptics';
-import { Button, digits, Hairline, Icon, IconButton, PrimaryButton, ProgressBar, Screen, T, TextField, Toggle } from '../../components/core';
+import { Bento, Button, digits, HeroButton, IconButton, ListGroup, ListRow, Screen, T, TextField, Tile, TileHeader, Toggle } from '../../components/core';
+import { AscentHero, PrBadge, PrBanner, RestFlash, RestTimerPill, SetBadge, SetCheck, StatTile } from '../../components/workout';
+import { springTo } from '../../motion';
 import { ActionMenu, Dialog, toast } from '../../components/overlays';
-import { AlternativesSheet, ExercisePicker, SetBadge, VolumeNoticeNote } from './TrainComponents';
+import { AlternativesSheet, ExercisePicker, VolumeNoticeNote } from './TrainComponents';
 
 const toKg = (text: string, units: Units) => {
   const v = parseFloat(text) || 0;
@@ -39,6 +42,7 @@ export function WorkoutSessionScreen() {
   const [finishing, setFinishing] = useState(false);
   const [confirmDiscard, setConfirmDiscard] = useState(false);
   const [prBanner, setPrBanner] = useState<string | null>(null);
+  const [prCount, setPrCount] = useState(0);
   const banner = useState(() => new Animated.Value(0))[0];
 
   useEffect(() => { TrainRepository.loadHistory().then(setHistory); }, []);
@@ -48,7 +52,7 @@ export function WorkoutSessionScreen() {
   }, []);
   useEffect(() => {
     if (!prBanner) return;
-    Animated.spring(banner, { toValue: 1, useNativeDriver: Platform.OS !== 'web' }).start();
+    springTo(banner, 1, 'bouncy').start();
     const t = setTimeout(() => Animated.timing(banner, { toValue: 0, duration: 250, useNativeDriver: Platform.OS !== 'web' }).start(() => setPrBanner(null)), 3500);
     return () => clearTimeout(t);
   }, [prBanner, banner]);
@@ -67,32 +71,38 @@ export function WorkoutSessionScreen() {
 
   // Finished or discarded: leave the page.
   useEffect(() => { if (!workout) goBack(nav); }, [workout, nav]);
+  const resting = workout != null && workout.restEndsAt != null && workout.restEndsAt > now;
+  // Flash the screen lime when a rest ends (tracked during render, not in an effect).
+  const [wasResting, setWasResting] = useState(resting);
+  const [flashKey, setFlashKey] = useState<number | null>(null);
+  if (wasResting !== resting) {
+    setWasResting(resting);
+    if (!resting) setFlashKey((k) => (k ?? 0) + 1);
+  }
   if (!workout) return null;
   const w = workout;
-  const resting = w.restEndsAt != null && w.restEndsAt > now;
 
   return (
     <Screen keyboard edges={['top', 'bottom']}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', paddingLeft: 4, paddingRight: 16, paddingTop: 8 }}>
-        <IconButton name="keyboard-arrow-down" label="Minimize" onPress={() => goBack(nav)} />
+      <View style={{ flexDirection: 'row', alignItems: 'center', paddingLeft: Gutter - 4, paddingRight: Gutter, paddingTop: 8, gap: 10 }}>
+        <IconButton variant="tonal" name="keyboard-arrow-down" label="Minimize" onPress={() => goBack(nav)} />
         <T v="title" lines={1} style={{ flex: 1 }}>{w.title}</T>
-        <Button kind="filled" label="Finish" onPress={() => setFinishing(true)} />
+        <Button kind="tonal" compact label="Finish" onPress={() => setFinishing(true)} />
       </View>
-      <View style={{ flexDirection: 'row', paddingHorizontal: 20, paddingVertical: 8 }}>
-        <Stat label="Duration" value={clock(Math.trunc((now - w.startedAt) / 1000))} />
-        <Stat label="Volume" value={WorkoutMath.formatVolume(volumeKg(w, units), units)} />
-        <Stat label="Sets" value={`${doneSets(w)}`} />
+      <View style={{ flexDirection: 'row', paddingHorizontal: Gutter, paddingVertical: 12, gap: 8 }}>
+        <StatTile label="Duration" value={clock(Math.trunc((now - w.startedAt) / 1000))} />
+        <StatTile label="Volume" value={WorkoutMath.formatVolume(volumeKg(w, units), units)} />
+        <StatTile label="Sets" value={`${doneSets(w)}`} />
       </View>
-      <Hairline style={{ marginTop: 8 }} />
 
       <FlatList
         style={{ flex: 1 }}
         data={w.exercises}
         keyExtractor={(x, i) => `${x.exerciseId}-${i}`}
         keyboardShouldPersistTaps="handled"
-        contentContainerStyle={{ paddingBottom: 24 }}
+        contentContainerStyle={{ paddingBottom: 24, gap: space.tileGap }}
         ListHeaderComponent={w.exercises.length === 0
-          ? <T v="body" color={palette.textMuted} style={{ padding: Gutter }}>Add your first exercise to get going.</T>
+          ? <T v="body" color={palette.textMuted} style={{ paddingHorizontal: Gutter, paddingVertical: 12 }}>Add your first exercise to get going.</T>
           : w.warmUp && w.warmUp.length > 0 ? <WarmUpCard lines={w.warmUp} /> : undefined}
         renderItem={({ item, index }) => (
           <View>
@@ -103,34 +113,35 @@ export function WorkoutSessionScreen() {
               records={records.get(ExerciseLibrary.key(item.exerciseId))}
               units={units}
               onOpen={() => nav.navigate('ExerciseDetail', { exerciseId: item.exerciseId, name: item.name })}
-              onRecord={(label) => { haptics.heavy(); setPrBanner(`New record: ${label} · ${item.name}`); }}
+              onRecord={(label) => { haptics.heavy(); setPrCount((n) => n + 1); setPrBanner(`${label} · ${item.name}`); }}
               onAlternatives={() => setAlternativesFor(index)}
             />
-            <Hairline />
           </View>
         )}
         ListFooterComponent={
-          <View style={{ paddingHorizontal: Gutter, paddingVertical: 16, gap: 8 }}>
-            <Button kind="filled" label="Add exercise" icon="add" onPress={() => setPicking(true)} style={{ height: 52 }} />
+          <View style={{ paddingHorizontal: Gutter, paddingVertical: 8, gap: 10 }}>
+            <Button kind="tonal" label="Add exercise" icon="add" onPress={() => setPicking(true)} />
+            <HeroButton label="Finish workout" icon="flag" onPress={() => setFinishing(true)} style={{ marginTop: 6 }} />
             <Button kind="text" label="Discard workout" color={palette.ember} onPress={() => setConfirmDiscard(true)} />
           </View>
         }
       />
 
-      {/* Docked at the bottom so it never pushes the sets around while you tap. */}
-      {resting && <RestBar secondsLeft={Math.max(Math.trunc((w.restEndsAt! - now) / 1000), 0)} total={w.restTotal ?? w.restSeconds} />}
-
-      {/* Live personal-record alert: floats over the header like a toast, so the sets never move. */}
-      {prBanner && (
-        <Animated.View pointerEvents="none" style={{
-          position: 'absolute', top: 0, left: 0, right: 0, backgroundColor: palette.gold, flexDirection: 'row', alignItems: 'center',
-          paddingHorizontal: Gutter, paddingVertical: 12, gap: 12, opacity: banner,
-          transform: [{ translateY: banner.interpolate({ inputRange: [0, 1], outputRange: [-60, 0] }) }],
-        }}>
-          <Icon name="emoji-events" color={palette.onLime} />
-          <T v="titleS" color={palette.onLime} style={{ flex: 1 }}>{prBanner}</T>
-        </Animated.View>
+      {/* Floats at the bottom so it never pushes the sets around while you tap. */}
+      {resting && (
+        <View style={{ paddingHorizontal: Gutter, paddingTop: 6, paddingBottom: 10 }}>
+          <RestTimerPill
+            secondsLeft={Math.max(Math.trunc((w.restEndsAt! - now) / 1000), 0)}
+            total={w.restTotal ?? w.restSeconds}
+            onShift={(sec) => TrainRepository.update((cur) => ({ ...cur, restEndsAt: (cur.restEndsAt ?? Date.now()) + sec * 1000 }))}
+            onSkip={() => TrainRepository.update((cur) => ({ ...cur, restEndsAt: null }))}
+          />
+        </View>
       )}
+      <RestFlash flashKey={flashKey} />
+
+      {/* Live personal-record alert: slides down over the header, so the sets never move. */}
+      {prBanner && <PrBanner text={prBanner} progress={banner} />}
 
       <ExercisePicker
         visible={picking}
@@ -196,7 +207,7 @@ export function WorkoutSessionScreen() {
         <T>Nothing from this session will be saved.</T>
       </Dialog>
 
-      {finishing && <FinishDialog w={w} units={units} now={now} onDismiss={() => setFinishing(false)} />}
+      {finishing && <FinishDialog w={w} units={units} now={now} records={prCount} onDismiss={() => setFinishing(false)} />}
     </Screen>
   );
 }
@@ -204,8 +215,8 @@ export function WorkoutSessionScreen() {
 /** The session's optional warm-up, before the first exercise. */
 function WarmUpCard({ lines }: { lines: string[] }) {
   return (
-    <View style={{ marginHorizontal: Gutter, marginTop: 12, padding: 12, borderRadius: 12, backgroundColor: palette.surface, gap: 4 }}>
-      <T v="titleS">Warm-up (optional)</T>
+    <View style={{ marginHorizontal: Gutter, marginBottom: space.tileGap, padding: space.tilePad, borderRadius: radius.lg, backgroundColor: palette.surface, gap: 4 }}>
+      <TileHeader icon="whatshot" text="Warm-up · optional" />
       {lines.map((line) => <T key={line} v="bodyS" color={palette.textMuted}>• {line}</T>)}
     </View>
   );
@@ -213,36 +224,17 @@ function WarmUpCard({ lines }: { lines: string[] }) {
 
 const restText = (sec: number) => (sec % 60 === 0 ? `${sec / 60} min` : `${Math.floor(sec / 60)}.5 min`);
 
-function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <View style={{ flex: 1 }}>
-      <T v="label" color={palette.textMuted}>{label}</T>
-      <T v="titleS">{value}</T>
-    </View>
-  );
-}
-
-function RestBar({ secondsLeft, total }: { secondsLeft: number; total: number }) {
-  const shift = (ms: number | null) => TrainRepository.update((w) => ({ ...w, restEndsAt: ms == null ? null : (w.restEndsAt ?? Date.now()) + ms }));
-  return (
-    <View style={{ backgroundColor: palette.limeContainer, paddingHorizontal: Gutter, paddingVertical: 8 }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-        <Icon name="timer" color={palette.lime} />
-        <T v="titleS" color={palette.lime} style={{ flex: 1 }}>  Rest  {clock(secondsLeft)}</T>
-        <Button kind="text" label="−15" onPress={() => shift(-15_000)} compact />
-        <Button kind="text" label="+15" onPress={() => shift(15_000)} compact />
-        <Button kind="text" label="Skip" onPress={() => shift(null)} compact />
-      </View>
-      <ProgressBar progress={secondsLeft / Math.max(total, 1)} height={4} duration={900} />
-    </View>
-  );
-}
-
 function ExerciseBlock({ ex, index, previous, records, units, onOpen, onRecord, onAlternatives }: {
   ex: ActiveExercise; index: number; previous: LoggedSet[] | undefined; records: ExerciseRecords | undefined; units: Units;
   onOpen: () => void; onRecord: (label: string) => void; onAlternatives: () => void;
 }) {
   const [menu, setMenu] = useState(false);
+  const [pr, setPr] = useState<{ set: number; key: number } | null>(null);
+  useEffect(() => {
+    if (!pr) return;
+    const t = setTimeout(() => setPr(null), 2600);
+    return () => clearTimeout(t);
+  }, [pr]);
   const plan = ex.plan ?? null;
   const bodyweight = ExerciseLibrary.isBodyweight(ex.exerciseId);
   const display = (kgValue: number) => formatNumber(units === 'IMPERIAL' ? Convert.kgToLb(kgValue) : kgValue);
@@ -258,8 +250,8 @@ function ExerciseBlock({ ex, index, previous, records, units, onOpen, onRecord, 
 
   let normalCount = 0;
   return (
-    <View style={{ paddingVertical: 12 }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', paddingLeft: Gutter, paddingRight: 4 }}>
+    <View style={{ marginHorizontal: Gutter, paddingVertical: 12, borderRadius: radius.lg, backgroundColor: palette.surface }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', paddingLeft: space.tilePad, paddingRight: 4 }}>
         <View style={{ flex: 1, alignItems: 'flex-start' }}>
           <Pressable onPress={onOpen} accessibilityRole="link" style={{ paddingVertical: 4 }}>
             <T v="titleS" color={palette.lime}>{ex.name}</T>
@@ -269,14 +261,14 @@ function ExerciseBlock({ ex, index, previous, records, units, onOpen, onRecord, 
         <IconButton name="more-vert" label="More" onPress={() => setMenu(true)} />
       </View>
       {plan && (
-        <View style={{ paddingHorizontal: Gutter, paddingBottom: 4, gap: 2 }}>
+        <View style={{ paddingHorizontal: space.tilePad, paddingBottom: 4, gap: 2 }}>
           <T v="bodyS" color={palette.textMuted}>
             {plan.sets} × {plan.repMin}–{plan.repMax} reps to failure · rest {restText(plan.restSec)}
           </T>
           {plan.note && <T v="bodyS" color={plan.findWeight ? palette.gold : palette.lime}>{plan.note}</T>}
         </View>
       )}
-      <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: Gutter - 8, paddingVertical: 4 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, paddingVertical: 6 }}>
         <Header text="SET" width={36} />
         <Header text="PREVIOUS" flex={1.4} />
         <Header text={bodyweight ? `+${unit}` : unit} flex={1} />
@@ -303,6 +295,7 @@ function ExerciseBlock({ ex, index, previous, records, units, onOpen, onRecord, 
             weightHint={weightHint}
             repsHint={repsHint}
             onChange={(s) => setAt(setIndex, s)}
+            pr={pr?.set === setIndex ? pr.key : null}
             onRemove={() => updateExercise((e) => ({ ...e, sets: e.sets.filter((_, i) => i !== setIndex) }))}
             onType={(t) => setAt(setIndex, { ...set, type: t })}
             onToggle={() => {
@@ -330,7 +323,7 @@ function ExerciseBlock({ ex, index, previous, records, units, onOpen, onRecord, 
                   byReps: {},
                 };
                 const label = beatenBy(best, { weightKg: toKg(filled.weight, units), reps: parseInt(filled.reps, 10) || 0, type: filled.type })[0];
-                if (label) onRecord(label);
+                if (label) { onRecord(label); setPr({ set: setIndex, key: Date.now() }); }
               }
               // Find your weight: each working set tells the next one what to lift.
               let nextPlan = plan;
@@ -357,7 +350,7 @@ function ExerciseBlock({ ex, index, previous, records, units, onOpen, onRecord, 
           />
         );
       })}
-      <Button kind="text" label="Add set" icon="add" style={{ marginHorizontal: 8 }} onPress={() => {
+      <Button kind="text" label="Add set" icon="add" style={{ marginHorizontal: 8, marginTop: 4 }} onPress={() => {
         haptics.tick();
         updateExercise((e) => ({ ...e, sets: [...e.sets, newSet({ weight: e.sets[e.sets.length - 1]?.weight ?? '' })] }));
       }} />
@@ -375,32 +368,24 @@ function Header({ text, width, flex }: { text: string; width?: number; flex?: nu
   return <T v="bodyS" color={palette.textMuted} center style={{ width, flex }}>{text}</T>;
 }
 
-function SetRow({ number, set, previous, weightHint, repsHint, onChange, onToggle, onRemove, onType }: {
+function SetRow({ number, set, previous, weightHint, repsHint, onChange, onToggle, onRemove, onType, pr }: {
   number: number; set: SetEntry; previous: string; weightHint: string; repsHint: string;
-  onChange: (s: SetEntry) => void; onToggle: () => void; onRemove: () => void; onType: (t: SetType) => void;
+  onChange: (s: SetEntry) => void; onToggle: () => void; onRemove: () => void; onType: (t: SetType) => void; pr: number | null;
 }) {
   const [menu, setMenu] = useState(false);
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: Gutter - 8, paddingVertical: 4, backgroundColor: set.done ? palette.limeContainer : palette.ink }}>
+    <View style={{ flexDirection: 'row', alignItems: 'center', marginHorizontal: 6, marginVertical: 2, paddingHorizontal: 2, paddingVertical: 2,
+      borderRadius: radius.full, backgroundColor: set.done ? palette.limeContainer : 'transparent' }}>
       {/* Tap the set number to change its type (W / F / D). */}
       <Pressable onPress={() => { haptics.tick(); setMenu(true); }} accessibilityLabel={`Set ${number} type`}
         style={{ width: 36, alignItems: 'center', paddingVertical: 8, borderRadius: 8 }}>
         <SetBadge type={set.type} normalIndex={number} />
       </Pressable>
-      <T color={palette.textMuted} center style={{ flex: 1.4 }}>{previous}</T>
+      <T v="bodyS" color={set.done ? palette.onLimeContainer : palette.textMuted} center style={{ flex: 1.4 }}>{previous}</T>
       <NumberBox value={set.weight} hint={weightHint} decimal onChange={(v) => onChange({ ...set, weight: v })} label={`Set ${number} weight`} />
       <NumberBox value={set.reps} hint={repsHint} onChange={(v) => onChange({ ...set, reps: v })} label={`Set ${number} reps`} />
-      <Pressable
-        onPress={() => { if (set.done) haptics.tick(); else haptics.confirm(); onToggle(); }}
-        accessibilityRole="checkbox"
-        accessibilityState={{ checked: set.done }}
-        accessibilityLabel={set.done ? `Mark set ${number} not done` : `Mark set ${number} done`}
-        style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}
-      >
-        <View style={{ width: 30, height: 30, borderRadius: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: set.done ? palette.lime : palette.surfaceHigh, transform: [{ scale: set.done ? 1 : 0.9 }] }}>
-          <Icon name="check" size={20} color={set.done ? palette.onLime : palette.textMuted} />
-        </View>
-      </Pressable>
+      <SetCheck done={set.done} onPress={onToggle} label={set.done ? `Mark set ${number} not done` : `Mark set ${number} done`} />
+      {pr != null && <View pointerEvents="none" style={{ position: 'absolute', right: 40, top: -6 }}><PrBadge fireKey={pr} /></View>}
       <ActionMenu visible={menu} onDismiss={() => setMenu(false)} items={[
         ...SET_TYPES.map((t) => ({ label: SET_TYPE[t].label, leading: <View style={{ width: 24, alignItems: 'center' }}><SetBadge type={t} normalIndex={1} /></View>, onPress: () => onType(t) })),
         { label: 'Remove set', icon: 'delete-outline' as const, danger: true, onPress: onRemove },
@@ -416,20 +401,20 @@ function NumberBox({ value, hint, decimal, onChange, label }: { value: string; h
         value={value}
         onChangeText={(t) => onChange(digits(t, decimal ? 6 : 3, decimal))}
         placeholder={hint}
-        placeholderTextColor="rgba(169,182,194,0.6)"
+        placeholderTextColor={palette.textFaint}
         keyboardType={decimal ? 'decimal-pad' : 'number-pad'}
         selectionColor={palette.lime}
         keyboardAppearance="dark"
         selectTextOnFocus
         accessibilityLabel={label}
-        style={[type.titleS, { color: palette.text, textAlign: 'center', backgroundColor: palette.surface, borderRadius: 8, paddingVertical: 8 },
+        style={[type.displayS, { fontSize: 17, lineHeight: 22, letterSpacing: 0, color: palette.text, textAlign: 'center', backgroundColor: palette.surfaceHigh, borderRadius: radius.sm, paddingVertical: 8 },
           Platform.OS === 'web' && ({ outlineStyle: 'none' } as object)]}
       />
     </View>
   );
 }
 
-function FinishDialog({ w, units, now, onDismiss }: { w: ActiveWorkout; units: Units; now: number; onDismiss: () => void }) {
+function FinishDialog({ w, units, now, records, onDismiss }: { w: ActiveWorkout; units: Units; now: number; records: number; onDismiss: () => void }) {
   const [caption, setCaption] = useState('');
   const [share, setShare] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -464,42 +449,66 @@ function FinishDialog({ w, units, now, onDismiss }: { w: ActiveWorkout; units: U
     toast(others.length > 0 ? `${saved}. Program changed, also in ${others.join(', ')}` : `${saved}. Saved to your program`);
   }
 
+  const volume = WorkoutMath.formatVolume(volumeKg(w, units), units);
   return (
-    <Dialog
-      visible
-      onDismiss={() => { if (!busy) onDismiss(); }}
-      title="Finish workout"
-      dismiss={{ label: 'Keep training', onPress: onDismiss, enabled: !busy }}
-      confirm={applied ? undefined : { label: done === 0 ? 'Tick a set first' : 'Save', enabled: !busy && done > 0, loading: busy, onPress: () => save(false) }}
-    >
-      <View style={{ flexDirection: 'row', paddingVertical: 8 }}>
-        <Stat label="Duration" value={WorkoutMath.formatDuration(Math.trunc((now - w.startedAt) / 1000))} />
-        <Stat label="Volume" value={WorkoutMath.formatVolume(volumeKg(w, units), units)} />
-        <View style={{ flex: 0.6 }}><Stat label="Sets" value={`${done}`} /></View>
-      </View>
-      {pending > 0 && <T v="bodyS" color={palette.ember}>{pending} set{pending === 1 ? '' : 's'} not ticked off won't be saved.</T>}
-      <TextField label="How did it go?" placeholder="New best on bench!" value={caption} onChangeText={(t) => setCaption(t.slice(0, 300))} multiline autoCapitalize="sentences" />
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-        <View style={{ flex: 1 }}>
-          <T v="body">Post to feed</T>
-          <T v="bodyS" color={palette.textMuted}>Your friends see this workout</T>
-        </View>
-        <Toggle value={share} onChange={setShare} label="Post to feed" />
-      </View>
-      {applied && (
-        <View style={{ gap: 8 }}>
-          <T v="titleS">You changed this routine. Keep the changes for next time?</T>
-          {changes.map((ch, i) => (
-            <T key={i} v="bodyS" color={palette.textMuted}>
-              {ch.kind === 'replace' ? `⇄ ${ExerciseLibrary.find(ch.fromId)?.name ?? ch.fromId} → ${ch.toName}` : `+ Added ${ch.toName}`}
-            </T>
-          ))}
-          <VolumeNoticeNote lines={notices} />
-          <PrimaryButton label={done === 0 ? 'Tick a set first' : 'Save to my program'} enabled={!busy && done > 0} onPress={() => save(true)} />
-          <Button label="Only this workout" enabled={!busy && done > 0} onPress={() => save(false)} />
-        </View>
-      )}
-      {error && <T color={palette.error}>{error}</T>}
-    </Dialog>
+    <Modal visible animationType="slide" onRequestClose={() => { if (!busy) onDismiss(); }}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: palette.ink }}>
+        <ScrollView contentContainerStyle={{ paddingBottom: 32 }} keyboardShouldPersistTaps="handled">
+          <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: Gutter - 4, paddingTop: 8 }}>
+            <IconButton variant="tonal" name="close" label="Keep training" onPress={onDismiss} disabled={busy} />
+          </View>
+          {/* The ascent arrow rises behind the total volume. */}
+          <View style={{ alignItems: 'center', justifyContent: 'center', height: 230 }}>
+            <View style={{ position: 'absolute' }}><AscentHero size={230} /></View>
+            <T v="overline" color={palette.lime}>Total volume</T>
+            <T v="hero">{volume}</T>
+            <T v="bodyS" color={palette.textMuted}>{w.title}</T>
+          </View>
+          <Bento>
+            <Tile span="1x1" style={{ justifyContent: 'space-between' }}>
+              <TileHeader icon="timer" text="Duration" />
+              <T v="displayM" style={{ fontSize: 30, lineHeight: 34 }}>{WorkoutMath.formatDuration(Math.trunc((now - w.startedAt) / 1000))}</T>
+            </Tile>
+            <Tile span="1x1" style={{ justifyContent: 'space-between' }}>
+              <TileHeader icon="check-circle" text="Sets" />
+              <T v="displayM">{done}</T>
+            </Tile>
+            <Tile span="2x1" background={records > 0 ? palette.goldContainer : palette.surface} style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+              <View style={{ flex: 1 }}>
+                <TileHeader icon="emoji-events" text="Personal records" color={records > 0 ? palette.gold : palette.textMuted} />
+                <T v="displayM" color={records > 0 ? palette.gold : palette.text}>{records}</T>
+              </View>
+              {records > 0 && <T v="bodyS" color={palette.gold}>New PR{records === 1 ? '' : 's'} today</T>}
+            </Tile>
+          </Bento>
+          <View style={{ paddingHorizontal: Gutter, paddingTop: 20, gap: 14 }}>
+            {pending > 0 && <T v="bodyS" color={palette.ember}>{pending} set{pending === 1 ? '' : 's'} not ticked off won't be saved.</T>}
+            <TextField label="How did it go?" placeholder="New best on bench!" value={caption} onChangeText={(t) => setCaption(t.slice(0, 300))} multiline autoCapitalize="sentences" />
+          </View>
+          <ListGroup style={{ marginTop: 14 }}>
+            <ListRow icon="dynamic-feed" title="Post to feed" subtitle="Your friends see this workout" trailing={<Toggle value={share} onChange={setShare} label="Post to feed" />} />
+          </ListGroup>
+          <View style={{ paddingHorizontal: Gutter, paddingTop: 20, gap: 10 }}>
+            {applied ? (
+              <>
+                <T v="titleS">You changed this routine. Keep the changes for next time?</T>
+                {changes.map((ch, i) => (
+                  <T key={i} v="bodyS" color={palette.textMuted}>
+                    {ch.kind === 'replace' ? `⇄ ${ExerciseLibrary.find(ch.fromId)?.name ?? ch.fromId} → ${ch.toName}` : `+ Added ${ch.toName}`}
+                  </T>
+                ))}
+                <VolumeNoticeNote lines={notices} />
+                <HeroButton label={done === 0 ? 'Tick a set first' : 'Save to my program'} enabled={!busy && done > 0} loading={busy} onPress={() => save(true)} />
+                <Button kind="tonal" label="Only this workout" enabled={!busy && done > 0} onPress={() => save(false)} />
+              </>
+            ) : (
+              <HeroButton label={done === 0 ? 'Tick a set first' : 'Finish workout'} icon="flag" enabled={!busy && done > 0} loading={busy} onPress={() => save(false)} />
+            )}
+            <Button kind="text" label="Keep training" color={palette.text} enabled={!busy} onPress={onDismiss} />
+            {error && <T color={palette.error}>{error}</T>}
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    </Modal>
   );
 }

@@ -7,10 +7,13 @@ import { activeProgramOf, activeStore, historyLive, TrainRepository, trainLive }
 import { doneSets, nextRoutine, Routine, setCount, WorkoutMath } from '../../../data/training';
 import { useStore } from '../../../lib/store';
 import { useNav } from '../../../navigation/types';
-import { palette, Gutter, radius } from '../../theme';
+import { palette, Gutter, radius, space, tone } from '../../theme';
 import { haptics } from '../../haptics';
 import { relativeDay } from '../../format';
-import { Button, Hairline, Icon, IconButton, PressableScale, Screen, SectionTitle, SkeletonCard, T, TabHeader } from '../../components/core';
+import {
+  Button, EmptyState, HeroButton, Icon, ListGroup, ListRow, PressableScale, Screen, SectionTitle, SkeletonCard, SplitButton, T, TabHeader, Tile,
+} from '../../components/core';
+import { ExpressiveShape } from '../../shapes/ExpressiveShape';
 import { ActionMenu, BottomSheet, Dialog, toast } from '../../components/overlays';
 
 export function TrainingPlanScreen() {
@@ -51,22 +54,23 @@ export function TrainingPlanScreen() {
     <View>
       <TabHeader title="Train" />
       {active && (
-        <>
-          <PressableScale onPress={() => nav.navigate('WorkoutSession')} style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: Gutter, paddingVertical: 12 }}>
-            <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: palette.lime }} />
-            <View style={{ flex: 1, marginLeft: 12 }}>
-              <T v="titleS">{active.title}</T>
-              <T v="bodyS" color={palette.textMuted}>In progress · {doneSets(active)} sets done</T>
-            </View>
-            <Button kind="filled" label="Resume" onPress={() => nav.navigate('WorkoutSession')} />
-          </PressableScale>
-          <Hairline />
-        </>
+        <Tile span="2x1" onPress={() => nav.navigate('WorkoutSession')} label={`${active.title}, in progress. Resume`}
+          style={{ marginHorizontal: Gutter, marginBottom: space.tileGap, flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 14 }}>
+          <ExpressiveShape shape="softTriangle" size={48} fill={tone(palette.lime, 0.18)}>
+            <Icon name="fitness-center" size={20} color={palette.lime} />
+          </ExpressiveShape>
+          <View style={{ flex: 1 }}>
+            <T v="overline" color={palette.lime}>In progress</T>
+            <T v="titleS" lines={1}>{active.title}</T>
+            <T v="bodyS" color={palette.textMuted}>{doneSets(active)} sets done</T>
+          </View>
+          <Button kind="tonal" label="Resume" compact onPress={() => nav.navigate('WorkoutSession')} />
+        </Tile>
       )}
-      <Button label="Start empty workout" icon="add" onPress={() => start(null)} style={{ marginHorizontal: Gutter, marginVertical: 8 }} />
+      {!active && <HeroButton label="Start empty workout" icon="add" onPress={() => start(null)} style={{ marginHorizontal: Gutter, marginVertical: 8 }} />}
 
       {/* Program switcher: the title of the routine list, like a folder name. */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', paddingLeft: Gutter, paddingRight: 8, paddingTop: 16 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', paddingLeft: Gutter, paddingRight: Gutter - 8, paddingTop: 20 }}>
         <View style={{ flex: 1, alignItems: 'flex-start' }}>
           <PressableScale onPress={() => setProgramMenu(true)} label="Change program" style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 6 }}>
             <T v="title" lines={1}>{program?.name ?? (state.loading && !state.error ? 'Loading…' : 'No program yet')}</T>
@@ -80,17 +84,16 @@ export function TrainingPlanScreen() {
         }} />
       </View>
       {splitLabel && (
-        <View style={{ flexDirection: 'row', alignItems: 'center', paddingLeft: Gutter, paddingRight: 8 }}>
-          <T v="body" color={palette.textMuted} style={{ flex: 1 }}>Your plan: {splitLabel}</T>
+        <View style={{ flexDirection: 'row', alignItems: 'center', paddingLeft: Gutter, paddingRight: Gutter - 8, paddingBottom: 6 }}>
+          <T v="bodyS" color={palette.textMuted} style={{ flex: 1 }}>Your plan: {splitLabel}</T>
           {splits.length > 1 && <Button kind="text" label="Change split" icon="swap-horiz" onPress={() => setSplitMenu(true)} compact />}
         </View>
       )}
       {state.error && <T color={palette.error} style={{ paddingHorizontal: Gutter, paddingVertical: 8 }}>{state.error}</T>}
       {state.loading && state.programs.length === 0 && !state.error ? <><SkeletonCard /><SkeletonCard /></>
         : (!program || program.routines.length === 0) && (
-          <T color={palette.textMuted} style={{ paddingHorizontal: Gutter, paddingVertical: 12 }}>
-            {!program ? 'Create a program to group your routines.' : 'No routines yet. Tap + Routine to build one.'}
-          </T>
+          <EmptyState icon="fitness-center" shape="softTriangle" title={!program ? 'No program yet' : 'No routines yet'}
+            hint={!program ? 'Create a program to group your routines.' : 'Tap + Routine to build one.'} />
         )}
     </View>
   );
@@ -98,21 +101,18 @@ export function TrainingPlanScreen() {
   const footer = recent.length > 0 ? (
     <View>
       <SectionTitle text="History" />
-      {recent.map((h) => (
-        <PressableScale key={h.id} onPress={() => nav.navigate('WorkoutDetail', { workoutId: h.id })}
-          style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: Gutter, paddingVertical: 10 }}>
-          <View style={{ flex: 1 }}>
-            <T v="body">{h.title}</T>
-            <T v="bodyS" color={palette.textMuted}>{relativeDay(h.finishedAt)}</T>
-          </View>
-          <View style={{ alignItems: 'flex-end' }}>
-            <T>{WorkoutMath.formatDuration(h.durationSec)}</T>
-            <T v="bodyS" color={palette.textMuted}>
-              {setCount(h)} sets · {WorkoutMath.formatVolume(h.volumeKg, units)}{h.records > 0 ? ` · ${h.records} PR` : ''}
-            </T>
-          </View>
-        </PressableScale>
-      ))}
+      <ListGroup>
+        {recent.map((h) => (
+          <ListRow key={h.id} title={h.title} onPress={() => nav.navigate('WorkoutDetail', { workoutId: h.id })}
+            subtitle={`${relativeDay(h.finishedAt)} · ${setCount(h)} sets · ${WorkoutMath.formatVolume(h.volumeKg, units)}`}
+            trailing={
+              <View style={{ alignItems: 'flex-end' }}>
+                <T v="displayS" style={{ fontSize: 17, lineHeight: 22 }}>{WorkoutMath.formatDuration(h.durationSec)}</T>
+                {h.records > 0 && <T v="bodyS" color={palette.gold}>{h.records} PR</T>}
+              </View>
+            } />
+        ))}
+      </ListGroup>
     </View>
   ) : undefined;
 
@@ -125,7 +125,7 @@ export function TrainingPlanScreen() {
         ListFooterComponent={footer}
         contentContainerStyle={{ paddingBottom: 24 }}
         renderItem={({ item }) => (
-          <View>
+          <View style={{ paddingHorizontal: Gutter, paddingBottom: space.tileGap }}>
             <RoutineRow
               routine={item}
               next={item.id === upNext?.id}
@@ -134,7 +134,6 @@ export function TrainingPlanScreen() {
               onEdit={() => program && nav.navigate('RoutineEditor', { programId: program.id, routineId: item.id })}
               onDelete={() => setDeleting(item)}
             />
-            <Hairline inset={Gutter} />
           </View>
         )}
       />
@@ -168,9 +167,9 @@ export function TrainingPlanScreen() {
                   if (!current) setTimeout(() => setPendingSplit({ split: o.split, label: o.label }), Platform.OS === 'ios' ? 350 : 0);
                 }}
                 style={({ pressed }) => ({
-                  flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16, borderRadius: radius.md, borderWidth: current ? 2 : 1,
-                  borderColor: current ? palette.lime : palette.outline,
-                  backgroundColor: current ? palette.limeContainer : pressed ? palette.surfaceHigh : 'transparent',
+                  flexDirection: 'row', alignItems: 'center', gap: 12, padding: space.tilePad, borderRadius: radius.lg, borderWidth: 2,
+                  borderColor: current ? palette.lime : 'transparent',
+                  backgroundColor: current ? palette.limeContainer : pressed ? palette.surfaceHighest : palette.surfaceHigh,
                 })}
               >
                 <View style={{ flex: 1, gap: 4 }}>
@@ -255,26 +254,27 @@ function RoutineRow({ routine, next, onStart, onOpen, onEdit, onDelete }: {
 }) {
   const [menu, setMenu] = useState(false);
   return (
-    <PressableScale onPress={onOpen} style={{ flexDirection: 'row', alignItems: 'center', paddingLeft: Gutter, paddingRight: 8, paddingVertical: 12 }}>
-      <View style={{ flex: 1 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          <T v="titleS">{routine.name}</T>
-          {next && (
-            <View style={{ backgroundColor: palette.lime, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 }}>
-              <T v="bodyS" color={palette.onLime}>Up next</T>
-            </View>
-          )}
-        </View>
-        <T v="bodyS" color={palette.textMuted} lines={2}>
-          {routine.exercises.length === 0 ? 'No exercises yet' : routine.exercises.map((x) => x.name).join(', ')}
-        </T>
+    <Tile span="2x1" onPress={onOpen} label={routine.name} border={next ? palette.lime : undefined} style={{ gap: 10 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+        <T v="titleS" style={{ flexShrink: 1 }} lines={1}>{routine.name}</T>
+        {next && (
+          <View style={{ backgroundColor: palette.lime, borderRadius: radius.full, paddingHorizontal: 10, paddingVertical: 3 }}>
+            <T v="overline" color={palette.onLime}>Up next</T>
+          </View>
+        )}
       </View>
-      <Button kind={next ? 'filled' : 'tonal'} label="Start" onPress={onStart} enabled={routine.exercises.length > 0} style={{ marginLeft: 12 }} compact />
-      <IconButton name="more-vert" label="More" color={palette.textMuted} onPress={() => setMenu(true)} />
+      <T v="bodyS" color={palette.textMuted} lines={2}>
+        {routine.exercises.length === 0 ? 'No exercises yet' : routine.exercises.map((x) => x.name).join(', ')}
+      </T>
+      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+        <T v="bodyS" color={palette.textFaint} style={{ flex: 1 }}>{routine.exercises.length} exercise{routine.exercises.length === 1 ? '' : 's'}</T>
+        <SplitButton label="Start" kind="tonal" onPress={onStart} onMenu={() => setMenu(true)} enabled={routine.exercises.length > 0} menuLabel={`More for ${routine.name}`} />
+      </View>
       <ActionMenu visible={menu} onDismiss={() => setMenu(false)} items={[
+        { label: 'Start', icon: 'play-arrow', onPress: onStart },
         { label: 'Edit', icon: 'edit', onPress: onEdit },
         { label: 'Delete', icon: 'delete-outline', danger: true, onPress: onDelete },
       ]} />
-    </PressableScale>
+    </Tile>
   );
 }

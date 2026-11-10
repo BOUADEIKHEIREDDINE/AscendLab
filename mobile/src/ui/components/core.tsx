@@ -317,6 +317,12 @@ export function Bento({ children, style }: { children: ReactNode; style?: StyleP
   );
 }
 
+/** Width of one Bento column (0 outside a Bento or before layout). Full width = 2 × column + gap. */
+export function useBentoColumn(): number {
+  const bento = useContext(BentoWidth);
+  return bento > 0 ? (bento - space.tileGap) / 2 : 0;
+}
+
 export type TileSpan = '1x1' | '2x1' | '2x2';
 
 /**

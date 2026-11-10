@@ -3,13 +3,16 @@ import React, { useMemo, useState } from 'react';
 import { FlatList, Modal, Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { historyLive } from '../../../data/trainRepo';
-import { doneKeys, Exercise, EQUIPMENT_LABEL, ExerciseLibrary, MUSCLE_LABEL, Muscle, MUSCLES, SetType } from '../../../data/training';
+import { doneKeys, Exercise, EQUIPMENT_LABEL, ExerciseLibrary, MUSCLE_LABEL, Muscle, MUSCLES } from '../../../data/training';
 import { useStore } from '../../../lib/store';
-import { palette } from '../../theme';
+import { palette, radius, space } from '../../theme';
 import { haptics } from '../../haptics';
-import { Button, Chip, Hairline, Icon, IconButton, PrimaryButton, T, TextField } from '../../components/core';
+import { Button, Chip, Hairline, Icon, IconButton, Notice, PrimaryButton, T, TextField } from '../../components/core';
 import { BottomSheet, Dialog } from '../../components/overlays';
 import { slotAlternatives, type Level as EngineLevel, type Slot } from '../../../lib/program-generator/program';
+
+/** Set badges now live with the other workout pieces; re-exported for existing imports. */
+export { SetBadge } from '../../components/workout';
 
 /**
  * Full-screen exercise search: filter by muscle, tap several exercises, then add them
@@ -47,8 +50,8 @@ export function ExercisePicker({ visible, onDismiss, onPick, muscle: initialMusc
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={close} presentationStyle="fullScreen">
       <SafeAreaView style={{ flex: 1, backgroundColor: palette.ink }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', paddingLeft: 4, paddingTop: 8, paddingRight: 16 }}>
-          <IconButton name="close" label="Close" onPress={close} />
+        <View style={{ flexDirection: 'row', alignItems: 'center', paddingLeft: space.gutter - 4, paddingTop: 8, paddingRight: 16, gap: 12 }}>
+          <IconButton variant="tonal" name="close" label="Close" onPress={close} />
           <T v="title">{single ? 'Pick an exercise' : 'Add exercises'}</T>
         </View>
         <TextField
@@ -124,7 +127,7 @@ export function AlternativesSheet({ visible, onDismiss, current, level, onChoose
         <T v="bodyS" color={palette.textMuted}>{subtitle}</T>
       </View>
       <View style={{ flexDirection: 'row', gap: 8 }}>
-        <Button kind="filled" label="Replace" icon="swap-horiz" onPress={() => choose({ exerciseId: id, name, mode: 'replace' })} compact />
+        <Button kind="tonal" label="Replace" icon="swap-horiz" onPress={() => choose({ exerciseId: id, name, mode: 'replace' })} compact />
         <Button kind="outline" label="Add" icon="add" onPress={() => choose({ exerciseId: id, name, mode: 'add' })} compact />
       </View>
     </View>
@@ -156,29 +159,26 @@ export function AlternativesSheet({ visible, onDismiss, current, level, onChoose
   );
 }
 
-/** The sets notice: an apricot note with one line per notice. Informs, never blocks. */
+/** The sets notice: an ember note with one line per notice. Informs, never blocks. */
 export function VolumeNoticeNote({ lines }: { lines: string[] }) {
   if (lines.length === 0) return null;
-  return (
-    <View style={{ borderLeftWidth: 3, borderLeftColor: palette.gold, backgroundColor: palette.surfaceHigh, borderRadius: 12, padding: 12, gap: 4 }}>
-      {lines.map((line) => <T key={line} v="bodyS">{line}</T>)}
-    </View>
-  );
+  return <Notice kind="ember" icon="tune" lines={lines} />;
 }
 
 function ExerciseRow({ title, subtitle, selected, onPress, create }: { title: string; subtitle: string; selected: boolean; onPress: () => void; create?: boolean }) {
   return (
     <View>
       <Pressable onPress={() => { haptics.tick(); onPress(); }} accessibilityRole="button" accessibilityState={{ selected }}
-        style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 14, gap: 14, backgroundColor: selected ? palette.limeContainer : palette.ink }}>
+        style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', marginHorizontal: 8, paddingHorizontal: 14, paddingVertical: 12, gap: 14, borderRadius: radius.md,
+          backgroundColor: selected ? palette.limeContainer : pressed ? palette.surface : 'transparent' })}>
         {create && <Icon name="add" color={palette.lime} />}
         <View style={{ flex: 1 }}>
-          <T v="body">{title}</T>
+          <T v="titleS" color={selected ? palette.onLimeContainer : palette.text}>{title}</T>
           <T v="bodyS" color={palette.textMuted}>{subtitle}</T>
         </View>
         {selected && <Icon name="check-circle" color={palette.lime} label="Selected" />}
       </Pressable>
-      <Hairline inset={20} />
+      {!selected && <Hairline inset={22} style={{ marginRight: 22 }} />}
     </View>
   );
 }
@@ -186,20 +186,13 @@ function ExerciseRow({ title, subtitle, selected, onPress, create }: { title: st
 /** "−  3  +" for a small whole number. */
 export function Stepper({ label, value, onChange, min, max }: { label: string; value: number; onChange: (v: number) => void; min: number; max: number }) {
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-      <T color={palette.textMuted}>{label}</T>
-      <IconButton name="remove" label={`Fewer ${label}`} disabled={value <= min} onPress={() => { haptics.tick(); onChange(Math.max(value - 1, min)); }} />
-      <T v="titleS" center style={{ width: 28 }}>{value}</T>
-      <IconButton name="add" label={`More ${label}`} disabled={value >= max} onPress={() => { haptics.tick(); onChange(Math.min(value + 1, max)); }} />
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+      <T color={palette.textMuted} style={{ marginRight: 4 }}>{label}</T>
+      <IconButton variant="tonal" name="remove" label={`Fewer ${label}`} disabled={value <= min} onPress={() => onChange(Math.max(value - 1, min))} />
+      <T v="displayS" center style={{ width: 36, fontSize: 22, lineHeight: 26 }}>{value}</T>
+      <IconButton variant="tonal" name="add" label={`More ${label}`} disabled={value >= max} onPress={() => onChange(Math.min(value + 1, max))} />
     </View>
   );
-}
-
-/** "1", "2"… for normal sets, or a coloured W / F / D for the other set types. */
-export function SetBadge({ type, normalIndex, width }: { type: SetType; normalIndex: number; width?: number }) {
-  const [text, color] = type === 'NORMAL' ? [`${normalIndex}`, palette.text]
-    : type === 'WARMUP' ? ['W', palette.gold] : type === 'FAILURE' ? ['F', palette.error] : ['D', palette.lime];
-  return <T v="titleS" color={color} style={[{ fontWeight: '600' }, width != null && { width }]}>{text}</T>;
 }
 
 /** Mount it only while open, so it starts from `initial` each time. */
