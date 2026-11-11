@@ -52,7 +52,7 @@ if (process.env.EXPO_PUBLIC_USE_FIREBASE_EMULATOR === 'true' && !existing) {
   // 10.0.2.2 is the computer running the Android emulator; the iOS simulator and web use localhost.
   const host = process.env.EXPO_PUBLIC_EMULATOR_HOST || (Platform.OS === 'android' ? '10.0.2.2' : 'localhost');
   connectAuthEmulator(auth, `http://${host}:9099`, { disableWarnings: true });
-  connectFirestoreEmulator(db, host, 8080);
+  connectFirestoreEmulator(db, host, Number(process.env.EXPO_PUBLIC_FIRESTORE_EMULATOR_PORT) || 8080);
 }
 
 /** Resolves to `null` instead of waiting forever when the network is slow. */

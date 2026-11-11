@@ -12,3 +12,6 @@ app/google-services.json
 
 # Temporary files from the shared drive
 .fuse_hidden*
+
+# Playwright MCP screenshots and logs
+.playwright-mcp/

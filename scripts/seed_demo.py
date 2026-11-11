@@ -13,13 +13,15 @@ Demo accounts (emulator only):
   sam@ascendlab.test  / demo-ascend-2026   (Sam Rivera, Alex's friend)
 """
 import json
+import os
 import random
 import urllib.request
 from datetime import datetime, timedelta, timezone
 
 PROJECT = "ascendlab-def55"
 AUTH = "http://localhost:9099"
-DB = f"http://localhost:8080/v1/projects/{PROJECT}/databases/(default)/documents"
+FS = f"http://localhost:{os.environ.get('FIRESTORE_EMULATOR_PORT', '8080')}"
+DB = f"{FS}/v1/projects/{PROJECT}/databases/(default)/documents"
 PASSWORD = "demo-ascend-2026"
 random.seed(7)
 
@@ -63,7 +65,7 @@ day = lambda d: d.strftime("%Y-%m-%d")
 ms = lambda d: int(d.timestamp() * 1000)
 
 # Clean slate in the emulator only.
-urllib.request.urlopen(urllib.request.Request(f"http://localhost:8080/emulator/v1/projects/{PROJECT}/databases/(default)/documents", method="DELETE"))
+urllib.request.urlopen(urllib.request.Request(f"{FS}/emulator/v1/projects/{PROJECT}/databases/(default)/documents", method="DELETE"))
 urllib.request.urlopen(urllib.request.Request(f"{AUTH}/emulator/v1/projects/{PROJECT}/accounts", method="DELETE"))
 
 alex = account("demo@ascendlab.test", "Alex Martin")
