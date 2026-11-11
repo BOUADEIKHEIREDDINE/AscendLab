@@ -12,6 +12,7 @@ import { StoryRing } from '../../components/progress';
 import { ExpressiveShape } from '../../shapes/ExpressiveShape';
 import { BottomSheet } from '../../components/overlays';
 import { PostCard, RaceCard } from '../../components/feed';
+import { MyDay } from '../../components/myDay';
 
 /** Posts already watched as stories in this session, so their ring turns grey. */
 export const storySeen = createStore<Set<string>>(new Set());
@@ -68,6 +69,7 @@ export function HomeScreen() {
         <IconButton variant="tonal" name="mc:trophy-outline" label="Today's race" onPress={() => setRaceOpen(true)} />
         <IconButton variant="tonal" name="person-add-alt" label="Friends" onPress={() => nav.navigate('Friends')} />
       </View>
+      <MyDay />
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: Gutter - 4, paddingVertical: 10, gap: 12 }}>
         {stories.map((p) => (
           <StoryBubble

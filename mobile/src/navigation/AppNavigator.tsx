@@ -16,6 +16,8 @@ import { PlanReadyScreen } from '../ui/screens/onboarding/PlanReadyScreen';
 import { HomeScreen } from '../ui/screens/home/HomeScreen';
 import { CreatePostScreen } from '../ui/screens/home/CreatePostScreen';
 import { FriendsScreen } from '../ui/screens/home/FriendsScreen';
+import { EditDayScreen } from '../ui/screens/home/EditDayScreen';
+import { PlanDayScreen } from '../ui/screens/home/PlanDayScreen';
 import { CommentsScreen } from '../ui/screens/home/CommentsScreen';
 import { CompareScreen } from '../ui/screens/home/CompareScreen';
 import { StoryScreen } from '../ui/screens/home/StoryScreen';
@@ -29,6 +31,7 @@ import {
 } from '../ui/screens/train/ProgressScreens';
 import { CalorieTrackerScreen } from '../ui/screens/food/CalorieTrackerScreen';
 import { NutritionPlannerScreen } from '../ui/screens/food/NutritionPlannerScreen';
+import { RecipeDetailScreen, RecipesScreen } from '../ui/screens/food/RecipesScreen';
 import { ProfileScreen } from '../ui/screens/profile/ProfileScreen';
 import { SettingsScreen } from '../ui/screens/profile/SettingsScreen';
 import { EditGoalsScreen } from '../ui/screens/profile/EditGoalsScreen';
@@ -45,6 +48,8 @@ const TAB_PAGES: Record<keyof TabPages, ComponentType> = {
   Home: HomeScreen,
   CreatePost: CreatePostScreen,
   Friends: FriendsScreen,
+  EditDay: EditDayScreen,
+  PlanDay: PlanDayScreen,
   Comments: CommentsScreen,
   Compare: CompareScreen,
   TrainingPlan: TrainingPlanScreen,
@@ -58,6 +63,8 @@ const TAB_PAGES: Record<keyof TabPages, ComponentType> = {
   Calendar: CalendarScreen,
   CalorieTracker: CalorieTrackerScreen,
   NutritionPlanner: NutritionPlannerScreen,
+  Recipes: RecipesScreen,
+  RecipeDetail: RecipeDetailScreen,
   Profile: ProfileScreen,
   Settings: SettingsScreen,
   EditGoals: EditGoalsScreen,

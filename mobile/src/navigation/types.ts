@@ -7,11 +7,18 @@ import { NavigatorScreenParams, RouteProp, useNavigation, useRoute } from '@reac
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { MealType } from '../data/social';
 
+/** Numbers to start the meal form with, e.g. one serving of a recipe. */
+export type MealPrefill = { description: string; calories: number; protein: number; carbs: number; fat: number };
+
 export type TabPages = {
   // Home tab (Home and Feed are the same page)
   Home: undefined;
-  CreatePost: { type?: MealType } | undefined;
+  /** `start`: which way of adding food opens first. */
+  CreatePost: { type?: MealType; prefill?: MealPrefill; start?: 'search' | 'barcode' | 'photo' | 'quick' } | undefined;
   Friends: undefined;
+  EditDay: undefined;
+  /** Ask for today's meal plan, or change what it's built from. */
+  PlanDay: undefined;
   Comments: { postId: string };
   Compare: undefined;
   // Train tab
@@ -27,6 +34,10 @@ export type TabPages = {
   // Food tab
   CalorieTracker: undefined;
   NutritionPlanner: undefined;
+  /** `planFor`: choosing a dish for today's meal of that type. */
+  Recipes: { planFor?: MealType } | undefined;
+  /** `fromPicker`: opened from the "A dish for…" list, so planning goes back past it. */
+  RecipeDetail: { recipeId: string; planFor?: MealType; fromPicker?: boolean; portion?: number };
   // Profile tab
   Profile: undefined;
   Settings: undefined;
