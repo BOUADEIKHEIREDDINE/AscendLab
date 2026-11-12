@@ -45,6 +45,8 @@ export function ExercisePicker({ visible, onDismiss, onPick, muscle: initialMusc
   const results = useMemo(() => (visible ? ExerciseLibrary.search(query, muscle, done) : []), [visible, query, muscle, done]);
   const out = useMemo(() => excludedKeys(exclude ?? []), [exclude]);
   const isOut = (id: string) => out.has(ExerciseLibrary.key(id));
+  const customId = ExerciseLibrary.custom(query).id;
+  const createOut = isOut(customId) || picked.some((p) => p.id === customId);
   const canCreate = query.trim() !== '' && !ExerciseLibrary.hasName(query);
   const has = (x: Exercise) => picked.some((p) => p.id === x.id);
   const toggle = (x: Exercise) => {
@@ -86,8 +88,8 @@ export function ExercisePicker({ visible, onDismiss, onPick, muscle: initialMusc
           ListHeaderComponent={
             <>
               {canCreate && (
-                <ExerciseRow title={`Create "${query.trim()}"`} subtitle={isOut(ExerciseLibrary.custom(query).id) ? ALREADY_IN : 'Custom exercise'} selected={false} create
-                  excluded={isOut(ExerciseLibrary.custom(query).id)}
+                <ExerciseRow title={`Create "${query.trim()}"`} subtitle={createOut ? ALREADY_IN : 'Custom exercise'} selected={false} create
+                  excluded={createOut}
                   onPress={() => { if (single) { toggle(ExerciseLibrary.custom(query)); return; } setPicked([...picked, ExerciseLibrary.custom(query)]); setQuery(''); }} />
               )}
               {customs.map((x) => <ExerciseRow key={x.id} exerciseId={x.id} single={single} title={x.name} subtitle="Custom exercise" selected onPress={() => toggle(x)} onInfo={() => setInfo(x)} />)}
@@ -148,7 +150,7 @@ export function AlternativesSheet({ visible, onDismiss, current, level, onChoose
   const [libraryPick, setLibraryPick] = useState<Exercise | null>(null);
   const [info, setInfo] = useState<{ id: string; name: string } | null>(null);
   const muscle = ExerciseLibrary.muscleOf(current.exerciseId);
-  const out = excludedKeys(exclude ?? []);
+  const out = useMemo(() => excludedKeys(exclude ?? []), [exclude]);
   const options = (current.slot ? slotAlternatives(current.slot, level, current.exerciseId) : []).filter((id) => !out.has(ExerciseLibrary.key(id)));
   const close = () => { setPicking(false); setLibraryPick(null); setInfo(null); onDismiss(); };
   const choose = (choice: AlternativeChoice) => { haptics.tick(); setLibraryPick(null); onChoose(choice); };
