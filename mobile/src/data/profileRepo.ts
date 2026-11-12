@@ -7,7 +7,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { deleteDoc, doc, getDoc, setDoc } from 'firebase/firestore';
 import { currentUid, db, withTimeout } from '../lib/firebase';
 import { createStore } from '../lib/store';
-import { profileFromMap, profileToMap, UserProfile } from './profile';
+import { pinLegacyDefaults, profileFromMap, profileToMap, UserProfile } from './profile';
 
 const NETWORK_TIMEOUT_MS = 6_000;
 const key = (uid: string) => `profile:${uid}`;
@@ -42,6 +42,15 @@ export const ProfileRepository = {
    * Returns null for someone who has never saved a profile (or when offline on a new phone).
    */
   async load(): Promise<UserProfile | null> {
+    const loaded = await ProfileRepository.read();
+    if (!loaded || loaded.rankingVersion != null) return loaded;
+    // Saved before the exercise ranking: keep the exercises the person has been seeing, once.
+    const pinned = pinLegacyDefaults(loaded);
+    try { await ProfileRepository.save(pinned); } catch { /* offline: the device copy is already updated */ }
+    return pinned;
+  },
+
+  async read(): Promise<UserProfile | null> {
     const cached = await ProfileRepository.cached();
     if (cached) return cached;
     const uid = currentUid();

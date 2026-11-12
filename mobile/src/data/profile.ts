@@ -13,6 +13,7 @@ import { buildPlan, type WeekPlan } from '../lib/program-generator/plan';
 import { slotOf, splitOptions, type Level as EngineLevel, type Slot, type Split, type SplitOption } from '../lib/program-generator/program';
 import { chooseTrainingDays, type Weekday } from '../lib/program-generator/schedule';
 import { CATALOG } from '../lib/program-generator/catalog';
+import { legacyDefault } from '../lib/program-generator/legacy';
 
 export type Sex = 'MAN' | 'WOMAN';
 export const SEX_LABEL: Record<Sex, string> = { MAN: 'Man', WOMAN: 'Woman' };
@@ -93,7 +94,12 @@ export interface UserProfile {
   split: Split | null;
   /** Exercise saved for a movement slot; the generator puts it everywhere the slot appears. */
   swaps: Partial<Record<Slot, string>>;
+  /** Exercise ranking the plan was saved under; null = saved before the ranking existed. */
+  rankingVersion: number | null;
 }
+
+/** Bump when the generator's default exercises change again. */
+export const RANKING_VERSION = 1;
 
 export const MIN_DAYS = 2;
 export const MAX_DAYS = 6;
@@ -101,7 +107,7 @@ export const MAX_DAYS = 6;
 export const emptyProfile = (): UserProfile => ({
   sex: null, age: null, heightCm: null, weightKg: null, activity: null, goal: null,
   level: null, trainingDays: null, trainCount: null, daysPerWeek: null, place: null, units: 'METRIC', onboardingComplete: false,
-  split: null, swaps: {},
+  split: null, swaps: {}, rankingVersion: RANKING_VERSION,
 });
 
 /** Spread-out days for a number of days, used for profiles saved before the weekday picker. */
@@ -142,6 +148,7 @@ export function profileToMap(p: UserProfile): Record<string, unknown> {
     daysPerWeek: p.daysPerWeek, place: p.place, units: p.units, onboardingComplete: p.onboardingComplete,
     // A list, not a map: saves merge nested maps key by key, which would keep a cleared swap.
     split: p.split, swaps: Object.entries(p.swaps).map(([slot, exerciseId]) => ({ slot, exerciseId })),
+    rankingVersion: p.rankingVersion,
   };
 }
 
@@ -177,6 +184,7 @@ export function profileFromMap(m: Record<string, unknown>): UserProfile {
     onboardingComplete: m.onboardingComplete === true,
     split: enumOrNull(SPLITS, m.split),
     swaps: swapsFrom(m.swaps),
+    rankingVersion: num(m.rankingVersion),
   };
 }
 
@@ -333,6 +341,28 @@ export function gymPlan(p: UserProfile): ReturnType<typeof buildPlan> | null {
     goal: ENGINE_GOAL[p.goal],
     age: p.age,
   });
+}
+
+/**
+ * Plans saved before the exercise ranking keep their exercises: each slot of the generated gym plan
+ * whose ranked default differs from the old default is saved as the person's own swap, once.
+ */
+export function pinLegacyDefaults(p: UserProfile): UserProfile {
+  if (p.rankingVersion != null) return p;
+  const next = { ...p, rankingVersion: RANKING_VERSION };
+  if (!hasEverythingForPlan(p) || p.place !== 'GYM') return next;
+  const plan = gymPlan(p);
+  if (!plan) return next;
+  const level = engineLevel(p);
+  const swaps = { ...p.swaps };
+  for (const day of plan.state.schedule.cycle) {
+    for (const { slot, exerciseId } of day.exercises) {
+      if (swaps[slot] != null) continue;
+      const old = legacyDefault(slot, level);
+      if (old !== exerciseId) swaps[slot] = old;
+    }
+  }
+  return { ...next, swaps };
 }
 
 /** Planned lifting minutes a week: the generated sessions at the gym, the simple estimate at home. */

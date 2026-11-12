@@ -5,9 +5,10 @@
  */
 import { Timestamp } from 'firebase/firestore';
 import {
-  BodyChecks, chosenDays, Convert, emptyProfile, gymPlan, PlanCalculator, splitChoice, profileFromMap, profileToMap, UserProfile, withDays,
+  BodyChecks, chosenDays, Convert, emptyProfile, gymPlan, pinLegacyDefaults, RANKING_VERSION, PlanCalculator, splitChoice, profileFromMap, profileToMap, UserProfile, withDays,
 } from '../profile';
 
+import { LEGACY_SLOT_OPTIONS, legacyDefault } from '../../lib/program-generator/legacy';
 import { Days, FeedPost, gapLabel, postFromMap } from '../social';
 import {
   activeFromJson, activeToJson, ActiveWorkout, beatenBy, countRecords, ExerciseLibrary, LoggedExercise, recordsByExercise,
@@ -153,10 +154,43 @@ describe('BodyChecks (same results as the Android app)', () => {
   test('profile survives a save and load', () => {
     const p: UserProfile = {
       sex: 'WOMAN', age: 28, heightCm: 165, weightKg: 60, activity: 'LIGHT', goal: 'LOSE_FAT', level: 'BEGINNER',
-      trainingDays: [0, 2, 4], trainCount: null, daysPerWeek: 3, place: 'HOME', units: 'IMPERIAL', onboardingComplete: true, split: null, swaps: {},
+      trainingDays: [0, 2, 4], trainCount: null, daysPerWeek: 3, place: 'HOME', units: 'IMPERIAL', onboardingComplete: true, split: null, swaps: {}, rankingVersion: 1,
     };
     expect(profileFromMap(profileToMap(p))).toEqual(p);
-    expect(profileFromMap({ sex: 'ALIEN' })).toEqual(emptyProfile());
+    expect(profileFromMap({ sex: 'ALIEN' })).toEqual({ ...emptyProfile(), rankingVersion: null });
+  });
+
+  describe('pinning the pre-ranking exercises', () => {
+    const old: UserProfile = { ...man, level: 'INTERMEDIATE', rankingVersion: null };
+    const days = (p: UserProfile) => gymPlan(p)!.state.schedule.cycle.flatMap((d) => d.exercises);
+
+    test('old gym profiles keep the current exercises', () => {
+      const pinned = pinLegacyDefaults(old);
+      expect(pinned.rankingVersion).toBe(RANKING_VERSION);
+      for (const e of days(pinned)) expect(e.exerciseId).toBe(legacyDefault(e.slot, 'intermediate'));
+      expect(LEGACY_SLOT_OPTIONS.squat).toContain(days(pinned).find((e) => e.slot === 'squat')?.exerciseId ?? 'Hack_Squat');
+    });
+
+    test('saved swaps win over pinning', () => {
+      const swapped = { ...old, swaps: { squat: 'Barbell_Squat' } as UserProfile['swaps'] };
+      expect(pinLegacyDefaults(swapped).swaps.squat).toBe('Barbell_Squat');
+    });
+
+    test('pinning is idempotent', () => {
+      const once = pinLegacyDefaults(old);
+      expect(pinLegacyDefaults(once)).toBe(once);
+      expect(pinLegacyDefaults({ ...once, rankingVersion: null })).toEqual(once);
+    });
+
+    test('pins every focus and split the profile uses', () => {
+      const p = { ...old, daysPerWeek: 5, trainingDays: [0, 1, 2, 4, 5], split: 'ppl_upper_lower' as const };
+      for (const e of days(pinLegacyDefaults(p))) expect(e.exerciseId).toBe(legacyDefault(e.slot, 'intermediate'));
+    });
+
+    test('home and incomplete profiles only get the version', () => {
+      expect(pinLegacyDefaults({ ...old, place: 'HOME' })).toEqual({ ...old, place: 'HOME', rankingVersion: 1 });
+      expect(pinLegacyDefaults({ ...emptyProfile(), rankingVersion: null }).swaps).toEqual({});
+    });
   });
 
   test('profiles saved by older versions still load', () => {
