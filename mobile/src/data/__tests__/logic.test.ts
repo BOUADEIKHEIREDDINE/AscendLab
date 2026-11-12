@@ -405,14 +405,15 @@ describe('workout changes', () => {
     const upperA = routines.find((r) => r.name === 'Upper A')!;
     const { routines: next, changedNames } = applyWorkoutChanges(upperA, routines, [
       { kind: 'replace', slot: 'chestPress', fromId: 'Barbell_Bench_Press_-_Medium_Grip', toId: 'Machine_Bench_Press', toName: 'Machine Bench Press' },
-      { kind: 'add', afterId: 'Seated_Cable_Rows', toId: 'Dumbbell_Flyes', toName: 'Dumbbell Flyes' },
+      { kind: 'add', afterId: 'Leverage_Iso_Row', toId: 'Dumbbell_Flyes', toName: 'Dumbbell Flyes' },
     ]);
     expect(changedNames.sort()).toEqual(['Upper A', 'Upper B']);
     for (const r of next.filter((x) => x.name.startsWith('Upper'))) {
       expect(r.exercises.find((x) => x.slot === 'chestPress')!.exerciseId).toBe('Machine_Bench_Press');
     }
+    // ranking: iso row machine is the Upper A row now (user decision)
     const a = next.find((r) => r.name === 'Upper A')!.exercises.map((x) => x.exerciseId);
-    expect(a[a.indexOf('Seated_Cable_Rows') + 1]).toBe('Dumbbell_Flyes');
+    expect(a[a.indexOf('Leverage_Iso_Row') + 1]).toBe('Dumbbell_Flyes');
     expect(next.find((r) => r.name === 'Upper B')!.exercises.map((x) => x.exerciseId)).not.toContain('Dumbbell_Flyes');
     expect(next.find((r) => r.name === 'Upper A')!.exercises.find((x) => x.exerciseId === 'Dumbbell_Flyes')).toMatchObject({ sets: 2 });
   });

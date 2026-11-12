@@ -1,4 +1,6 @@
 import { CATALOG } from '../catalog';
+import { LEGACY_SLOT_OPTIONS } from '../legacy';
+import { HIDDEN, RANKING, SLOT_MUSCLE } from '../ranking';
 import {
   estimatedMinutes,
   generateProgram,
@@ -11,6 +13,7 @@ import {
   type Level,
   type Muscle,
   type ProgramInput,
+  type Slot,
   type Split,
 } from '../program';
 
@@ -119,10 +122,10 @@ describe('generateProgram — full body', () => {
     }
   });
 
-  it('day A rows on the seated cable row, day B on the T-bar row (upper back)', () => {
+  it('day A rows on the iso row machine, day B on the lying T-bar row (upper back)', () => {
     const [a, b] = generateProgram({ level: 'intermediate', daysPerWeek: 2 }).days;
-    expect(a.exercises.map((e) => e.exerciseId)).toContain('Seated_Cable_Rows');
-    expect(b.exercises.map((e) => e.exerciseId)).toContain('T-Bar_Row_with_Handle');
+    expect(a.exercises.map((e) => e.exerciseId)).toContain('Leverage_Iso_Row'); // ranking: iso row machine first (user decision)
+    expect(b.exercises.map((e) => e.exerciseId)).toContain('Lying_T-Bar_Row'); // ranking: lying T-bar row first
   });
 });
 
@@ -236,8 +239,9 @@ describe('generateProgram — exercises and swaps', () => {
     for (const id of ids(input)) expect(CATALOG[id].equipment).not.toBe('barbell');
   });
 
-  it('gives trained lifters the barbell bench press and everyone the hack squat', () => {
-    expect(ids({ level: 'intermediate', daysPerWeek: 6 })).toContain('Barbell_Bench_Press_-_Medium_Grip');
+  it('gives everyone the machine bench press and the hack squat', () => {
+    // ranking: machine press first (user decision), so trained lifters no longer default to the barbell
+    expect(ids({ level: 'intermediate', daysPerWeek: 6 })).toContain('Machine_Bench_Press');
     for (const level of LEVELS) expect(ids({ level, daysPerWeek: 6 })).toContain('Hack_Squat');
   });
 
@@ -298,7 +302,9 @@ describe('generateProgram — exercises and swaps', () => {
   it.each(everyInput)('offers 2-3 alternatives that train the same main muscle (%o)', (input) => {
     for (const day of generateProgram(input).days) {
       for (const ex of day.exercises) {
-        expect(ex.alternatives.length).toBeGreaterThanOrEqual(2);
+        // squat2 and legExtension lose their third option to a hidden exercise (spec 3): one alternative left.
+        const hasHidden = LEGACY_SLOT_OPTIONS[ex.slot].some((id) => HIDDEN.includes(id));
+        expect(ex.alternatives.length).toBeGreaterThanOrEqual(hasHidden ? 1 : 2);
         expect(ex.alternatives.length).toBeLessThanOrEqual(3);
         for (const alt of ex.alternatives) {
           expect(alt).not.toBe(ex.exerciseId);
@@ -311,7 +317,8 @@ describe('generateProgram — exercises and swaps', () => {
 
   it('keeps a swap everywhere that exercise appears', () => {
     const base = generateProgram({ level: 'intermediate', daysPerWeek: 4 });
-    const bench = base.days[0].exercises.find((e) => e.exerciseId === 'Barbell_Bench_Press_-_Medium_Grip');
+    // ranking: machine press first (user decision)
+    const bench = base.days[0].exercises.find((e) => e.exerciseId === 'Machine_Bench_Press');
     expect(bench).toBeDefined();
     const swapped = generateProgram({
       level: 'intermediate',
@@ -320,7 +327,7 @@ describe('generateProgram — exercises and swaps', () => {
     });
     const list = swapped.days.flatMap((d) => d.exercises.map((e) => e.exerciseId));
     expect(list).toContain('Dumbbell_Bench_Press');
-    expect(list).not.toContain('Barbell_Bench_Press_-_Medium_Grip');
+    expect(list).not.toContain('Machine_Bench_Press');
   });
 
   it('ignores a swap that is not an alternative for that slot', () => {
@@ -417,7 +424,8 @@ describe('generateProgram — lower-body focus', () => {
 describe('volume helpers', () => {
   it('counts primary sets fully and secondary sets as half', () => {
     const day = generateProgram({ level: 'intermediate', daysPerWeek: 6, split: 'arnold' as Split }).days[0];
-    const bench = day.exercises.find((e) => e.exerciseId === 'Barbell_Bench_Press_-_Medium_Grip');
+    // ranking: machine press first (user decision); same chest and secondary muscles as the barbell press
+    const bench = day.exercises.find((e) => e.exerciseId === 'Machine_Bench_Press');
     expect(bench).toBeDefined();
     expect(sessionSets({ ...day, exercises: [bench!] })).toMatchObject({ chest: 2, shoulders: 1, triceps: 1 });
   });
@@ -456,5 +464,81 @@ describe('alternatives', () => {
     expect(isSlotOption('chestPress', 'beginner', 'Barbell_Bench_Press_-_Medium_Grip')).toBe(false);
     expect(isSlotOption('chestPress', 'advanced', 'Barbell_Bench_Press_-_Medium_Grip')).toBe(true);
     expect(isSlotOption('chestPress', 'advanced', 'Pullups')).toBe(false);
+  });
+});
+
+describe('slots read the exercise ranking', () => {
+  const SLOTS = Object.keys(LEGACY_SLOT_OPTIONS) as Slot[];
+  // The default of a slot is its first option for the level, which slotAlternatives hides from its own list.
+  const firstOption = (slot: Slot, level: Level): string => {
+    const probe = slotAlternatives(slot, level, '');
+    return probe[0];
+  };
+
+  it('every legacy option keeps its slot', () => {
+    for (const slot of SLOTS) for (const id of LEGACY_SLOT_OPTIONS[slot]) expect(slotOf(id)).toBe(slot);
+  });
+
+  it('defaults follow the ranking', () => {
+    for (const slot of SLOTS) {
+      const ranked = RANKING[SLOT_MUSCLE[slot]].find((e) => e.slot === slot && !HIDDEN.includes(e.exerciseId));
+      if (ranked) expect(firstOption(slot, 'intermediate')).toBe(ranked.exerciseId);
+    }
+  });
+
+  it('every slot has at least 3 options for every level', () => {
+    for (const slot of SLOTS) {
+      for (const level of LEVELS) {
+        // Slots whose third legacy option is hidden (squat2, legExtension) keep two visible options.
+        const hasHidden = LEGACY_SLOT_OPTIONS[slot].some((id) => HIDDEN.includes(id));
+        expect(slotAlternatives(slot, level, firstOption(slot, level)).length).toBeGreaterThanOrEqual(hasHidden ? 1 : 2);
+      }
+    }
+  });
+
+  it('beginners never get barbell defaults or alternatives', () => {
+    for (const slot of SLOTS) {
+      for (const id of slotAlternatives(slot, 'beginner', '')) expect(CATALOG[id].equipment).not.toBe('barbell');
+    }
+  });
+
+  it('hidden ids are never defaults or alternatives', () => {
+    for (const slot of SLOTS) {
+      for (const level of LEVELS) {
+        for (const id of slotAlternatives(slot, level, '')) expect(HIDDEN).not.toContain(id);
+      }
+    }
+  });
+
+  it('hidden swaps still apply', () => {
+    expect(HIDDEN.length).toBeGreaterThan(0);
+    for (const id of HIDDEN) {
+      const slot = slotOf(id);
+      expect(slot).not.toBeNull();
+      expect(isSlotOption(slot as Slot, 'advanced', id)).toBe(true);
+      const program = generateProgram({
+        level: 'advanced',
+        daysPerWeek: 2,
+        split: 'full_body',
+        swaps: { [slot as Slot]: id },
+      });
+      const ids = program.days.flatMap((d) => d.exercises.map((e) => e.exerciseId));
+      expect(ids).toContain(id);
+    }
+  });
+
+  it('no generated day repeats an exercise', () => {
+    for (const level of LEVELS) {
+      for (const daysPerWeek of DAYS) {
+        for (const focus of ['balanced', 'lower_body'] as const) {
+          for (const { split } of splitOptions(daysPerWeek, focus)) {
+            for (const day of generateProgram({ level, daysPerWeek, split, focus }).days) {
+              const ids = day.exercises.map((e) => e.exerciseId);
+              expect(new Set(ids).size).toBe(ids.length);
+            }
+          }
+        }
+      }
+    }
   });
 });
