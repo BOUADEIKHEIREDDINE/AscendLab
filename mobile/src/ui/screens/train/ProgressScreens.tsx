@@ -20,6 +20,7 @@ import { ExpressiveShape } from '../../shapes/ExpressiveShape';
 import { ActionMenu, Dialog } from '../../components/overlays';
 import { LineChart } from '../../components/charts';
 import { ExerciseAnimation } from '../../components/ExerciseAnimation';
+import { HowToContent } from '../../components/exerciseInfo';
 import { SetBadge } from './TrainComponents';
 
 const DAY_MS = 24 * 3600 * 1000;
@@ -249,35 +250,8 @@ function BestByReps({ byReps, units }: { byReps: Record<number, number>; units: 
 }
 
 function ExerciseHowTo({ howTo, photos }: { howTo: HowTo | null; photos: React.ReactNode }) {
-  if (!howTo) return <T color={palette.textMuted} style={{ padding: Gutter }}>No instructions for this exercise yet.</T>;
-  const facts: [string, string][] = [
-    ['Main muscles', howTo.primary.join(', ')],
-    ...(howTo.secondary.length > 0 ? [['Also works', howTo.secondary.join(', ')] as [string, string]] : []),
-    ['Equipment', howTo.equipment],
-    ['Level', howTo.level],
-  ];
-  return (
-    <ScrollView contentContainerStyle={{ paddingBottom: 24 }}>
-      {photos}
-      <SectionTitle text="Instructions" />
-      {howTo.instructions.map((step, i) => (
-        <View key={i} style={{ flexDirection: 'row', paddingHorizontal: Gutter, paddingVertical: 6 }}>
-          <T v="displayS" color={palette.primary} style={{ width: 32, fontSize: 18, lineHeight: 22 }}>{i + 1}</T>
-          <T v="body" style={{ flex: 1 }}>{step}</T>
-        </View>
-      ))}
-      <SectionTitle text="Details" />
-      <ListGroup>
-        {facts.map(([label, value]) => (
-          <View key={label} style={{ flexDirection: 'row', paddingHorizontal: 18, paddingVertical: 14, gap: 16 }}>
-            <T v="body" color={palette.textMuted} style={{ width: 110 }}>{label}</T>
-            <T v="body" style={{ flex: 1 }}>{value}</T>
-          </View>
-        ))}
-      </ListGroup>
-      <T v="bodyS" color={palette.textMuted} style={{ paddingHorizontal: Gutter, paddingTop: 16 }}>Photos and instructions: free-exercise-db (public domain)</T>
-    </ScrollView>
-  );
+  if (!howTo) return <HowToContent howTo={null} />;
+  return <ScrollView contentContainerStyle={{ paddingBottom: 24 }}><HowToContent howTo={howTo} photos={photos} /></ScrollView>;
 }
 
 // ---------------------------------------------------------------- Statistics
