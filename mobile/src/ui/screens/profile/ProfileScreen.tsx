@@ -135,6 +135,8 @@ export function ProfileScreen() {
             <ListGroup>
               <ListRow icon="flag" iconColor={palette.primary} title={GOAL[profile.goal].label} onPress={() => nav.navigate('EditGoals')}
                 subtitle={`${formatKcal(t.calories)} kcal · ${t.proteinG} g protein · ${profile.daysPerWeek} days a week`} />
+              <ListRow icon="local-fire-department" iconColor={palette.ember} title="Daily targets" onPress={() => nav.navigate('EditTargets')}
+                subtitle={t.custom ? 'Set by you · tap to change' : 'Recommended · tap to use your own'} />
             </ListGroup>
           </>
         );

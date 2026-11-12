@@ -35,6 +35,7 @@ import { RecipeDetailScreen, RecipesScreen } from '../ui/screens/food/RecipesScr
 import { ProfileScreen } from '../ui/screens/profile/ProfileScreen';
 import { SettingsScreen } from '../ui/screens/profile/SettingsScreen';
 import { EditGoalsScreen } from '../ui/screens/profile/EditGoalsScreen';
+import { EditTargetsScreen } from '../ui/screens/profile/EditTargetsScreen';
 
 const screenOptions: NativeStackNavigationOptions = {
   headerShown: false,
@@ -68,6 +69,7 @@ const TAB_PAGES: Record<keyof TabPages, ComponentType> = {
   Profile: ProfileScreen,
   Settings: SettingsScreen,
   EditGoals: EditGoalsScreen,
+  EditTargets: EditTargetsScreen,
 };
 
 function makeTabStack(initial: keyof TabPages) {

@@ -8,7 +8,7 @@ import { feedLive, SocialRepository } from '../../../data/socialRepo';
 import { useStore } from '../../../lib/store';
 import { goBack, useNav } from '../../../navigation/types';
 import { palette, Gutter } from '../../theme';
-import { ListGroup, PageHeader, ProgressBar, Screen, SectionTitle, T, Tile, TileHeader } from '../../components/core';
+import { Button, ListGroup, PageHeader, ProgressBar, Screen, SectionTitle, T, Tile, TileHeader } from '../../components/core';
 import { MacroCard } from '../../components/plan';
 import { mealBudget } from './CalorieTrackerScreen';
 
@@ -50,7 +50,7 @@ export function NutritionPlannerScreen() {
             <T v="bodyS" color={palette.textMuted} style={{ paddingHorizontal: Gutter }}>
               A guide, not a rule: move calories between meals as you like. What matters is the daily total.
             </T>
-            <SectionTitle text="Daily targets" />
+            <SectionTitle text="Daily targets" trailing={<Button kind="text" compact label="Edit" icon="edit" onPress={() => nav.navigate('EditTargets')} />} />
             <View style={{ paddingHorizontal: Gutter, gap: 10 }}>
               <Tile span="2x1">
                 <TileHeader icon="local-fire-department" text="Calories" />
@@ -58,6 +58,7 @@ export function NutritionPlannerScreen() {
                   <T v="displayM">{formatKcal(targets.calories)}</T>
                   <T v="body" color={palette.textMuted} style={{ marginBottom: 4 }}>  kcal a day</T>
                 </View>
+                {targets.custom && <T v="bodyS" color={palette.textMuted}>Set by you · recommended {formatKcal(targets.recommended.calories)} kcal</T>}
               </Tile>
               <MacroCard targets={targets} />
             </View>

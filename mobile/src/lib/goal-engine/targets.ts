@@ -37,11 +37,11 @@ export type Targets = {
 };
 
 const KCAL_PER_KG = 7700;
-const MIN_CALORIES = { male: 1500, female: 1200 };
+export const MIN_CALORIES = { male: 1500, female: 1200 };
 /** Above this weekly gain, extra weight is mostly fat (Helms 2023, Garthe 2013). */
 const FAST_GAIN_RATE = 0.5;
-const ADULT_AGE = 18;
-const UNDERWEIGHT_BMI = 18.5;
+export const ADULT_AGE = 18;
+export const UNDERWEIGHT_BMI = 18.5;
 /** Recomposition runs at a small deficit only when there is fat to lose. */
 const RECOMP_DEFICIT_BMI = 25;
 

@@ -1,7 +1,7 @@
 import React, { ReactNode, useEffect, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import { AuthRepository } from '../../../data/authRepo';
-import { Convert, GOAL, PLACE, UserProfile, Units } from '../../../data/profile';
+import { Convert, formatKcal, GOAL, hasEverythingForPlan, PLACE, PlanCalculator, UserProfile, Units } from '../../../data/profile';
 import { ProfileRepository, profileStore } from '../../../data/profileRepo';
 import { useStore } from '../../../lib/store';
 import { goBack, useNav } from '../../../navigation/types';
@@ -15,6 +15,12 @@ function goalSummary(p: UserProfile): string | null {
   if (!p.goal || !p.daysPerWeek || !p.place) return null;
   const place = PLACE[p.place].label;
   return `${GOAL[p.goal].label} · ${p.daysPerWeek} days a week · ${place.charAt(0).toLowerCase()}${place.slice(1)}`;
+}
+
+function targetsSummary(p: UserProfile | null): string {
+  if (!hasEverythingForPlan(p)) return 'Calories and macros';
+  const t = PlanCalculator.nutrition(p);
+  return `${formatKcal(t.calories)} kcal · ${t.proteinG} g protein · ${t.custom ? 'set by you' : 'recommended'}`;
 }
 
 export function SettingsScreen() {
@@ -31,6 +37,7 @@ export function SettingsScreen() {
         <Appear index={0}>
           <Section title="Your plan">
             <SettingRow icon="flag" title="Edit goals" subtitle={(p && goalSummary(p)) ?? 'Goal, training days and place'} onPress={() => nav.navigate('EditGoals')} />
+            <SettingRow icon="local-fire-department" title="Daily targets" subtitle={targetsSummary(p)} onPress={() => nav.navigate('EditTargets')} />
             {p?.heightCm != null && p.weightKg != null && p.age != null && (
                 <SettingRow icon="person" title="Your body"
                   subtitle={`${p.age} years · ${Convert.formatHeight(p.heightCm, p.units)} · ${Convert.formatWeight(p.weightKg, p.units)}`} />

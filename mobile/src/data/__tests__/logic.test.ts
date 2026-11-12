@@ -51,6 +51,21 @@ describe('PlanCalculator: calories from the goal engine', () => {
     expect(t.atMinimum).toBe(true);
   });
 
+  test('typed targets replace the recommended ones everywhere', () => {
+    const t = PlanCalculator.nutrition({ ...man, customTargets: { mode: 'calories', calories: 3200, proteinG: 180 } });
+    expect(t.calories).toBe(3200);
+    expect(t.proteinG).toBe(180);
+    expect(t.custom).toBe(true);
+    expect(t.recommended.calories).toBe(2840);
+  });
+
+  test('typed targets under the floor are kept, with a warning', () => {
+    const t = PlanCalculator.nutrition({ ...man, customTargets: { mode: 'calories', calories: 1300, proteinG: null } });
+    expect(t.calories).toBe(1300);
+    expect(t.atMinimum).toBe(false);
+    expect(t.warnings).toEqual(['below_floor']);
+  });
+
   test('macros add up to the calorie target', () => {
     (['LOSE_FAT', 'BUILD_MUSCLE', 'GAIN_WEIGHT', 'RECOMPOSITION', 'MAINTAIN'] as const).forEach((goal) => {
       const t = PlanCalculator.nutrition({ ...man, goal });
@@ -153,9 +168,15 @@ describe('BodyChecks (same results as the Android app)', () => {
   test('profile survives a save and load', () => {
     const p: UserProfile = {
       sex: 'WOMAN', age: 28, heightCm: 165, weightKg: 60, activity: 'LIGHT', goal: 'LOSE_FAT', level: 'BEGINNER',
-      trainingDays: [0, 2, 4], trainCount: null, daysPerWeek: 3, place: 'HOME', units: 'IMPERIAL', onboardingComplete: true, split: null, swaps: {},
+      trainingDays: [0, 2, 4], trainCount: null, daysPerWeek: 3, place: 'HOME', units: 'IMPERIAL', onboardingComplete: true, split: null, swaps: {}, customTargets: null,
     };
     expect(profileFromMap(profileToMap(p))).toEqual(p);
+    const byCalories: UserProfile = { ...p, customTargets: { mode: 'calories', calories: 1800, proteinG: null } };
+    expect(profileFromMap(profileToMap(byCalories))).toEqual(byCalories);
+    const byMacros: UserProfile = { ...p, customTargets: { mode: 'macros', proteinG: 130, carbsG: 200, fatG: 60 } };
+    expect(profileFromMap(profileToMap(byMacros))).toEqual(byMacros);
+    // A half-written value means "use the recommended targets".
+    expect(profileFromMap({ customTargets: { mode: 'macros', proteinG: 130 } }).customTargets).toBeNull();
     expect(profileFromMap({ sex: 'ALIEN' })).toEqual(emptyProfile());
   });
 

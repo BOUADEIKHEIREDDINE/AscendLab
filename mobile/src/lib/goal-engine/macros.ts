@@ -4,7 +4,7 @@ const FAT_MIN_G_PER_KG = 0.6;
 /** Above this BMI, per-kg targets use the weight at this BMI instead of actual weight. */
 const REFERENCE_BMI_CAP = 30;
 
-const KCAL_PER_G = { protein: 4, fat: 9, carbs: 4 };
+export const KCAL_PER_G = { protein: 4, fat: 9, carbs: 4 };
 
 export type Macros = {
   proteinG: number;
@@ -20,15 +20,19 @@ export function referenceWeightKg(weightKg: number, heightCm: number): number {
 
 /** Daily macro targets in grams for a calorie target. */
 export function macros(calories: number, weightKg: number, heightCm: number): Macros {
+  return macrosWithProtein(calories, PROTEIN_G_PER_KG * referenceWeightKg(weightKg, heightCm), weightKg, heightCm);
+}
+
+/** Fat and carbs that fit a calorie target once protein (g) is fixed, e.g. typed by the user. */
+export function macrosWithProtein(calories: number, proteinG: number, weightKg: number, heightCm: number): Macros {
   const refKg = referenceWeightKg(weightKg, heightCm);
-  const protein = PROTEIN_G_PER_KG * refKg;
   const fat = Math.max((FAT_SHARE_OF_CALORIES * calories) / KCAL_PER_G.fat, FAT_MIN_G_PER_KG * refKg);
   const carbs = Math.max(
     0,
-    (calories - protein * KCAL_PER_G.protein - fat * KCAL_PER_G.fat) / KCAL_PER_G.carbs,
+    (calories - proteinG * KCAL_PER_G.protein - fat * KCAL_PER_G.fat) / KCAL_PER_G.carbs,
   );
   return {
-    proteinG: Math.round(protein),
+    proteinG: Math.round(proteinG),
     fatG: Math.round(fat),
     carbsG: Math.round(carbs),
   };

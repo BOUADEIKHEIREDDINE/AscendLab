@@ -42,6 +42,7 @@ export type TabPages = {
   Profile: undefined;
   Settings: undefined;
   EditGoals: undefined;
+  EditTargets: undefined;
 };
 
 export type Tabs = {

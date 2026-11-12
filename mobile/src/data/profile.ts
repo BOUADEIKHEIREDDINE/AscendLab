@@ -7,6 +7,7 @@
  */
 import { liftingKcalPerDay } from '../lib/goal-engine/energy';
 import { computeTargets } from '../lib/goal-engine/targets';
+import { applyCustomTargets, type CustomTargets, type CustomWarning } from '../lib/goal-engine/custom';
 import type { Goal as EngineGoal } from '../lib/goal-engine/targets';
 import type { ActivityLevel as EngineActivity } from '../lib/goal-engine/energy';
 import { buildPlan, type WeekPlan } from '../lib/program-generator/plan';
@@ -93,6 +94,8 @@ export interface UserProfile {
   split: Split | null;
   /** Exercise saved for a movement slot; the generator puts it everywhere the slot appears. */
   swaps: Partial<Record<Slot, string>>;
+  /** Daily targets the person typed; null = the recommended ones. */
+  customTargets: CustomTargets | null;
 }
 
 export const MIN_DAYS = 2;
@@ -101,7 +104,7 @@ export const MAX_DAYS = 6;
 export const emptyProfile = (): UserProfile => ({
   sex: null, age: null, heightCm: null, weightKg: null, activity: null, goal: null,
   level: null, trainingDays: null, trainCount: null, daysPerWeek: null, place: null, units: 'METRIC', onboardingComplete: false,
-  split: null, swaps: {},
+  split: null, swaps: {}, customTargets: null,
 });
 
 /** Spread-out days for a number of days, used for profiles saved before the weekday picker. */
@@ -142,6 +145,14 @@ export function profileToMap(p: UserProfile): Record<string, unknown> {
     daysPerWeek: p.daysPerWeek, place: p.place, units: p.units, onboardingComplete: p.onboardingComplete,
     // A list, not a map: saves merge nested maps key by key, which would keep a cleared swap.
     split: p.split, swaps: Object.entries(p.swaps).map(([slot, exerciseId]) => ({ slot, exerciseId })),
+    // Every key is written, so a merge never keeps a value from the other mode.
+    customTargets: p.customTargets == null ? null : {
+      mode: p.customTargets.mode,
+      calories: p.customTargets.mode === 'calories' ? p.customTargets.calories : null,
+      proteinG: p.customTargets.proteinG,
+      carbsG: p.customTargets.mode === 'macros' ? p.customTargets.carbsG : null,
+      fatG: p.customTargets.mode === 'macros' ? p.customTargets.fatG : null,
+    },
   };
 }
 
@@ -177,7 +188,25 @@ export function profileFromMap(m: Record<string, unknown>): UserProfile {
     onboardingComplete: m.onboardingComplete === true,
     split: enumOrNull(SPLITS, m.split),
     swaps: swapsFrom(m.swaps),
+    customTargets: customTargetsFrom(m.customTargets),
   };
+}
+
+/** Reads stored custom targets; anything incomplete means "use the recommended ones". */
+function customTargetsFrom(v: unknown): CustomTargets | null {
+  if (!v || typeof v !== 'object') return null;
+  const m = v as Record<string, unknown>;
+  const protein = num(m.proteinG);
+  if (m.mode === 'calories') {
+    const calories = num(m.calories);
+    return calories == null ? null : { mode: 'calories', calories, proteinG: protein };
+  }
+  if (m.mode === 'macros') {
+    const carbs = num(m.carbsG);
+    const fat = num(m.fatG);
+    return protein == null || carbs == null || fat == null ? null : { mode: 'macros', proteinG: protein, carbsG: carbs, fatG: fat };
+  }
+  return null;
 }
 
 const SPLITS: readonly Split[] = ['full_body', 'upper_lower', 'arnold_upper_lower', 'ppl_upper_lower', 'arnold', 'ppl', 'lower_body_focus'];
@@ -277,6 +306,12 @@ export interface NutritionTargets {
   liftingKcal: number;
   /** The target was raised to the safety minimum (1,200 / 1,500 kcal). */
   atMinimum: boolean;
+  /** The person typed these targets themselves. */
+  custom: boolean;
+  /** Safety rules the typed targets break, shown as warnings (empty when not custom). */
+  warnings: CustomWarning[];
+  /** What the engine recommends, to show next to typed targets and to reset to. */
+  recommended: { calories: number; proteinG: number; carbsG: number; fatG: number };
 }
 
 /** One training day in the week. `dayIndex` runs 0 (Monday) to 6 (Sunday). */
@@ -295,6 +330,13 @@ export interface TrainingWeek {
 }
 
 const roundTo = (x: number, step: number) => roundInt(x / step) * step;
+
+/** One line per broken safety rule, for typed targets. */
+export const CUSTOM_WARNING: Record<CustomWarning, string> = {
+  below_floor: 'This is under the safe minimum we use (1,200 kcal for women, 1,500 kcal for men). Eating this little for long can cost muscle, energy and health.',
+  minor_deficit: "You're under 18, and this is less than your body uses. Eating in a deficit while you're still growing is best done with a doctor or dietitian.",
+  underweight_deficit: 'Your weight is already low for your height, and this target makes you lose more. Please talk to a doctor before you do this.',
+};
 
 const ENGINE_ACTIVITY: Record<ActivityLevel, EngineActivity> = { SEDENTARY: 'sedentary', LIGHT: 'light', MODERATE: 'moderate', VERY: 'high' };
 
@@ -374,16 +416,16 @@ export const PlanCalculator = {
       goal: ENGINE_GOAL[p.goal!],
       exerciseKcalPerDay,
     });
-    return {
-      calories: roundTo(t.calories, 10),
-      proteinG: t.macros.proteinG,
-      carbsG: t.macros.carbsG,
-      fatG: t.macros.fatG,
-      bmr: roundTo(t.bmr, 10),
-      maintenance: roundTo(t.tdee, 10),
-      liftingKcal: exerciseKcalPerDay,
-      atMinimum: t.notices.includes('calorie_floor'),
-    };
+    const recommended = { calories: roundTo(t.calories, 10), proteinG: t.macros.proteinG, carbsG: t.macros.carbsG, fatG: t.macros.fatG };
+    const common = { bmr: roundTo(t.bmr, 10), maintenance: roundTo(t.tdee, 10), liftingKcal: exerciseKcalPerDay, recommended };
+    if (p.customTargets) {
+      const c = applyCustomTargets({
+        sex: p.sex === 'WOMAN' ? 'female' : 'male', age: p.age!, weightKg: p.weightKg!, heightCm: p.heightCm!,
+        custom: p.customTargets, maintenanceKcal: t.tdee, recommendedProteinG: t.macros.proteinG,
+      });
+      return { ...common, calories: c.calories, proteinG: c.proteinG, carbsG: c.carbsG, fatG: c.fatG, atMinimum: false, custom: true, warnings: c.warnings };
+    }
+    return { ...common, ...recommended, atMinimum: t.notices.includes('calorie_floor'), custom: false, warnings: [] };
   },
 
   /** Gym: the program generator. Home: the Android app's simple plan (the generator is gym-only for now). */
@@ -476,6 +518,7 @@ export function formatKcal(value: number): string {
 export function calorieReason(t: NutritionTargets, goal: Goal): string {
   const lifting = t.liftingKcal > 0 ? `, your training included` : '';
   const normal = `Your body uses about ${formatKcal(t.maintenance)} kcal on a normal day${lifting}.`;
+  if (t.custom) return `${normal} You set this target yourself. We recommend ${formatKcal(t.recommended.calories)} kcal for your goal.`;
   if (t.atMinimum) return `${normal} We keep your target at a safe minimum, so you progress gently and stay energised.`;
   switch (goal) {
     case 'LOSE_FAT':
