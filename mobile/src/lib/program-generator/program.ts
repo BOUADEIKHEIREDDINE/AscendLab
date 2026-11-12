@@ -104,9 +104,12 @@ const SET_SEC = 45;
 const SETUP_SEC = 120;
 
 /**
- * Exercises per slot, all for a full gym. The first is the default for trained lifters; beginners
- * get the first one without a barbell (failure under a bar is the risky part). The others are the
- * swap alternatives. An exercise belongs to one slot only, so no swap can repeat a move in a session.
+ * Exercises per slot, all for a full gym. The order comes from the exercise ranking (ranking.ts):
+ * ranked exercises first, then the older options not in the ranking, then hidden ones last.
+ * The first visible option is the default for trained lifters; beginners get the first one without
+ * a barbell (failure under a bar is the risky part). The other visible options are the swap
+ * alternatives. Hidden exercises are never a default or an alternative but stay accepted for saved
+ * data. An exercise belongs to one slot only, so no swap can repeat a move in a session.
  */
 /** Hidden exercises are still accepted (saved data) but never offered. */
 const HIDDEN_IDS: ReadonlySet<string> = new Set(HIDDEN);

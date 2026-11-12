@@ -3,7 +3,10 @@
  * Ids, names, equipment, mechanic and muscles are copied from the database; muscles are mapped
  * to our groups (lats + middle back → back, quadriceps → quads, abductors → glutes, abdominals → abs;
  * lower back, forearms, traps dropped). One correction: squat and leg press patterns get no hamstring
- * credit, since squats don't grow the hamstrings (Kubo 2019, MRI).
+ * credit, since squats don't grow the hamstrings (Kubo 2019, MRI). A second correction: every exercise
+ * in the row, row2 and tBarRow generator slots credits biceps and shoulders as secondary muscles,
+ * because horizontal rows flex the elbow and extend the shoulder, and the database labels them
+ * inconsistently.
  *
  * Rows with an `Ascend_` id are our own entries for common gym exercises the database lacks
  * (no media yet).
@@ -58,13 +61,13 @@ const ROWS: Row[] = [
   ['Wide-Grip_Lat_Pulldown', 'Wide-Grip Lat Pulldown', 'cable', 'compound', 'upper', ['back'], ['biceps', 'shoulders']],
   ['Close-Grip_Front_Lat_Pulldown', 'Close-Grip Front Lat Pulldown', 'cable', 'compound', 'upper', ['back'], ['biceps', 'shoulders']],
   ['Pullups', 'Pullups', 'bodyweight', 'compound', 'upper', ['back'], ['biceps']],
-  ['T-Bar_Row_with_Handle', 'T-Bar Row with Handle', 'barbell', 'compound', 'upper', ['back'], ['biceps']],
-  ['Lying_T-Bar_Row', 'Lying T-Bar Row', 'machine', 'compound', 'upper', ['back'], ['biceps']],
+  ['T-Bar_Row_with_Handle', 'T-Bar Row with Handle', 'barbell', 'compound', 'upper', ['back'], ['biceps', 'shoulders']],
+  ['Lying_T-Bar_Row', 'Lying T-Bar Row', 'machine', 'compound', 'upper', ['back'], ['biceps', 'shoulders']],
   ['Bent_Over_Two-Dumbbell_Row', 'Bent Over Two-Dumbbell Row', 'dumbbell', 'compound', 'upper', ['back'], ['biceps', 'shoulders']],
   ['Leverage_Iso_Row', 'Leverage Iso Row', 'machine', 'compound', 'upper', ['back'], ['biceps', 'shoulders']],
   ['Smith_Machine_Bent_Over_Row', 'Smith Machine Bent Over Row', 'machine', 'compound', 'upper', ['back'], ['biceps', 'shoulders']],
   ['Leverage_High_Row', 'Leverage High Row', 'machine', 'compound', 'upper', ['back'], ['biceps', 'shoulders']],
-  ['Seated_One-arm_Cable_Pulley_Rows', 'Seated One-arm Cable Pulley Rows', 'cable', 'compound', 'upper', ['back'], ['biceps']],
+  ['Seated_One-arm_Cable_Pulley_Rows', 'Seated One-arm Cable Pulley Rows', 'cable', 'compound', 'upper', ['back'], ['biceps', 'shoulders']],
   ['V-Bar_Pulldown', 'V-Bar Pulldown', 'cable', 'compound', 'upper', ['back'], ['biceps', 'shoulders']],
   ['One_Arm_Lat_Pulldown', 'One Arm Lat Pulldown', 'cable', 'compound', 'upper', ['back'], ['biceps']],
   ['Straight-Arm_Pulldown', 'Straight-Arm Pulldown', 'cable', 'isolation', 'upper', ['back'], []],
@@ -122,7 +125,7 @@ const ROWS: Row[] = [
   ['Single-Leg_Leg_Extension', 'Single-Leg Leg Extension', 'machine', 'isolation', 'lower', ['quads'], []],
   ['Romanian_Deadlift', 'Romanian Deadlift', 'barbell', 'compound', 'lower', ['hamstrings'], ['calves', 'glutes']],
   ['Stiff-Legged_Dumbbell_Deadlift', 'Stiff-Legged Dumbbell Deadlift', 'dumbbell', 'compound', 'lower', ['hamstrings'], ['glutes']],
-  ['Smith_Machine_Stiff-Legged_Deadlift', 'Smith Machine Stiff-Legged Deadlift', 'machine', 'compound', 'lower', ['hamstrings'], ['calves', 'glutes']],
+  ['Smith_Machine_Stiff-Legged_Deadlift', 'Smith Machine Stiff-Legged Deadlift', 'machine', 'compound', 'lower', ['hamstrings'], ['glutes']],
   ['Kettlebell_One-Legged_Deadlift', 'Kettlebell One-Legged Deadlift', 'kettlebell', 'compound', 'lower', ['hamstrings'], ['glutes']],
   ['Lying_Leg_Curls', 'Lying Leg Curls', 'machine', 'isolation', 'lower', ['hamstrings'], []],
   ['Seated_Leg_Curl', 'Seated Leg Curl', 'machine', 'isolation', 'lower', ['hamstrings'], []],

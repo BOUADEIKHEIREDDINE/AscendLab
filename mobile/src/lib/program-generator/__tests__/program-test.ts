@@ -19,6 +19,8 @@ import {
 
 const LEVELS: Level[] = ['beginner', 'intermediate', 'advanced'];
 const DAYS = [2, 3, 4, 5, 6];
+/** Their third option is a user-approved hidden exercise, so only two options are visible. */
+const TWO_OPTION_SLOTS: Slot[] = ['squat2', 'legExtension'];
 /** Muscles held to the weekly sets rule. Glutes and calves only get what the plan gives them. */
 const TARGET_MUSCLES: Muscle[] = ['chest', 'back', 'shoulders', 'biceps', 'triceps', 'quads', 'hamstrings'];
 
@@ -302,9 +304,7 @@ describe('generateProgram — exercises and swaps', () => {
   it.each(everyInput)('offers 2-3 alternatives that train the same main muscle (%o)', (input) => {
     for (const day of generateProgram(input).days) {
       for (const ex of day.exercises) {
-        // squat2 and legExtension lose their third option to a hidden exercise (spec 3): one alternative left.
-        const hasHidden = LEGACY_SLOT_OPTIONS[ex.slot].some((id) => HIDDEN.includes(id));
-        expect(ex.alternatives.length).toBeGreaterThanOrEqual(hasHidden ? 1 : 2);
+        expect(ex.alternatives.length).toBeGreaterThanOrEqual(TWO_OPTION_SLOTS.includes(ex.slot) ? 1 : 2);
         expect(ex.alternatives.length).toBeLessThanOrEqual(3);
         for (const alt of ex.alternatives) {
           expect(alt).not.toBe(ex.exerciseId);
@@ -486,12 +486,12 @@ describe('slots read the exercise ranking', () => {
     }
   });
 
-  it('every slot has at least 3 options for every level', () => {
+  it('every slot has at least 3 options for every level, except the two-option slots', () => {
     for (const slot of SLOTS) {
       for (const level of LEVELS) {
-        // Slots whose third legacy option is hidden (squat2, legExtension) keep two visible options.
-        const hasHidden = LEGACY_SLOT_OPTIONS[slot].some((id) => HIDDEN.includes(id));
-        expect(slotAlternatives(slot, level, firstOption(slot, level)).length).toBeGreaterThanOrEqual(hasHidden ? 1 : 2);
+        expect(slotAlternatives(slot, level, firstOption(slot, level)).length).toBeGreaterThanOrEqual(
+          TWO_OPTION_SLOTS.includes(slot) ? 1 : 2,
+        );
       }
     }
   });
