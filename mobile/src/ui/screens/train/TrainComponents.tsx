@@ -7,7 +7,7 @@ import { doneKeys, Exercise, EQUIPMENT_LABEL, ExerciseLibrary, MUSCLE_LABEL, Mus
 import { useStore } from '../../../lib/store';
 import { palette, radius, space } from '../../theme';
 import { haptics } from '../../haptics';
-import { Button, Chip, Hairline, Icon, IconButton, Notice, PrimaryButton, T, TextField } from '../../components/core';
+import { Button, Chip, Hairline, HelpNote, Icon, IconButton, Notice, PrimaryButton, T, TextField } from '../../components/core';
 import { BottomSheet, Dialog } from '../../components/overlays';
 import { ExerciseInfoPanel, ExerciseThumb } from '../../components/exerciseInfo';
 import { slotAlternatives, type Level as EngineLevel, type Slot } from '../../../lib/program-generator/program';
@@ -87,8 +87,15 @@ export function ExercisePicker({ visible, onDismiss, onPick, muscle: initialMusc
               {customs.map((x) => <ExerciseRow key={x.id} exerciseId={x.id} single={single} title={x.name} subtitle="Custom exercise" selected onPress={() => toggle(x)} onInfo={() => setInfo(x)} />)}
             </>
           }
+          ListFooterComponent={
+            muscle != null && query.trim() === '' ? (
+              <View style={{ paddingHorizontal: 16, paddingTop: 12, gap: 8 }}>
+                {ExerciseLibrary.alsoFor(muscle).map((line) => <HelpNote key={line} text={line} />)}
+              </View>
+            ) : undefined
+          }
           renderItem={({ item }) => (
-            <ExerciseRow exerciseId={item.id} single={single} title={item.name} subtitle={`${MUSCLE_LABEL[item.muscle]} · ${EQUIPMENT_LABEL[item.equipment]}`}
+            <ExerciseRow exerciseId={item.id} single={single} topPick={muscle != null && ExerciseLibrary.rankOf(item.id) != null} title={item.name} subtitle={`${MUSCLE_LABEL[item.muscle]} · ${EQUIPMENT_LABEL[item.equipment]}`}
               selected={has(item)} onPress={() => toggle(item)} onInfo={() => setInfo(item)} />
           )}
         />
@@ -192,13 +199,14 @@ export function VolumeNoticeNote({ lines }: { lines: string[] }) {
  * A picker row. With `onInfo`, the photo and the text open the exercise's photos and instructions
  * and the round box on the right selects it; without it (the "Create" row), the whole row selects.
  */
-function ExerciseRow({ exerciseId, title, subtitle, selected, onPress, onInfo, create, single }: {
-  exerciseId?: string; title: string; subtitle: string; selected: boolean; onPress: () => void; onInfo?: () => void; create?: boolean; single?: boolean;
+function ExerciseRow({ exerciseId, title, subtitle, selected, onPress, onInfo, create, single, topPick }: {
+  topPick?: boolean; exerciseId?: string; title: string; subtitle: string; selected: boolean; onPress: () => void; onInfo?: () => void; create?: boolean; single?: boolean;
 }) {
   const text = (
     <View style={{ flex: 1 }}>
       <T v="titleS" color={selected ? palette.onPrimaryContainer : palette.text}>{title}</T>
       <T v="bodyS" color={palette.textMuted}>{subtitle}</T>
+      {topPick && <T v="label" color={palette.primary}>Top pick</T>}
     </View>
   );
   if (!onInfo) {

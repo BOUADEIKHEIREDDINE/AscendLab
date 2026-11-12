@@ -16,6 +16,7 @@ import {
   newSet, noticeText, programNotices, replaceEverywhere, swapsAfterReplace, volumeSessions, workoutReplace, applyWorkoutChanges,
   keptReplaces, replacementSetCount, previousForSets,
 } from '../training';
+import { RANKING } from '../../lib/program-generator/ranking';
 
 const man: UserProfile = {
   ...emptyProfile(),
@@ -246,6 +247,29 @@ describe('Workout records', () => {
     expect(dbPress).toEqual(expect.arrayContaining(['Dumbbell_Bench_Press', 'Incline_Dumbbell_Press', 'Dumbbell_Shoulder_Press']));
     expect(dbPress).not.toContain('db_bench_press'); // linked to Dumbbell_Bench_Press, listed once
     expect(ExerciseLibrary.search('', 'CARDIO')).toHaveLength(4);
+  });
+
+  test('ranked exercises come first under a muscle filter', () => {
+    const unranked = ExerciseLibrary.search('', 'LEGS').find((x) => ExerciseLibrary.rankOf(x.id) == null)!;
+    const ids = ExerciseLibrary.search('', 'LEGS', new Set([ExerciseLibrary.key(unranked.id)])).map((x) => x.id);
+    expect(ids.slice(0, 4)).toEqual([RANKING.quads[0].exerciseId, RANKING.hamstrings[0].exerciseId, RANKING.calves[0].exerciseId, RANKING.quads[1].exerciseId]);
+    expect(ExerciseLibrary.alsoFor('LEGS').length).toBeGreaterThan(0);
+    expect(ExerciseLibrary.alsoFor('CARDIO')).toEqual([]);
+  });
+
+  test('typed searches ignore the ranking', () => {
+    const done = new Set(['Preacher_Curl']);
+    const typed = ExerciseLibrary.search('curl', 'ARMS', done).map((x) => x.id);
+    expect(typed[0]).toBe('Preacher_Curl');
+    const alpha = ExerciseLibrary.search('curl', 'ARMS').map((x) => x.id);
+    expect(alpha.filter((id) => id !== 'Preacher_Curl')).toEqual(typed.slice(1));
+  });
+
+  test('rankOf is shared by linked ids', () => {
+    expect(ExerciseLibrary.rankOf('Machine_Bench_Press')).toBe(1);
+    expect(ExerciseLibrary.rankOf('db_bench_press')).toBe(ExerciseLibrary.rankOf('Dumbbell_Bench_Press'));
+    expect(ExerciseLibrary.rankOf('db_bench_press')).toBe(2);
+    expect(ExerciseLibrary.rankOf('custom:nope')).toBeNull();
   });
 });
 

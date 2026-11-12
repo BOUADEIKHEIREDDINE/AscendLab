@@ -13,7 +13,7 @@ import { goBack, useNav, useParams } from '../../../navigation/types';
 import { palette, Gutter, radius } from '../../theme';
 import { formatDate } from '../../format';
 import {
-  Chip, Hairline, Icon, IconButton, ListGroup, ListRow, PageHeader, PressableScale, ProgressBar, Screen, SectionTitle, Segmented, SkeletonCard, T, TextField, Tile,
+  Chip, Hairline, HelpNote, Icon, IconButton, ListGroup, ListRow, PageHeader, PressableScale, ProgressBar, Screen, SectionTitle, Segmented, SkeletonCard, T, TextField, Tile,
 } from '../../components/core';
 import { StatTile } from '../../components/workout';
 import { ExpressiveShape } from '../../shapes/ExpressiveShape';
@@ -412,6 +412,13 @@ export function ExerciseLibraryScreen() {
         keyExtractor={(x) => x.id}
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={{ paddingBottom: 32 }}
+        ListFooterComponent={
+          muscle != null && query.trim() === '' ? (
+            <View style={{ marginHorizontal: Gutter, marginTop: 12, gap: 8 }}>
+              {ExerciseLibrary.alsoFor(muscle).map((line) => <HelpNote key={line} text={line} />)}
+            </View>
+          ) : undefined
+        }
         renderItem={({ item, index }) => {
           // Rows read as one grouped surface: rounded at the ends, hairlines between.
           const first = index === 0, last = index === results.length - 1;
@@ -420,7 +427,7 @@ export function ExerciseLibraryScreen() {
               borderTopLeftRadius: first ? radius.lg : 0, borderTopRightRadius: first ? radius.lg : 0,
               borderBottomLeftRadius: last ? radius.lg : 0, borderBottomRightRadius: last ? radius.lg : 0 }}>
               {!first && <Hairline inset={18} />}
-              <ListRow title={item.name} subtitle={`${MUSCLE_LABEL[item.muscle]} · ${EQUIPMENT_LABEL[item.equipment]}`}
+              <ListRow title={item.name} subtitle={`${MUSCLE_LABEL[item.muscle]} · ${EQUIPMENT_LABEL[item.equipment]}${muscle != null && ExerciseLibrary.rankOf(item.id) != null ? ' · Top pick' : ''}`}
                 onPress={() => nav.navigate('ExerciseDetail', { exerciseId: item.id, name: item.name })}
                 trailing={sessionsById.has(ExerciseLibrary.key(item.id)) ? <T v="label" color={palette.primary}>{sessionsById.get(ExerciseLibrary.key(item.id))}×</T> : undefined} />
             </View>
