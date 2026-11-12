@@ -32,7 +32,7 @@ describe('one exercise library', () => {
 describe('search', () => {
   it('lists every exercise once, without the linked hand-list entries', () => {
     const all = ExerciseLibrary.search('', null);
-    expect(all).toHaveLength(718 + 6 + 10); // database, our Ascend_ entries, unlinked hand-list entries
+    expect(all).toHaveLength(718 + 7 + 10); // database, our Ascend_ entries, unlinked hand-list entries
     expect(new Set(all.map((x) => x.id)).size).toBe(all.length);
     const ids = all.map((x) => x.id);
     expect(ids).not.toContain('bench_press');
