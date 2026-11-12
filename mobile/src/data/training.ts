@@ -587,6 +587,11 @@ export function doneKeys(history: WorkoutRecord[] | null | undefined): Set<strin
   return new Set((history ?? []).flatMap((w) => w.exercises.map((x) => ExerciseLibrary.key(x.exerciseId))));
 }
 
+/** Exercise ids as `ExerciseLibrary.key`s, so a linked hand-list id and its database twin count as one exercise. */
+export function excludedKeys(ids: string[]): Set<string> {
+  return new Set(ids.map((id) => ExerciseLibrary.key(id)));
+}
+
 /** Last time's sets per exercise, keyed by `ExerciseLibrary.key`. */
 export function lastSets(history: WorkoutRecord[] | null | undefined): Map<string, LoggedSet[]> {
   const map = new Map<string, LoggedSet[]>();

@@ -14,7 +14,7 @@ import {
   activeFromJson, activeToJson, ActiveWorkout, beatenBy, countRecords, ExerciseLibrary, LoggedExercise, recordsByExercise,
   nextRoutine, recordsFrom, routineExerciseFromMap, routineToMap, starterRoutines, WorkoutMath, workoutFromDoc,
   newSet, noticeText, programNotices, replaceEverywhere, swapsAfterReplace, volumeSessions, workoutReplace, applyWorkoutChanges,
-  keptReplaces, replacementSetCount, previousForSets,
+  keptReplaces, replacementSetCount, previousForSets, excludedKeys,
 } from '../training';
 import { RANKING } from '../../lib/program-generator/ranking';
 
@@ -526,5 +526,14 @@ describe('routine view', () => {
     ];
     expect(previousForSets(last, 3)).toEqual([last[1], last[2], null]);
     expect(previousForSets(undefined, 2)).toEqual([null, null]);
+  });
+});
+
+describe('excludedKeys: no exercise twice', () => {
+  it('linked ids count as the same exercise', () => {
+    expect(excludedKeys(['bench_press']).has(ExerciseLibrary.key('Barbell_Bench_Press_-_Medium_Grip'))).toBe(true);
+  });
+  it('custom ids exclude themselves', () => {
+    expect(excludedKeys(['custom:my_move']).has('custom:my_move')).toBe(true);
   });
 });

@@ -3,7 +3,7 @@ import React, { useMemo, useState } from 'react';
 import { FlatList, Modal, Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { historyLive } from '../../../data/trainRepo';
-import { doneKeys, Exercise, EQUIPMENT_LABEL, ExerciseLibrary, MUSCLE_LABEL, Muscle, MUSCLES } from '../../../data/training';
+import { doneKeys, excludedKeys, Exercise, EQUIPMENT_LABEL, ExerciseLibrary, MUSCLE_LABEL, Muscle, MUSCLES } from '../../../data/training';
 import { useStore } from '../../../lib/store';
 import { palette, radius, space } from '../../theme';
 import { haptics } from '../../haptics';
@@ -19,12 +19,14 @@ export { SetBadge } from '../../components/workout';
  * Full-screen exercise search: filter by muscle, tap several exercises, then add them
  * all at once. Typing a name that isn't listed offers a custom exercise.
  */
-export function ExercisePicker({ visible, onDismiss, onPick, muscle: initialMuscle, single }: {
+export function ExercisePicker({ visible, onDismiss, onPick, muscle: initialMuscle, single, exclude }: {
   visible: boolean; onDismiss: () => void; onPick: (list: Exercise[]) => void;
   /** Muscle filter to open with. */
   muscle?: Muscle;
   /** One tap picks one exercise and returns it. */
   single?: boolean;
+  /** Exercise ids already in the routine or workout: shown, but they cannot be picked again. */
+  exclude?: string[];
 }) {
   const [query, setQuery] = useState('');
   const [muscle, setMuscle] = useState<Muscle | null>(initialMuscle ?? null);
@@ -41,9 +43,12 @@ export function ExercisePicker({ visible, onDismiss, onPick, muscle: initialMusc
   const done = useMemo(() => doneKeys(history), [history]);
   // Hidden pickers stay mounted under screens that re-render every second: search only when open.
   const results = useMemo(() => (visible ? ExerciseLibrary.search(query, muscle, done) : []), [visible, query, muscle, done]);
+  const out = useMemo(() => excludedKeys(exclude ?? []), [exclude]);
+  const isOut = (id: string) => out.has(ExerciseLibrary.key(id));
   const canCreate = query.trim() !== '' && !ExerciseLibrary.hasName(query);
   const has = (x: Exercise) => picked.some((p) => p.id === x.id);
   const toggle = (x: Exercise) => {
+    if (isOut(x.id)) return;
     if (single) { onPick([x]); setQuery(''); return; }
     setPicked(has(x) ? picked.filter((p) => p.id !== x.id) : [...picked, x]);
   };
@@ -81,7 +86,8 @@ export function ExercisePicker({ visible, onDismiss, onPick, muscle: initialMusc
           ListHeaderComponent={
             <>
               {canCreate && (
-                <ExerciseRow title={`Create "${query.trim()}"`} subtitle="Custom exercise" selected={false} create
+                <ExerciseRow title={`Create "${query.trim()}"`} subtitle={isOut(ExerciseLibrary.custom(query).id) ? ALREADY_IN : 'Custom exercise'} selected={false} create
+                  excluded={isOut(ExerciseLibrary.custom(query).id)}
                   onPress={() => { if (single) { toggle(ExerciseLibrary.custom(query)); return; } setPicked([...picked, ExerciseLibrary.custom(query)]); setQuery(''); }} />
               )}
               {customs.map((x) => <ExerciseRow key={x.id} exerciseId={x.id} single={single} title={x.name} subtitle="Custom exercise" selected onPress={() => toggle(x)} onInfo={() => setInfo(x)} />)}
@@ -95,8 +101,8 @@ export function ExercisePicker({ visible, onDismiss, onPick, muscle: initialMusc
             ) : undefined
           }
           renderItem={({ item }) => (
-            <ExerciseRow exerciseId={item.id} single={single} topPick={muscle != null && ExerciseLibrary.rankOf(item.id) != null} title={item.name} subtitle={`${MUSCLE_LABEL[item.muscle]} · ${EQUIPMENT_LABEL[item.equipment]}`}
-              selected={has(item)} onPress={() => toggle(item)} onInfo={() => setInfo(item)} />
+            <ExerciseRow exerciseId={item.id} single={single} topPick={muscle != null && ExerciseLibrary.rankOf(item.id) != null} title={item.name} subtitle={isOut(item.id) ? ALREADY_IN : `${MUSCLE_LABEL[item.muscle]} · ${EQUIPMENT_LABEL[item.equipment]}`}
+              excluded={isOut(item.id)} selected={has(item)} onPress={() => toggle(item)} onInfo={() => setInfo(item)} />
           )}
         />
         {!single && <View style={{ paddingHorizontal: 20, paddingTop: 12, paddingBottom: 16 }}>
@@ -109,7 +115,7 @@ export function ExercisePicker({ visible, onDismiss, onPick, muscle: initialMusc
         {info && (
           <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
             <ExerciseInfoPanel exerciseId={info.id} name={info.name} onClose={() => setInfo(null)}
-              action={{
+              action={isOut(info.id) ? undefined : {
                 label: single ? 'Pick this exercise' : has(info) ? 'Remove from selection' : 'Add to selection',
                 onPress: () => { const x = info; setInfo(null); toggle(x); },
               }} />
@@ -120,6 +126,9 @@ export function ExercisePicker({ visible, onDismiss, onPick, muscle: initialMusc
   );
 }
 
+/** Subtitle of an exercise that is already in the routine or workout. */
+const ALREADY_IN = 'Already in this routine';
+
 export type AlternativeChoice = { exerciseId: string; name: string; mode: 'replace' | 'add' };
 
 /**
@@ -127,17 +136,20 @@ export type AlternativeChoice = { exerciseId: string; name: string; mode: 'repla
  * + Add, then every library exercise for the same muscle. The picker opens in place of the sheet
  * (stacked modals misbehave), and its pick comes back here to choose Replace or Add.
  */
-export function AlternativesSheet({ visible, onDismiss, current, level, onChoose }: {
+export function AlternativesSheet({ visible, onDismiss, current, level, onChoose, exclude }: {
   visible: boolean; onDismiss: () => void;
   current: { exerciseId: string; name: string; slot?: Slot };
   level: EngineLevel;
   onChoose: (choice: AlternativeChoice) => void;
+  /** Exercise ids already in the routine or workout: left out of the options. */
+  exclude?: string[];
 }) {
   const [picking, setPicking] = useState(false);
   const [libraryPick, setLibraryPick] = useState<Exercise | null>(null);
   const [info, setInfo] = useState<{ id: string; name: string } | null>(null);
   const muscle = ExerciseLibrary.muscleOf(current.exerciseId);
-  const options = current.slot ? slotAlternatives(current.slot, level, current.exerciseId) : [];
+  const out = excludedKeys(exclude ?? []);
+  const options = (current.slot ? slotAlternatives(current.slot, level, current.exerciseId) : []).filter((id) => !out.has(ExerciseLibrary.key(id)));
   const close = () => { setPicking(false); setLibraryPick(null); setInfo(null); onDismiss(); };
   const choose = (choice: AlternativeChoice) => { haptics.tick(); setLibraryPick(null); onChoose(choice); };
 
@@ -176,6 +188,7 @@ export function AlternativesSheet({ visible, onDismiss, current, level, onChoose
       <ExercisePicker
         visible={visible && picking}
         single
+        exclude={exclude}
         muscle={muscle === 'OTHER' ? undefined : muscle}
         onDismiss={() => setPicking(false)}
         onPick={([x]) => { setPicking(false); if (x) setLibraryPick(x); }}
@@ -199,8 +212,8 @@ export function VolumeNoticeNote({ lines }: { lines: string[] }) {
  * A picker row. With `onInfo`, the photo and the text open the exercise's photos and instructions
  * and the round box on the right selects it; without it (the "Create" row), the whole row selects.
  */
-function ExerciseRow({ exerciseId, title, subtitle, selected, onPress, onInfo, create, single, topPick }: {
-  topPick?: boolean; exerciseId?: string; title: string; subtitle: string; selected: boolean; onPress: () => void; onInfo?: () => void; create?: boolean; single?: boolean;
+function ExerciseRow({ exerciseId, title, subtitle, selected, onPress, onInfo, create, single, topPick, excluded }: {
+  excluded?: boolean; topPick?: boolean; exerciseId?: string; title: string; subtitle: string; selected: boolean; onPress: () => void; onInfo?: () => void; create?: boolean; single?: boolean;
 }) {
   const text = (
     <View style={{ flex: 1 }}>
@@ -211,8 +224,8 @@ function ExerciseRow({ exerciseId, title, subtitle, selected, onPress, onInfo, c
   );
   if (!onInfo) {
     return (
-      <View>
-        <Pressable onPress={() => { haptics.tick(); onPress(); }} accessibilityRole="button" accessibilityState={{ selected }}
+      <View style={excluded ? { opacity: 0.5 } : undefined}>
+        <Pressable disabled={excluded} onPress={() => { haptics.tick(); onPress(); }} accessibilityRole="button" accessibilityState={{ selected, disabled: !!excluded }}
           style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', marginHorizontal: 8, paddingHorizontal: 14, paddingVertical: 12, gap: 14, borderRadius: radius.md,
             backgroundColor: selected ? palette.primaryContainer : pressed ? palette.surface : 'transparent' })}>
           {create && <Icon name="add" color={palette.primary} />}
@@ -233,11 +246,11 @@ function ExerciseRow({ exerciseId, title, subtitle, selected, onPress, onInfo, c
           <ExerciseThumb exerciseId={exerciseId ?? ''} />
           {text}
         </Pressable>
-        <Pressable onPress={() => { haptics.tick(); onPress(); }} accessibilityRole={single ? 'button' : 'checkbox'}
-          accessibilityState={single ? undefined : { checked: selected }} accessibilityLabel={single ? `Pick ${title}` : `Select ${title}`}
+        <Pressable disabled={excluded} onPress={() => { haptics.tick(); onPress(); }} accessibilityRole={single ? 'button' : 'checkbox'}
+          accessibilityState={single ? { disabled: !!excluded } : { checked: selected, disabled: !!excluded }} accessibilityLabel={single ? `Pick ${title}` : `Select ${title}`}
           style={{ width: 56, alignItems: 'center', justifyContent: 'center' }}>
-          <Icon name={selected ? 'check-circle' : single ? 'add-circle-outline' : 'radio-button-unchecked'} size={28}
-            color={selected ? palette.primary : palette.textMuted} />
+          <Icon name={excluded ? 'block' : selected ? 'check-circle' : single ? 'add-circle-outline' : 'radio-button-unchecked'} size={28}
+            color={excluded ? palette.textMuted : selected ? palette.primary : palette.textMuted} />
         </Pressable>
       </View>
       {!selected && <Hairline inset={22} style={{ marginRight: 22 }} />}

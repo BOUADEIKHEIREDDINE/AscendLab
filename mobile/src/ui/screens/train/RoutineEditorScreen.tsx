@@ -131,6 +131,7 @@ function RoutineForm({ program, original, onDone }: { program: Program | null; o
           visible
           onDismiss={() => setAlternativesFor(null)}
           current={exercises[alternativesFor]}
+          exclude={exercises.map((x) => x.exerciseId)}
           level={profile ? engineLevel(profile) : 'beginner'}
           onChoose={({ exerciseId, name: picked, mode }) => {
             const i = alternativesFor;
@@ -147,6 +148,7 @@ function RoutineForm({ program, original, onDone }: { program: Program | null; o
       )}
       <ExercisePicker
         visible={picking}
+        exclude={exercises.map((x) => x.exerciseId)}
         onDismiss={() => setPicking(false)}
         onPick={(picked) => {
           setExercises([...exercises, ...picked.map((x) => ({ exerciseId: x.id, name: x.name, sets: 3, reps: 10 }))]);
