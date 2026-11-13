@@ -14,6 +14,7 @@ import { buildPlan, type WeekPlan } from '../lib/program-generator/plan';
 import { slotOf, splitOptions, type Level as EngineLevel, type Slot, type Split, type SplitOption } from '../lib/program-generator/program';
 import { chooseTrainingDays, type Weekday } from '../lib/program-generator/schedule';
 import { CATALOG } from '../lib/program-generator/catalog';
+import { legacyDefault } from '../lib/program-generator/legacy';
 
 export type Sex = 'MAN' | 'WOMAN';
 export const SEX_LABEL: Record<Sex, string> = { MAN: 'Man', WOMAN: 'Woman' };
@@ -96,7 +97,16 @@ export interface UserProfile {
   swaps: Partial<Record<Slot, string>>;
   /** Daily targets the person typed; null = the recommended ones. */
   customTargets: CustomTargets | null;
+  /** Exercise ranking the plan was saved under; null = saved before the ranking existed. */
+  rankingVersion: number | null;
 }
+
+/**
+ * Bump when the generator's default exercises change again. Bumping to 2 needs a snapshot of the
+ * version-1 defaults first (as legacy.ts keeps the pre-ranking ones), because pinLegacyDefaults
+ * only handles rankingVersion == null.
+ */
+export const RANKING_VERSION = 1;
 
 export const MIN_DAYS = 2;
 export const MAX_DAYS = 6;
@@ -104,7 +114,7 @@ export const MAX_DAYS = 6;
 export const emptyProfile = (): UserProfile => ({
   sex: null, age: null, heightCm: null, weightKg: null, activity: null, goal: null,
   level: null, trainingDays: null, trainCount: null, daysPerWeek: null, place: null, units: 'METRIC', onboardingComplete: false,
-  split: null, swaps: {}, customTargets: null,
+  split: null, swaps: {}, customTargets: null, rankingVersion: RANKING_VERSION,
 });
 
 /** Spread-out days for a number of days, used for profiles saved before the weekday picker. */
@@ -153,6 +163,7 @@ export function profileToMap(p: UserProfile): Record<string, unknown> {
       carbsG: p.customTargets.mode === 'macros' ? p.customTargets.carbsG : null,
       fatG: p.customTargets.mode === 'macros' ? p.customTargets.fatG : null,
     },
+    rankingVersion: p.rankingVersion,
   };
 }
 
@@ -189,6 +200,7 @@ export function profileFromMap(m: Record<string, unknown>): UserProfile {
     split: enumOrNull(SPLITS, m.split),
     swaps: swapsFrom(m.swaps),
     customTargets: customTargetsFrom(m.customTargets),
+    rankingVersion: num(m.rankingVersion),
   };
 }
 
@@ -375,6 +387,34 @@ export function gymPlan(p: UserProfile): ReturnType<typeof buildPlan> | null {
     goal: ENGINE_GOAL[p.goal],
     age: p.age,
   });
+}
+
+/**
+ * Plans saved before the exercise ranking keep their exercises: each slot of the generated gym plan
+ * whose ranked default differs from the old default is saved as the person's own swap, once.
+ */
+export function pinLegacyDefaults(p: UserProfile): UserProfile {
+  if (p.rankingVersion != null) return p;
+  const next = { ...p, rankingVersion: RANKING_VERSION };
+  if (!hasEverythingForPlan(p) || p.place !== 'GYM') return next;
+  const plan = gymPlan(p);
+  if (!plan) return next;
+  const level = engineLevel(p);
+  const swaps = { ...p.swaps };
+  for (const day of plan.state.schedule.cycle) {
+    for (const { slot, exerciseId } of day.exercises) {
+      if (swaps[slot] != null) continue;
+      const old = legacyDefault(slot, level);
+      if (old !== exerciseId) swaps[slot] = old;
+    }
+  }
+  return { ...next, swaps };
+}
+
+/** A profile as read from storage, with plans saved before the ranking pinned. `pinned` = it changed and should be saved once. */
+export function settleStoredProfile(p: UserProfile): { profile: UserProfile; pinned: boolean } {
+  if (p.rankingVersion != null) return { profile: p, pinned: false };
+  return { profile: pinLegacyDefaults(p), pinned: true };
 }
 
 /** Planned lifting minutes a week: the generated sessions at the gym, the simple estimate at home. */

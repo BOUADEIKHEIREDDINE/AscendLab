@@ -145,6 +145,7 @@ export function WorkoutSessionScreen() {
 
       <ExercisePicker
         visible={picking}
+        exclude={w.exercises.map((x) => x.exerciseId)}
         onDismiss={() => setPicking(false)}
         onPick={(picked) => {
           TrainRepository.update((cur) => ({
@@ -164,6 +165,7 @@ export function WorkoutSessionScreen() {
           visible
           onDismiss={() => setAlternativesFor(null)}
           current={w.exercises[alternativesFor]}
+          exclude={w.exercises.map((x) => x.exerciseId)}
           level={profile ? engineLevel(profile) : 'beginner'}
           onChoose={({ exerciseId, name, mode }) => {
             const i = alternativesFor;

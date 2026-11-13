@@ -1,6 +1,6 @@
 /** Create a routine (routineId null) or edit one, inside a program. */
 import React, { useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { Pressable, ScrollView, View } from 'react-native';
 import { TrainRepository, trainLive } from '../../../data/trainRepo';
 import { ProfileRepository, profileStore } from '../../../data/profileRepo';
 import { engineLevel } from '../../../data/profile';
@@ -131,6 +131,7 @@ function RoutineForm({ program, original, onDone }: { program: Program | null; o
           visible
           onDismiss={() => setAlternativesFor(null)}
           current={exercises[alternativesFor]}
+          exclude={exercises.map((x) => x.exerciseId)}
           level={profile ? engineLevel(profile) : 'beginner'}
           onChoose={({ exerciseId, name: picked, mode }) => {
             const i = alternativesFor;
@@ -147,6 +148,7 @@ function RoutineForm({ program, original, onDone }: { program: Program | null; o
       )}
       <ExercisePicker
         visible={picking}
+        exclude={exercises.map((x) => x.exerciseId)}
         onDismiss={() => setPicking(false)}
         onPick={(picked) => {
           setExercises([...exercises, ...picked.map((x) => ({ exerciseId: x.id, name: x.name, sets: 3, reps: 10 }))]);
@@ -171,6 +173,7 @@ function ExerciseSection({ ex, first, last, onSwap, onSets, onReps, onMoveUp, on
   onSwap: () => void; onSets: (v: number) => void; onReps: (v: number) => void;
   onMoveUp: () => void; onMoveDown: () => void; onRemove: () => void;
 }) {
+  const nav = useNav();
   const [menu, setMenu] = useState(false);
   const rest = restSecFor(ex.exerciseId);
   const planned = rest != null;
@@ -180,7 +183,11 @@ function ExerciseSection({ ex, first, last, onSwap, onSets, onReps, onMoveUp, on
       <View style={{ paddingVertical: 12 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', paddingLeft: space.tilePad, paddingRight: 4 }}>
           <View style={{ flex: 1, alignItems: 'flex-start' }}>
-            <T v="titleS" color={palette.primary} lines={2} style={{ paddingVertical: 4 }}>{ex.name}</T>
+            <Pressable onPress={() => nav.navigate('ExerciseDetail', { exerciseId: ex.exerciseId, name: ex.name })}
+              accessibilityRole="link" accessibilityHint="Opens the exercise page" hitSlop={6}
+              style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}>
+              <T v="titleS" color={palette.primary} lines={2} style={{ paddingVertical: 4 }}>{ex.name}</T>
+            </Pressable>
           </View>
           <IconButton name="more-vert" label="More" onPress={() => setMenu(true)} />
         </View>

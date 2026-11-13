@@ -5,16 +5,18 @@
  */
 import { Timestamp } from 'firebase/firestore';
 import {
-  BodyChecks, chosenDays, Convert, emptyProfile, gymPlan, PlanCalculator, splitChoice, profileFromMap, profileToMap, UserProfile, withDays,
+  BodyChecks, chosenDays, Convert, emptyProfile, gymPlan, pinLegacyDefaults, settleStoredProfile, RANKING_VERSION, PlanCalculator, splitChoice, profileFromMap, profileToMap, UserProfile, withDays,
 } from '../profile';
 
+import { LEGACY_SLOT_OPTIONS, legacyDefault } from '../../lib/program-generator/legacy';
 import { Days, FeedPost, gapLabel, postFromMap } from '../social';
 import {
   activeFromJson, activeToJson, ActiveWorkout, beatenBy, countRecords, ExerciseLibrary, LoggedExercise, recordsByExercise,
   nextRoutine, recordsFrom, routineExerciseFromMap, routineToMap, starterRoutines, WorkoutMath, workoutFromDoc,
   newSet, noticeText, programNotices, replaceEverywhere, swapsAfterReplace, volumeSessions, workoutReplace, applyWorkoutChanges,
-  keptReplaces, replacementSetCount, previousForSets,
+  keptReplaces, replacementSetCount, previousForSets, excludedKeys,
 } from '../training';
+import { RANKING } from '../../lib/program-generator/ranking';
 
 const man: UserProfile = {
   ...emptyProfile(),
@@ -168,7 +170,7 @@ describe('BodyChecks (same results as the Android app)', () => {
   test('profile survives a save and load', () => {
     const p: UserProfile = {
       sex: 'WOMAN', age: 28, heightCm: 165, weightKg: 60, activity: 'LIGHT', goal: 'LOSE_FAT', level: 'BEGINNER',
-      trainingDays: [0, 2, 4], trainCount: null, daysPerWeek: 3, place: 'HOME', units: 'IMPERIAL', onboardingComplete: true, split: null, swaps: {}, customTargets: null,
+      trainingDays: [0, 2, 4], trainCount: null, daysPerWeek: 3, place: 'HOME', units: 'IMPERIAL', onboardingComplete: true, split: null, swaps: {}, customTargets: null, rankingVersion: 1,
     };
     expect(profileFromMap(profileToMap(p))).toEqual(p);
     const byCalories: UserProfile = { ...p, customTargets: { mode: 'calories', calories: 1800, proteinG: null } };
@@ -177,7 +179,52 @@ describe('BodyChecks (same results as the Android app)', () => {
     expect(profileFromMap(profileToMap(byMacros))).toEqual(byMacros);
     // A half-written value means "use the recommended targets".
     expect(profileFromMap({ customTargets: { mode: 'macros', proteinG: 130 } }).customTargets).toBeNull();
-    expect(profileFromMap({ sex: 'ALIEN' })).toEqual(emptyProfile());
+    expect(profileFromMap({ sex: 'ALIEN' })).toEqual({ ...emptyProfile(), rankingVersion: null });
+  });
+
+  describe('pinning the pre-ranking exercises', () => {
+    const old: UserProfile = { ...man, level: 'INTERMEDIATE', rankingVersion: null };
+    const days = (p: UserProfile) => gymPlan(p)!.state.schedule.cycle.flatMap((d) => d.exercises);
+
+    test('old gym profiles keep the current exercises', () => {
+      const pinned = pinLegacyDefaults(old);
+      expect(pinned.rankingVersion).toBe(RANKING_VERSION);
+      for (const e of days(pinned)) expect(e.exerciseId).toBe(legacyDefault(e.slot, 'intermediate'));
+      expect(LEGACY_SLOT_OPTIONS.squat).toContain(days(pinned).find((e) => e.slot === 'squat')?.exerciseId ?? 'Hack_Squat');
+    });
+
+    test('saved swaps win over pinning', () => {
+      const swapped = { ...old, swaps: { squat: 'Barbell_Squat' } as UserProfile['swaps'] };
+      expect(pinLegacyDefaults(swapped).swaps.squat).toBe('Barbell_Squat');
+    });
+
+    test('pinning is idempotent', () => {
+      const once = pinLegacyDefaults(old);
+      expect(pinLegacyDefaults(once)).toBe(once);
+      expect(pinLegacyDefaults({ ...once, rankingVersion: null })).toEqual(once);
+    });
+
+    test('pins every focus and split the profile uses', () => {
+      const p = { ...old, daysPerWeek: 5, trainingDays: [0, 1, 2, 4, 5], split: 'ppl_upper_lower' as const };
+      for (const e of days(pinLegacyDefaults(p))) expect(e.exerciseId).toBe(legacyDefault(e.slot, 'intermediate'));
+    });
+
+    test('a stored map without a version is pinned and flagged for one save', () => {
+      const stored = profileToMap({ ...old, rankingVersion: null });
+      const { profile, pinned } = settleStoredProfile(profileFromMap(stored));
+      expect(pinned).toBe(true);
+      expect(profile.rankingVersion).toBe(RANKING_VERSION);
+      for (const e of days(profile)) expect(e.exerciseId).toBe(legacyDefault(e.slot, 'intermediate'));
+      // Read back again after the save: nothing more to do.
+      const again = settleStoredProfile(profileFromMap(profileToMap(profile)));
+      expect(again.pinned).toBe(false);
+      expect(again.profile.swaps).toEqual(profile.swaps);
+    });
+
+    test('home and incomplete profiles only get the version', () => {
+      expect(pinLegacyDefaults({ ...old, place: 'HOME' })).toEqual({ ...old, place: 'HOME', rankingVersion: 1 });
+      expect(pinLegacyDefaults({ ...emptyProfile(), rankingVersion: null }).swaps).toEqual({});
+    });
   });
 
   test('profiles saved by older versions still load', () => {
@@ -233,6 +280,29 @@ describe('Workout records', () => {
     expect(dbPress).toEqual(expect.arrayContaining(['Dumbbell_Bench_Press', 'Incline_Dumbbell_Press', 'Dumbbell_Shoulder_Press']));
     expect(dbPress).not.toContain('db_bench_press'); // linked to Dumbbell_Bench_Press, listed once
     expect(ExerciseLibrary.search('', 'CARDIO')).toHaveLength(4);
+  });
+
+  test('ranked exercises come first under a muscle filter', () => {
+    const unranked = ExerciseLibrary.search('', 'LEGS').find((x) => ExerciseLibrary.rankOf(x.id) == null)!;
+    const ids = ExerciseLibrary.search('', 'LEGS', new Set([ExerciseLibrary.key(unranked.id)])).map((x) => x.id);
+    expect(ids.slice(0, 4)).toEqual([RANKING.quads[0].exerciseId, RANKING.hamstrings[0].exerciseId, RANKING.calves[0].exerciseId, RANKING.quads[1].exerciseId]);
+    expect(ExerciseLibrary.alsoFor('LEGS').length).toBeGreaterThan(0);
+    expect(ExerciseLibrary.alsoFor('CARDIO')).toEqual([]);
+  });
+
+  test('typed searches ignore the ranking', () => {
+    const done = new Set(['Preacher_Curl']);
+    const typed = ExerciseLibrary.search('curl', 'ARMS', done).map((x) => x.id);
+    expect(typed[0]).toBe('Preacher_Curl');
+    const alpha = ExerciseLibrary.search('curl', 'ARMS').map((x) => x.id);
+    expect(alpha.filter((id) => id !== 'Preacher_Curl')).toEqual(typed.slice(1));
+  });
+
+  test('rankOf is shared by linked ids', () => {
+    expect(ExerciseLibrary.rankOf('Machine_Bench_Press')).toBe(1);
+    expect(ExerciseLibrary.rankOf('db_bench_press')).toBe(ExerciseLibrary.rankOf('Dumbbell_Bench_Press'));
+    expect(ExerciseLibrary.rankOf('db_bench_press')).toBe(3);
+    expect(ExerciseLibrary.rankOf('custom:nope')).toBeNull();
   });
 });
 
@@ -426,14 +496,15 @@ describe('workout changes', () => {
     const upperA = routines.find((r) => r.name === 'Upper A')!;
     const { routines: next, changedNames } = applyWorkoutChanges(upperA, routines, [
       { kind: 'replace', slot: 'chestPress', fromId: 'Barbell_Bench_Press_-_Medium_Grip', toId: 'Machine_Bench_Press', toName: 'Machine Bench Press' },
-      { kind: 'add', afterId: 'Seated_Cable_Rows', toId: 'Dumbbell_Flyes', toName: 'Dumbbell Flyes' },
+      { kind: 'add', afterId: 'Leverage_Iso_Row', toId: 'Dumbbell_Flyes', toName: 'Dumbbell Flyes' },
     ]);
     expect(changedNames.sort()).toEqual(['Upper A', 'Upper B']);
     for (const r of next.filter((x) => x.name.startsWith('Upper'))) {
       expect(r.exercises.find((x) => x.slot === 'chestPress')!.exerciseId).toBe('Machine_Bench_Press');
     }
+    // ranking: iso row machine is the Upper A row now (user decision)
     const a = next.find((r) => r.name === 'Upper A')!.exercises.map((x) => x.exerciseId);
-    expect(a[a.indexOf('Seated_Cable_Rows') + 1]).toBe('Dumbbell_Flyes');
+    expect(a[a.indexOf('Leverage_Iso_Row') + 1]).toBe('Dumbbell_Flyes');
     expect(next.find((r) => r.name === 'Upper B')!.exercises.map((x) => x.exerciseId)).not.toContain('Dumbbell_Flyes');
     expect(next.find((r) => r.name === 'Upper A')!.exercises.find((x) => x.exerciseId === 'Dumbbell_Flyes')).toMatchObject({ sets: 2 });
   });
@@ -488,5 +559,14 @@ describe('routine view', () => {
     ];
     expect(previousForSets(last, 3)).toEqual([last[1], last[2], null]);
     expect(previousForSets(undefined, 2)).toEqual([null, null]);
+  });
+});
+
+describe('excludedKeys: no exercise twice', () => {
+  it('linked ids count as the same exercise', () => {
+    expect(excludedKeys(['bench_press']).has(ExerciseLibrary.key('Barbell_Bench_Press_-_Medium_Grip'))).toBe(true);
+  });
+  it('custom ids exclude themselves', () => {
+    expect(excludedKeys(['custom:my_move']).has('custom:my_move')).toBe(true);
   });
 });

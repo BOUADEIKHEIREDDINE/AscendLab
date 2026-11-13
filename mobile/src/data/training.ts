@@ -6,6 +6,7 @@
 import { CATALOG, type Muscle as CatalogMuscle } from '../lib/program-generator/catalog';
 import { DB_EXERCISES, dbFind, equipmentOfDb, generatorMusclesOfDb, groupOfDbMuscle, photoUrls } from './exerciseDb';
 import { isSlot, isSlotOption, SETS, slotOf, type Level as EngineLevel, type ProgramDay, type Slot } from '../lib/program-generator/program';
+import { ALSO, RANKING, rankOf as rankingOf, type RankedMuscle } from '../lib/program-generator/ranking';
 import { volumeNotices, type VolumeNotice, type VolumeSession } from '../lib/program-generator/volume-notice';
 import { Convert, gymPlan, planDays, PlanCalculator, roundInt, Units, UNIT, UserProfile } from './profile';
 import type { ExercisePlan } from './progress';
@@ -144,6 +145,27 @@ const capital = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 /** How to do an exercise, from free-exercise-db. */
 export interface HowTo { images: string[]; instructions: string[]; primary: string[]; secondary: string[]; equipment: string; level: string }
 
+/** The ranked muscles each picker group shows first. */
+export const GROUP_MUSCLES: Record<Muscle, RankedMuscle[]> = {
+  CHEST: ['chest', 'upperChest'],
+  BACK: ['lats', 'midBack'],
+  SHOULDERS: ['frontDelts', 'sideDelts', 'rearDelts'],
+  ARMS: ['biceps', 'triceps'],
+  LEGS: ['quads', 'hamstrings', 'calves'],
+  GLUTES: ['glutes'],
+  CORE: ['abs'],
+  CARDIO: [],
+  OTHER: [],
+};
+
+/** The group's ranked exercise ids interleaved by rank: all #1s, then all #2s, and so on. */
+function interleavedRanking(group: Muscle): string[] {
+  const lists = GROUP_MUSCLES[group].map((m) => RANKING[m]);
+  const out: string[] = [];
+  for (let i = 0; i < Math.max(0, ...lists.map((l) => l.length)); i++) for (const l of lists) if (l[i]) out.push(l[i].exerciseId);
+  return out;
+}
+
 export const ExerciseLibrary = {
   /** Any exercise by id: hand list (also the linked ones), generator, database. */
   find: (id: string) => byId.get(id),
@@ -159,7 +181,8 @@ export const ExerciseLibrary = {
   /**
    * Search used by the picker and the library page: every typed word must appear in the name or in
    * one of its aliases. Exercises done before (`done` holds `key()`s) come first, then exact names,
-   * then names starting with the query, then the rest, each alphabetically.
+   * then names starting with the query, then the rest, each alphabetically. With a muscle and no
+   * typed query, the group's ranked exercises come before all of that, interleaved by rank.
    */
   search(query: string, muscle: Muscle | null, done?: ReadonlySet<string>): Exercise[] {
     const q = norm(query);
@@ -171,8 +194,20 @@ export const ExerciseLibrary = {
       const match = q === '' || names.includes(q) ? 0 : names.some((n) => n.startsWith(q)) ? 1 : 2;
       buckets[(done?.has(ExerciseLibrary.key(x.id)) ? 0 : 3) + match].push(x);
     }
-    return buckets.flat();
+    const flat = buckets.flat();
+    if (muscle == null || words.length > 0) return flat;
+    const rest = new Map(flat.map((x) => [ExerciseLibrary.key(x.id), x]));
+    const ranked: Exercise[] = [];
+    for (const id of interleavedRanking(muscle)) {
+      const x = rest.get(id);
+      if (x) { ranked.push(x); rest.delete(id); }
+    }
+    return [...ranked, ...flat.filter((x) => rest.get(ExerciseLibrary.key(x.id)) === x)];
   },
+  /** 1-based rank of an exercise within its muscle's ranking, or null when unranked. A linked id shares its twin's rank. */
+  rankOf: (id: string): number | null => rankingOf(ExerciseLibrary.key(id))?.rank ?? null,
+  /** The "also grows" lines for a group's muscles. */
+  alsoFor: (group: Muscle): string[] => GROUP_MUSCLES[group].flatMap((m) => (ALSO[m] ? [ALSO[m]!] : [])),
   /** Whether a name (or a hidden hand-list name) is already in the library: no custom twin then. */
   hasName: (name: string): boolean => KNOWN_NAMES.has(norm(name)),
   /** Muscles in the generator's terms, for the sets notice: the generator's catalog first, then the database's labels. */
@@ -550,6 +585,11 @@ export const defaultExerciseTab = (hasHistory: boolean): 'summary' | 'howto' => 
 /** Every exercise in the history, as `ExerciseLibrary.key`s: search lists these first. */
 export function doneKeys(history: WorkoutRecord[] | null | undefined): Set<string> {
   return new Set((history ?? []).flatMap((w) => w.exercises.map((x) => ExerciseLibrary.key(x.exerciseId))));
+}
+
+/** Exercise ids as `ExerciseLibrary.key`s, so a linked hand-list id and its database twin count as one exercise. */
+export function excludedKeys(ids: string[]): Set<string> {
+  return new Set(ids.map((id) => ExerciseLibrary.key(id)));
 }
 
 /** Last time's sets per exercise, keyed by `ExerciseLibrary.key`. */

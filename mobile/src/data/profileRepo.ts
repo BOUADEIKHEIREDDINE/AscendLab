@@ -7,7 +7,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { deleteDoc, doc, getDoc, setDoc } from 'firebase/firestore';
 import { currentUid, db, withTimeout } from '../lib/firebase';
 import { createStore } from '../lib/store';
-import { profileFromMap, profileToMap, UserProfile } from './profile';
+import { profileFromMap, settleStoredProfile, profileToMap, UserProfile } from './profile';
 
 const NETWORK_TIMEOUT_MS = 6_000;
 const key = (uid: string) => `profile:${uid}`;
@@ -21,17 +21,27 @@ async function remember(uid: string, p: UserProfile) {
   try { await AsyncStorage.setItem(key(uid), JSON.stringify(profileToMap(p))); } catch { /* device storage full: keep going */ }
 }
 
+/** Pins a pre-ranking profile once, keeps the device copy, and syncs Firestore in the background (a failed write keeps the device copy). */
+async function settle(uid: string, loaded: UserProfile): Promise<UserProfile> {
+  const { profile, pinned } = settleStoredProfile(loaded);
+  await remember(uid, profile);
+  if (pinned) withTimeout(setDoc(ref(uid), profileToMap(profile), { merge: true }), NETWORK_TIMEOUT_MS).catch(() => undefined);
+  return profile;
+}
+
 export const ProfileRepository = {
-  /** Profile saved on this device for the signed-in person, read without any network call. */
+  /**
+   * Profile saved on this device for the signed-in person, read without waiting for the network.
+   * A plan saved before the exercise ranking is pinned here (see pinLegacyDefaults) before it reaches
+   * profileStore; the Firestore copy is updated in the background.
+   */
   async cached(): Promise<UserProfile | null> {
     const uid = currentUid();
     if (!uid) return null;
     try {
       const json = await AsyncStorage.getItem(key(uid));
       if (!json) return null;
-      const p = profileFromMap(JSON.parse(json));
-      profileStore.set(p);
-      return p;
+      return await settle(uid, profileFromMap(JSON.parse(json)));
     } catch {
       return null;
     }
@@ -49,9 +59,7 @@ export const ProfileRepository = {
     const snap = await withTimeout(getDoc(ref(uid)), NETWORK_TIMEOUT_MS);
     const data = snap?.data();
     if (!data) return null;
-    const p = profileFromMap(data);
-    await remember(uid, p);
-    return p;
+    return settle(uid, profileFromMap(data));
   },
 
   /**

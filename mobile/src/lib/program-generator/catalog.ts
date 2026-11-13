@@ -3,7 +3,10 @@
  * Ids, names, equipment, mechanic and muscles are copied from the database; muscles are mapped
  * to our groups (lats + middle back → back, quadriceps → quads, abductors → glutes, abdominals → abs;
  * lower back, forearms, traps dropped). One correction: squat and leg press patterns get no hamstring
- * credit, since squats don't grow the hamstrings (Kubo 2019, MRI).
+ * credit, since squats don't grow the hamstrings (Kubo 2019, MRI). A second correction: every exercise
+ * in the row, row2 and tBarRow generator slots credits biceps and shoulders as secondary muscles,
+ * because horizontal rows flex the elbow and extend the shoulder, and the database labels them
+ * inconsistently.
  *
  * Rows with an `Ascend_` id are our own entries for common gym exercises the database lacks
  * (no media yet).
@@ -58,13 +61,13 @@ const ROWS: Row[] = [
   ['Wide-Grip_Lat_Pulldown', 'Wide-Grip Lat Pulldown', 'cable', 'compound', 'upper', ['back'], ['biceps', 'shoulders']],
   ['Close-Grip_Front_Lat_Pulldown', 'Close-Grip Front Lat Pulldown', 'cable', 'compound', 'upper', ['back'], ['biceps', 'shoulders']],
   ['Pullups', 'Pullups', 'bodyweight', 'compound', 'upper', ['back'], ['biceps']],
-  ['T-Bar_Row_with_Handle', 'T-Bar Row with Handle', 'barbell', 'compound', 'upper', ['back'], ['biceps']],
-  ['Lying_T-Bar_Row', 'Lying T-Bar Row', 'machine', 'compound', 'upper', ['back'], ['biceps']],
+  ['T-Bar_Row_with_Handle', 'T-Bar Row with Handle', 'barbell', 'compound', 'upper', ['back'], ['biceps', 'shoulders']],
+  ['Lying_T-Bar_Row', 'Lying T-Bar Row', 'machine', 'compound', 'upper', ['back'], ['biceps', 'shoulders']],
   ['Bent_Over_Two-Dumbbell_Row', 'Bent Over Two-Dumbbell Row', 'dumbbell', 'compound', 'upper', ['back'], ['biceps', 'shoulders']],
-  ['Leverage_Iso_Row', 'Leverage Iso Row', 'machine', 'compound', 'upper', ['back'], ['biceps']],
+  ['Leverage_Iso_Row', 'Leverage Iso Row', 'machine', 'compound', 'upper', ['back'], ['biceps', 'shoulders']],
   ['Smith_Machine_Bent_Over_Row', 'Smith Machine Bent Over Row', 'machine', 'compound', 'upper', ['back'], ['biceps', 'shoulders']],
-  ['Leverage_High_Row', 'Leverage High Row', 'machine', 'compound', 'upper', ['back'], []],
-  ['Seated_One-arm_Cable_Pulley_Rows', 'Seated One-arm Cable Pulley Rows', 'cable', 'compound', 'upper', ['back'], ['biceps']],
+  ['Leverage_High_Row', 'Leverage High Row', 'machine', 'compound', 'upper', ['back'], ['biceps', 'shoulders']],
+  ['Seated_One-arm_Cable_Pulley_Rows', 'Seated One-arm Cable Pulley Rows', 'cable', 'compound', 'upper', ['back'], ['biceps', 'shoulders']],
   ['V-Bar_Pulldown', 'V-Bar Pulldown', 'cable', 'compound', 'upper', ['back'], ['biceps', 'shoulders']],
   ['One_Arm_Lat_Pulldown', 'One Arm Lat Pulldown', 'cable', 'compound', 'upper', ['back'], ['biceps']],
   ['Straight-Arm_Pulldown', 'Straight-Arm Pulldown', 'cable', 'isolation', 'upper', ['back'], []],
@@ -146,6 +149,37 @@ const ROWS: Row[] = [
   ['Standing_Calf_Raises', 'Standing Calf Raises', 'machine', 'isolation', 'lower', ['calves'], []],
   ['Seated_Calf_Raise', 'Seated Calf Raise', 'machine', 'isolation', 'lower', ['calves'], []],
   ['Calf_Press_On_The_Leg_Press_Machine', 'Calf Press On The Leg Press Machine', 'machine', 'isolation', 'lower', ['calves'], []],
+  // Added for the exercise ranking (docs/Research/Evidence/Training - Exercise ranking.md)
+  ['Smith_Machine_Bench_Press', 'Smith Machine Bench Press', 'machine', 'compound', 'upper', ['chest'], ['shoulders', 'triceps']],
+  ['Cable_Crossover', 'Cable Crossover', 'cable', 'isolation', 'upper', ['chest'], ['shoulders']],
+  ['Pushups', 'Pushups', 'bodyweight', 'compound', 'upper', ['chest'], ['shoulders', 'triceps']],
+  ['Smith_Machine_Incline_Bench_Press', 'Smith Machine Incline Bench Press', 'machine', 'compound', 'upper', ['chest'], ['shoulders', 'triceps']],
+  ['Hammer_Grip_Incline_DB_Bench_Press', 'Hammer Grip Incline DB Bench Press', 'dumbbell', 'compound', 'upper', ['chest'], ['shoulders', 'triceps']],
+  ['Underhand_Cable_Pulldowns', 'Underhand Cable Pulldowns', 'cable', 'compound', 'upper', ['back'], ['biceps', 'shoulders']],
+  ['Chin-Up', 'Chin-Up', 'bodyweight', 'compound', 'upper', ['back'], ['biceps']],
+  ['Smith_Machine_Overhead_Shoulder_Press', 'Smith Machine Overhead Shoulder Press', 'machine', 'compound', 'upper', ['shoulders'], ['triceps']],
+  ['Leverage_Shoulder_Press', 'Leverage Shoulder Press', 'machine', 'compound', 'upper', ['shoulders'], ['triceps']],
+  ['Standing_Military_Press', 'Standing Military Press', 'barbell', 'compound', 'upper', ['shoulders'], ['triceps']],
+  ['Standing_Low-Pulley_Deltoid_Raise', 'Standing Low-Pulley Deltoid Raise', 'cable', 'isolation', 'upper', ['shoulders'], []],
+  ['One-Arm_Incline_Lateral_Raise', 'One-Arm Incline Lateral Raise', 'dumbbell', 'isolation', 'upper', ['shoulders'], []],
+  ['Reverse_Machine_Flyes', 'Reverse Machine Flyes', 'machine', 'isolation', 'upper', ['shoulders'], []],
+  ['Bent_Over_Dumbbell_Rear_Delt_Raise_With_Head_On_Bench', 'Bent Over Dumbbell Rear Delt Raise With Head On Bench', 'dumbbell', 'isolation', 'upper', ['shoulders'], []],
+  ['Cable_One_Arm_Tricep_Extension', 'Cable One Arm Tricep Extension', 'cable', 'isolation', 'upper', ['triceps'], []],
+  ['Goblet_Squat', 'Goblet Squat', 'kettlebell', 'compound', 'lower', ['quads'], ['calves', 'glutes']],
+  ['Front_Barbell_Squat', 'Front Barbell Squat', 'barbell', 'compound', 'lower', ['quads'], ['calves', 'glutes']],
+  ['Hyperextensions_Back_Extensions', 'Hyperextensions (Back Extensions)', 'bodyweight', 'isolation', 'lower', ['hamstrings'], ['glutes']],
+  ['Glute_Ham_Raise', 'Glute Ham Raise', 'machine', 'compound', 'lower', ['hamstrings'], ['calves', 'glutes']],
+  ['Calf_Press', 'Calf Press', 'machine', 'isolation', 'lower', ['calves'], []],
+  ['Smith_Machine_Calf_Raise', 'Smith Machine Calf Raise', 'machine', 'isolation', 'lower', ['calves'], []],
+  ['Donkey_Calf_Raises', 'Donkey Calf Raises', 'bodyweight', 'isolation', 'lower', ['calves'], []],
+  ['Standing_Dumbbell_Calf_Raise', 'Standing Dumbbell Calf Raise', 'dumbbell', 'isolation', 'lower', ['calves'], []],
+  ['Standing_Barbell_Calf_Raise', 'Standing Barbell Calf Raise', 'barbell', 'isolation', 'lower', ['calves'], []],
+  ['Weighted_Crunches', 'Weighted Crunches', 'dumbbell', 'isolation', 'upper', ['abs'], []],
+  ['Reverse_Crunch', 'Reverse Crunch', 'bodyweight', 'isolation', 'upper', ['abs'], []],
+  ['Knee_Hip_Raise_On_Parallel_Bars', 'Knee/Hip Raise On Parallel Bars', 'bodyweight', 'isolation', 'upper', ['abs'], []],
+  ['Hanging_Leg_Raise', 'Hanging Leg Raise', 'bodyweight', 'isolation', 'upper', ['abs'], []],
+  ['Ab_Roller', 'Ab Roller', 'bodyweight', 'isolation', 'upper', ['abs'], ['shoulders']],
+  ['Ascend_Machine_Lateral_Raise', 'Machine Lateral Raise', 'machine', 'isolation', 'upper', ['shoulders'], []],
 ];
 
 export const CATALOG: Record<string, CatalogExercise> = Object.fromEntries(
