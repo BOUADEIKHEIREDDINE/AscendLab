@@ -8,7 +8,7 @@ import { DB_EXERCISES, dbFind, equipmentOfDb, generatorMusclesOfDb, groupOfDbMus
 import { isSlot, isSlotOption, SETS, slotOf, type Level as EngineLevel, type ProgramDay, type Slot } from '../lib/program-generator/program';
 import { ALSO, RANKING, rankOf as rankingOf, type RankedMuscle } from '../lib/program-generator/ranking';
 import { volumeNotices, type VolumeNotice, type VolumeSession } from '../lib/program-generator/volume-notice';
-import { Convert, gymPlan, planDays, PlanCalculator, roundInt, Units, UNIT, UserProfile } from './profile';
+import { Convert, engineLevel, gymPlan, planDays, PlanCalculator, roundInt, Units, UNIT, UserProfile } from './profile';
 import type { ExercisePlan } from './progress';
 
 export type Muscle = 'CHEST' | 'BACK' | 'SHOULDERS' | 'ARMS' | 'LEGS' | 'GLUTES' | 'CORE' | 'CARDIO' | 'OTHER';
@@ -681,6 +681,24 @@ export function replaceEverywhere(routines: Routine[], slot: Slot, exerciseId: s
 export function swapsAfterReplace(swaps: UserProfile['swaps'], slot: Slot, exerciseId: string, level: EngineLevel): UserProfile['swaps'] {
   const { [slot]: _old, ...rest } = swaps;
   return isSlotOption(slot, level, exerciseId) ? { ...rest, [slot]: exerciseId } : rest;
+}
+
+/** The starter routine with this name (a day title of the week card), or null if the plan no longer has it. */
+export function planRoutine(profile: UserProfile, name: string): Routine | null {
+  return starterRoutines(profile).find((r) => r.name === name) ?? null;
+}
+
+/**
+ * A replace on the onboarding plan preview: the draft with the swap applied everywhere the slot
+ * appears, and the sets notices it causes. Picking the plan's own default again removes the swap.
+ */
+export function previewReplace(profile: UserProfile, slot: Slot, exerciseId: string): { profile: UserProfile; notices: string[] } {
+  const { [slot]: _old, ...rest } = profile.swaps;
+  const fallback = gymPlan({ ...profile, swaps: rest })?.state.schedule.cycle
+    .flatMap((d) => d.exercises).find((x) => x.slot === slot)?.exerciseId;
+  const swaps = exerciseId === fallback ? rest : swapsAfterReplace(profile.swaps, slot, exerciseId, engineLevel(profile));
+  const next = { ...profile, swaps };
+  return { profile: next, notices: programNotices(starterRoutines(profile), starterRoutines(next), next).map(noticeText) };
 }
 
 export function addAfter(exercises: RoutineExercise[], index: number, ex: RoutineExercise): RoutineExercise[] {
