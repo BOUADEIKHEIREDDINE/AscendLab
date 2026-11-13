@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FlatList, Platform, Pressable, View } from 'react-native';
+import { FlatList, Platform, View } from 'react-native';
 import { ProfileRepository, profileStore } from '../../../data/profileRepo';
 import { splitChoice } from '../../../data/profile';
 import type { Split } from '../../../lib/program-generator/program';
@@ -14,7 +14,8 @@ import {
   Button, EmptyState, HeroButton, Icon, ListGroup, ListRow, PressableScale, Screen, SectionTitle, SkeletonCard, SplitButton, T, TabHeader, Tile,
 } from '../../components/core';
 import { ExpressiveShape } from '../../shapes/ExpressiveShape';
-import { ActionMenu, BottomSheet, Dialog, toast } from '../../components/overlays';
+import { ActionMenu, Dialog, toast } from '../../components/overlays';
+import { SplitSheet } from './TrainComponents';
 
 export function TrainingPlanScreen() {
   const nav = useNav();
@@ -154,41 +155,16 @@ export function TrainingPlanScreen() {
         ]}
       />
 
-      {/* One outlined card per split, the current one highlighted, so the options read apart. */}
-      <BottomSheet visible={splitMenu} onDismiss={() => setSplitMenu(false)}>
-        <View style={{ paddingHorizontal: Gutter, paddingBottom: 8, gap: 12 }}>
-          <T v="title">Choose your split</T>
-          <T v="bodyS" color={palette.textMuted}>Both fit your training days. Pick the one you prefer.</T>
-          {splits.map((o) => {
-            const current = o.split === currentSplit;
-            return (
-              <Pressable
-                key={o.split}
-                accessibilityRole="button"
-                accessibilityState={{ selected: current }}
-                onPress={() => {
-                  haptics.tick();
-                  setSplitMenu(false);
-                  // Opened after the sheet closes: stacked popups misbehave, mostly on iOS.
-                  if (!current) setTimeout(() => setPendingSplit({ split: o.split, label: o.label }), Platform.OS === 'ios' ? 350 : 0);
-                }}
-                style={({ pressed }) => ({
-                  flexDirection: 'row', alignItems: 'center', gap: 12, padding: space.tilePad, borderRadius: radius.lg, borderWidth: 2,
-                  borderColor: current ? palette.primary : 'transparent',
-                  backgroundColor: current ? palette.primaryContainer : pressed ? palette.surfaceHighest : palette.surfaceHigh,
-                })}
-              >
-                <View style={{ flex: 1, gap: 4 }}>
-                  <T v="titleS">{o.label}</T>
-                  <T v="bodyS" color={palette.textMuted}>{o.description}</T>
-                  {current && <T v="bodyS" color={palette.primary}>Your current split</T>}
-                </View>
-                {current ? <Icon name="check-circle" color={palette.primary} /> : <Icon name="chevron-right" color={palette.textMuted} />}
-              </Pressable>
-            );
-          })}
-        </View>
-      </BottomSheet>
+      {currentSplit && (
+        <SplitSheet
+          visible={splitMenu}
+          onDismiss={() => setSplitMenu(false)}
+          options={splits}
+          current={currentSplit}
+          // Opened after the sheet closes: stacked popups misbehave, mostly on iOS.
+          onPick={(o) => setTimeout(() => setPendingSplit({ split: o.split, label: o.label }), Platform.OS === 'ios' ? 350 : 0)}
+        />
+      )}
 
       <Dialog
         visible={pendingSplit != null}

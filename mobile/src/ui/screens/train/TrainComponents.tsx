@@ -5,12 +5,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { historyLive } from '../../../data/trainRepo';
 import { doneKeys, excludedKeys, Exercise, EQUIPMENT_LABEL, ExerciseLibrary, MUSCLE_LABEL, Muscle, MUSCLES } from '../../../data/training';
 import { useStore } from '../../../lib/store';
-import { palette, radius, space } from '../../theme';
+import { Gutter, palette, radius, space } from '../../theme';
 import { haptics } from '../../haptics';
 import { Button, Chip, Hairline, HelpNote, Icon, IconButton, Notice, PrimaryButton, T, TextField } from '../../components/core';
 import { BottomSheet, Dialog } from '../../components/overlays';
 import { ExerciseInfoPanel, ExerciseThumb } from '../../components/exerciseInfo';
-import { slotAlternatives, type Level as EngineLevel, type Slot } from '../../../lib/program-generator/program';
+import { slotAlternatives, type Level as EngineLevel, type Slot, type Split, type SplitOption } from '../../../lib/program-generator/program';
 
 /** Set badges now live with the other workout pieces; re-exported for existing imports. */
 export { SetBadge } from '../../components/workout';
@@ -138,13 +138,15 @@ export type AlternativeChoice = { exerciseId: string; name: string; mode: 'repla
  * + Add, then every library exercise for the same muscle. The picker opens in place of the sheet
  * (stacked modals misbehave), and its pick comes back here to choose Replace or Add.
  */
-export function AlternativesSheet({ visible, onDismiss, current, level, onChoose, exclude }: {
+export function AlternativesSheet({ visible, onDismiss, current, level, onChoose, exclude, replaceOnly }: {
   visible: boolean; onDismiss: () => void;
   current: { exerciseId: string; name: string; slot?: Slot };
   level: EngineLevel;
   onChoose: (choice: AlternativeChoice) => void;
   /** Exercise ids already in the routine or workout: left out of the options. */
   exclude?: string[];
+  /** Only the slot's own options, each with Replace: no + Add and no library search (onboarding preview). */
+  replaceOnly?: boolean;
 }) {
   const [picking, setPicking] = useState(false);
   const [libraryPick, setLibraryPick] = useState<Exercise | null>(null);
@@ -167,7 +169,7 @@ export function AlternativesSheet({ visible, onDismiss, current, level, onChoose
       </Pressable>
       <View style={{ flexDirection: 'row', gap: 8 }}>
         <Button kind="tonal" label="Replace" icon="swap-horiz" onPress={() => choose({ exerciseId: id, name, mode: 'replace' })} compact />
-        <Button kind="outline" label="Add" icon="add" onPress={() => choose({ exerciseId: id, name, mode: 'add' })} compact />
+        {!replaceOnly && <Button kind="outline" label="Add" icon="add" onPress={() => choose({ exerciseId: id, name, mode: 'add' })} compact />}
       </View>
     </View>
   );
@@ -184,8 +186,10 @@ export function AlternativesSheet({ visible, onDismiss, current, level, onChoose
           const ex = ExerciseLibrary.find(id);
           return option(id, ex?.name ?? id, ex ? EQUIPMENT_LABEL[ex.equipment] : '');
         })}
-        <Button kind="text" label={`More exercises for ${MUSCLE_LABEL[muscle].toLowerCase()}`} icon="search"
-          onPress={() => setPicking(true)} style={{ marginHorizontal: 8, marginTop: 4 }} />
+        {!replaceOnly && (
+          <Button kind="text" label={`More exercises for ${MUSCLE_LABEL[muscle].toLowerCase()}`} icon="search"
+            onPress={() => setPicking(true)} style={{ marginHorizontal: 8, marginTop: 4 }} />
+        )}
       </BottomSheet>
       <ExercisePicker
         visible={visible && picking}
@@ -201,6 +205,50 @@ export function AlternativesSheet({ visible, onDismiss, current, level, onChoose
         </SafeAreaView>
       </Modal>
     </>
+  );
+}
+
+/**
+ * "Choose your split": one outlined card per split, the current one highlighted, so the options
+ * read apart. The sheet closes itself; `onPick` runs only for a split that isn't the current one.
+ */
+export function SplitSheet({ visible, onDismiss, options, current, onPick }: {
+  visible: boolean; onDismiss: () => void; options: SplitOption[]; current: Split; onPick: (o: SplitOption) => void;
+}) {
+  return (
+    <BottomSheet visible={visible} onDismiss={onDismiss}>
+      <View style={{ paddingHorizontal: Gutter, paddingBottom: 8, gap: 12 }}>
+        <T v="title">Choose your split</T>
+        <T v="bodyS" color={palette.textMuted}>Both fit your training days. Pick the one you prefer.</T>
+        {options.map((o) => {
+          const isCurrent = o.split === current;
+          return (
+            <Pressable
+              key={o.split}
+              accessibilityRole="button"
+              accessibilityState={{ selected: isCurrent }}
+              onPress={() => {
+                haptics.tick();
+                onDismiss();
+                if (!isCurrent) onPick(o);
+              }}
+              style={({ pressed }) => ({
+                flexDirection: 'row', alignItems: 'center', gap: 12, padding: space.tilePad, borderRadius: radius.lg, borderWidth: 2,
+                borderColor: isCurrent ? palette.primary : 'transparent',
+                backgroundColor: isCurrent ? palette.primaryContainer : pressed ? palette.surfaceHighest : palette.surfaceHigh,
+              })}
+            >
+              <View style={{ flex: 1, gap: 4 }}>
+                <T v="titleS">{o.label}</T>
+                <T v="bodyS" color={palette.textMuted}>{o.description}</T>
+                {isCurrent && <T v="bodyS" color={palette.primary}>Your current split</T>}
+              </View>
+              {isCurrent ? <Icon name="check-circle" color={palette.primary} /> : <Icon name="chevron-right" color={palette.textMuted} />}
+            </Pressable>
+          );
+        })}
+      </View>
+    </BottomSheet>
   );
 }
 
