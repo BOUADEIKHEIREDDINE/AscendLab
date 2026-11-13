@@ -19,6 +19,7 @@ import { Bento, Button, digits, HeroButton, IconButton, ListGroup, ListRow, Scre
 import { AscentHero, PrBadge, PrBanner, RestFlash, RestTimerPill, SetBadge, SetCheck, StatTile } from '../../components/workout';
 import { springTo } from '../../motion';
 import { ActionMenu, Dialog, toast } from '../../components/overlays';
+import { SwipeToDelete } from '../../components/swipe';
 import { AlternativesSheet, ExercisePicker, VolumeNoticeNote } from './TrainComponents';
 
 const toKg = (text: string, units: Units) => {
@@ -288,9 +289,10 @@ function ExerciseBlock({ ex, index, previous, records, units, onOpen, onRecord, 
         // Grey hint: today's planned weight, else last session's, else the set above.
         const weightHint = planWeight != null && planWeight > 0 ? display(planWeight)
           : prevWeight ?? (ex.sets[setIndex - 1]?.weight || (bodyweight ? '0' : ''));
+        const remove = () => updateExercise((e) => ({ ...e, sets: e.sets.filter((_, i) => i !== setIndex) }));
         return (
+          <SwipeToDelete key={setIndex} onDelete={remove}>
           <SetRow
-            key={setIndex}
             number={normalCount}
             set={set}
             previous={prevText}
@@ -298,7 +300,7 @@ function ExerciseBlock({ ex, index, previous, records, units, onOpen, onRecord, 
             repsHint={repsHint}
             onChange={(s) => setAt(setIndex, s)}
             pr={pr?.set === setIndex ? pr.key : null}
-            onRemove={() => updateExercise((e) => ({ ...e, sets: e.sets.filter((_, i) => i !== setIndex) }))}
+            onRemove={remove}
             onType={(t) => setAt(setIndex, { ...set, type: t })}
             onToggle={() => {
               const nowDone = !set.done;
@@ -350,6 +352,7 @@ function ExerciseBlock({ ex, index, previous, records, units, onOpen, onRecord, 
               }));
             }}
           />
+          </SwipeToDelete>
         );
       })}
       <Button kind="text" label="Add set" icon="add" style={{ marginHorizontal: 8, marginTop: 4 }} onPress={() => {

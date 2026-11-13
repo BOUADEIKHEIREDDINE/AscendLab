@@ -7,6 +7,7 @@ import { useFonts } from 'expo-font';
 import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold } from '@expo-google-fonts/inter';
 import { SpaceGrotesk_500Medium, SpaceGrotesk_700Bold } from '@expo-google-fonts/space-grotesk';
 import { DarkTheme, NavigationContainer } from '@react-navigation/native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthRepository } from './src/data/authRepo';
 import { ProfileRepository } from './src/data/profileRepo';
@@ -54,6 +55,8 @@ export default function App() {
   }, [start, fontsReady]);
 
   return (
+    // Swipe gestures (swipe a set left to delete it) need the gesture root around the whole app.
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: palette.ink }}>
     <ThemeProvider>
     <SafeAreaProvider style={{ backgroundColor: palette.ink }}>
       <StatusBar style="light" />
@@ -69,5 +72,6 @@ export default function App() {
       <ToastHost />
     </SafeAreaProvider>
     </ThemeProvider>
+    </GestureHandlerRootView>
   );
 }
