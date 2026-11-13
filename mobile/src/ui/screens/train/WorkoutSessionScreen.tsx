@@ -289,9 +289,12 @@ function ExerciseBlock({ ex, index, previous, records, units, onOpen, onRecord, 
         // Grey hint: today's planned weight, else last session's, else the set above.
         const weightHint = planWeight != null && planWeight > 0 ? display(planWeight)
           : prevWeight ?? (ex.sets[setIndex - 1]?.weight || (bodyweight ? '0' : ''));
-        const remove = () => updateExercise((e) => ({ ...e, sets: e.sets.filter((_, i) => i !== setIndex) }));
+        // By key, not position: the row folds away first, and the list may change meanwhile.
+        const remove = () => updateExercise((e) => ({
+          ...e, sets: e.sets.filter((s, i) => (set.key != null ? s.key !== set.key : i !== setIndex)),
+        }));
         return (
-          <SwipeToDelete key={setIndex} onDelete={remove}>
+          <SwipeToDelete key={set.key ?? setIndex} onDelete={remove}>
           <SetRow
             number={normalCount}
             set={set}
