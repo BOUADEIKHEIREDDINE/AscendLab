@@ -5,7 +5,7 @@ import { TrainRepository, trainLive } from '../../../data/trainRepo';
 import { ProfileRepository, profileStore } from '../../../data/profileRepo';
 import { engineLevel } from '../../../data/profile';
 import {
-  ADDED_SETS, addAfter, keptReplaces, noticeText, Program, programNotices, replaceEverywhere, Routine, RoutineExercise, swapsAfterReplace, uuid,
+  ADDED_SETS, addAfter, keptReplaces, noticeText, Program, programNotices, replaceEverywhere, resizeKeys, Routine, RoutineExercise, swapsAfterReplace, uuid,
 } from '../../../data/training';
 import { DEFAULT_TARGET, restSecFor } from '../../../data/progress';
 import type { Slot } from '../../../lib/program-generator/program';
@@ -15,6 +15,7 @@ import { palette, Gutter, radius, space } from '../../theme';
 import { Button, IconButton, PageHeader, PrimaryButton, Screen, T, TextField } from '../../components/core';
 import { ShapeLoader } from '../../shapes/ShapeLoader';
 import { ActionMenu, toast } from '../../components/overlays';
+import { SwipeToDelete } from '../../components/swipe';
 import { AlternativesSheet, ExercisePicker, SetBadge, Stepper, VolumeNoticeNote } from './TrainComponents';
 
 export function RoutineEditorScreen() {
@@ -175,6 +176,9 @@ function ExerciseSection({ ex, first, last, onSwap, onSets, onReps, onMoveUp, on
 }) {
   const nav = useNav();
   const [menu, setMenu] = useState(false);
+  // One stable key per set row, so a swiped-away set folds out and the ones below slide up.
+  const [rowKeys, setRowKeys] = useState(() => resizeKeys([], ex.sets));
+  if (rowKeys.length !== ex.sets) setRowKeys(resizeKeys(rowKeys, ex.sets));
   const rest = restSecFor(ex.exerciseId);
   const planned = rest != null;
   const target = planned ? `${DEFAULT_TARGET.repMin}–${DEFAULT_TARGET.repMax}` : String(ex.reps);
@@ -202,13 +206,19 @@ function ExerciseSection({ ex, first, last, onSwap, onSets, onReps, onMoveUp, on
           <View style={{ width: 44 }} />
         </View>
         {Array.from({ length: ex.sets }, (_, i) => (
-          <View key={i} style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, paddingVertical: 4 }}>
+          // A routine keeps at least one set per exercise, so the last one can't be swiped away.
+          <SwipeToDelete key={rowKeys[i] ?? i} enabled={ex.sets > 1} onDelete={() => {
+            setRowKeys(rowKeys.filter((_, j) => j !== i));
+            onSets(ex.sets - 1);
+          }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, paddingVertical: 4 }}>
             <View style={{ width: 36, alignItems: 'center', paddingVertical: 8 }}><SetBadge type="NORMAL" normalIndex={i + 1} /></View>
             <View style={{ flex: 1, marginHorizontal: 4, height: 40, borderRadius: radius.sm, backgroundColor: palette.surfaceHigh, alignItems: 'center', justifyContent: 'center' }}>
               <T v="displayS" color={palette.textMuted} style={{ fontSize: 17, lineHeight: 22 }}>{target}</T>
             </View>
             <IconButton name="close" label={`Remove set ${i + 1}`} color={palette.textMuted} disabled={ex.sets <= 1} onPress={() => onSets(ex.sets - 1)} />
           </View>
+          </SwipeToDelete>
         ))}
         {!planned && (
           <View style={{ paddingHorizontal: space.tilePad - 4 }}>

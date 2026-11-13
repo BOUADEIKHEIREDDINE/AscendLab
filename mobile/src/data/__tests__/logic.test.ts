@@ -14,7 +14,7 @@ import {
   activeFromJson, activeToJson, ActiveWorkout, beatenBy, countRecords, ExerciseLibrary, LoggedExercise, recordsByExercise,
   nextRoutine, recordsFrom, routineExerciseFromMap, routineToMap, starterRoutines, WorkoutMath, workoutFromDoc,
   newSet, noticeText, programNotices, replaceEverywhere, swapsAfterReplace, volumeSessions, workoutReplace, applyWorkoutChanges,
-  keptReplaces, replacementSetCount, previousForSets, excludedKeys, planRoutine, previewReplace,
+  keptReplaces, replacementSetCount, previousForSets, excludedKeys, planRoutine, previewReplace, resizeKeys,
 } from '../training';
 import { RANKING } from '../../lib/program-generator/ranking';
 import { slotAlternatives } from '../../lib/program-generator/program';
@@ -265,7 +265,8 @@ describe('Workout records', () => {
       title: 'Push', routineId: null, startedAt: 1, restEndsAt: null, restSeconds: 90,
       exercises: [{ exerciseId: 'bench_press', name: 'Bench Press', targetReps: 10, sets: [{ weight: '80', reps: '8', done: true, type: 'WARMUP' }] }],
     };
-    expect(activeFromJson(activeToJson(w))).toEqual(w);
+    // Restored sets get a fresh on-screen key; everything saved comes back the same.
+    expect(activeFromJson(activeToJson(w))).toMatchObject(w);
   });
 
   test('stored workouts with missing fields still load', () => {
@@ -465,7 +466,7 @@ describe('program edits', () => {
     const next = { exerciseId: 'B', name: 'B', targetReps: 10, sets: [newSet(), newSet()] };
     const result = workoutReplace([old], 0, next);
     expect(result.map((x) => x.exerciseId)).toEqual(['A', 'B']);
-    expect(result[0].sets).toEqual([newSet({ done: true, reps: '8' })]);
+    expect(result[0].sets).toEqual([{ ...newSet({ done: true, reps: '8' }), key: old.sets[0].key }]);
   });
 
   test('a workout replace with nothing ticked swaps in place', () => {
@@ -618,5 +619,37 @@ describe('plan ready preview', () => {
   test('notices are plain lines', () => {
     const { notices } = previewReplace(four, 'chestPress', alt(four));
     for (const line of notices) expect(typeof line).toBe('string');
+  });
+});
+
+describe('row keys for animated set rows', () => {
+  test('every new set gets its own key', () => {
+    const a = newSet();
+    const b = newSet({ weight: '20' });
+    expect(a.key).toBeTruthy();
+    expect(b.key).toBeTruthy();
+    expect(a.key).not.toBe(b.key);
+  });
+
+  test('a restored workout gives each set a key, and keys are not saved', () => {
+    const w: ActiveWorkout = {
+      title: 'Upper A', routineId: null, startedAt: 1, restEndsAt: null, restSeconds: 90,
+      exercises: [{ exerciseId: 'x', name: 'X', targetReps: 10, sets: [newSet(), newSet()] }],
+    };
+    const json = activeToJson(w);
+    expect(json).not.toContain('"key"');
+    const sets = activeFromJson(json)!.exercises[0].sets;
+    expect(sets[0].key).toBeTruthy();
+    expect(sets[0].key).not.toBe(sets[1].key);
+  });
+
+  test('resizeKeys keeps existing keys and only adds or trims at the end', () => {
+    let n = 0;
+    const make = () => `k${n++}`;
+    expect(resizeKeys([], 3, make)).toEqual(['k0', 'k1', 'k2']);
+    expect(resizeKeys(['a', 'b'], 3, make)).toEqual(['a', 'b', 'k3']);
+    expect(resizeKeys(['a', 'b', 'c'], 2, make)).toEqual(['a', 'b']);
+    const same = ['a'];
+    expect(resizeKeys(same, 1, make)).toBe(same);
   });
 });

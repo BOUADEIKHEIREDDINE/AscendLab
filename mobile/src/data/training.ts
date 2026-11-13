@@ -351,8 +351,19 @@ export const SET_TYPE: Record<SetType, { short: string; label: string }> = {
 const setTypeOf = (v: unknown): SetType => (SET_TYPES.includes(v as SetType) ? (v as SetType) : 'NORMAL');
 
 /** One set while training. Weight and reps are kept as typed, in the person's units. */
-export interface SetEntry { weight: string; reps: string; done: boolean; type: SetType }
-export const newSet = (partial: Partial<SetEntry> = {}): SetEntry => ({ weight: '', reps: '', done: false, type: 'NORMAL', ...partial });
+export interface SetEntry {
+  weight: string; reps: string; done: boolean; type: SetType;
+  /** Identity of the row on screen, so a deleted set animates out and the rest slide up. Never saved. */
+  key?: string;
+}
+export const newSet = (partial: Partial<SetEntry> = {}): SetEntry => ({ weight: '', reps: '', done: false, type: 'NORMAL', key: uuid(), ...partial });
+
+/** Row keys for `count` rows: existing keys stay in place, new ones are added (or extras trimmed) at the end. */
+export function resizeKeys(keys: string[], count: number, make: () => string = uuid): string[] {
+  if (keys.length === count) return keys;
+  if (keys.length > count) return keys.slice(0, count);
+  return [...keys, ...Array.from({ length: count - keys.length }, make)];
+}
 
 export interface ActiveExercise {
   exerciseId: string;
@@ -421,7 +432,7 @@ export function activeFromJson(json: string): ActiveWorkout | null {
         ...(x.plan && typeof x.plan === 'object' ? { plan: x.plan as ExercisePlan } : {}),
         ...(isSlot(x.slot) ? { slot: x.slot } : {}),
         ...(x.tag === 'swapped' || x.tag === 'added' ? { tag: x.tag as 'swapped' | 'added' } : {}),
-        sets: (x.sets as any[]).map((s) => ({ weight: String(s.w ?? ''), reps: String(s.r ?? ''), done: !!s.d, type: setTypeOf(s.t) })),
+        sets: (x.sets as any[]).map((s) => newSet({ weight: String(s.w ?? ''), reps: String(s.r ?? ''), done: !!s.d, type: setTypeOf(s.t) })),
       })),
     };
   } catch {
