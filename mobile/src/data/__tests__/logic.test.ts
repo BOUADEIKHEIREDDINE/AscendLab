@@ -14,9 +14,10 @@ import {
   activeFromJson, activeToJson, ActiveWorkout, beatenBy, countRecords, ExerciseLibrary, LoggedExercise, recordsByExercise,
   nextRoutine, recordsFrom, routineExerciseFromMap, routineToMap, starterRoutines, WorkoutMath, workoutFromDoc,
   newSet, noticeText, programNotices, replaceEverywhere, swapsAfterReplace, volumeSessions, workoutReplace, applyWorkoutChanges,
-  keptReplaces, replacementSetCount, previousForSets, excludedKeys,
+  keptReplaces, replacementSetCount, previousForSets, excludedKeys, planRoutine, previewReplace,
 } from '../training';
 import { RANKING } from '../../lib/program-generator/ranking';
+import { slotAlternatives } from '../../lib/program-generator/program';
 
 const man: UserProfile = {
   ...emptyProfile(),
@@ -568,5 +569,54 @@ describe('excludedKeys: no exercise twice', () => {
   });
   it('custom ids exclude themselves', () => {
     expect(excludedKeys(['custom:my_move']).has('custom:my_move')).toBe(true);
+  });
+});
+
+describe('plan ready preview', () => {
+  const four = withDays({ ...man, level: 'INTERMEDIATE' }, [0, 1, 3, 4], null);
+  const six = withDays({ ...man, level: 'INTERMEDIATE' }, [0, 1, 2, 3, 4, 5], null);
+  const chestOf = (p: UserProfile) => starterRoutines(p).flatMap((r) => r.exercises).filter((x) => x.slot === 'chestPress');
+  const alt = (p: UserProfile) => slotAlternatives('chestPress', 'intermediate', chestOf(p)[0].exerciseId)[0];
+
+  test('every day of the week card opens a routine', () => {
+    for (const p of [man, four, six, { ...man, place: 'HOME' as const }]) {
+      for (const d of PlanCalculator.training(p).days) expect(planRoutine(p, d.title)).not.toBeNull();
+    }
+  });
+
+  test('an unknown routine name gives null', () => {
+    expect(planRoutine(four, 'Nope')).toBeNull();
+  });
+
+  test('a replace applies to every routine with the slot', () => {
+    const pick = alt(four);
+    const { profile } = previewReplace(four, 'chestPress', pick);
+    const chest = chestOf(profile);
+    expect(chest.length).toBeGreaterThan(1);
+    for (const x of chest) expect(x.exerciseId).toBe(pick);
+  });
+
+  test('switching back to the original leaves no swap', () => {
+    const original = chestOf(four)[0].exerciseId;
+    const swapped = previewReplace(four, 'chestPress', alt(four)).profile;
+    const back = previewReplace(swapped, 'chestPress', original).profile;
+    expect(back.swaps).toEqual({});
+    expect(chestOf(back)[0].exerciseId).toBe(original);
+  });
+
+  test('a swap survives a split change and a days change', () => {
+    const pick = alt(six);
+    const { profile } = previewReplace(six, 'chestPress', pick);
+    const ppl = { ...profile, split: 'ppl' as const };
+    expect(chestOf(ppl).length).toBeGreaterThan(0);
+    for (const x of chestOf(ppl)) expect(x.exerciseId).toBe(pick);
+    const fewer = withDays(profile, [0, 2], null);
+    expect(starterRoutines(fewer).length).toBeGreaterThan(0);
+    expect(fewer.swaps).toEqual({ chestPress: pick });
+  });
+
+  test('notices are plain lines', () => {
+    const { notices } = previewReplace(four, 'chestPress', alt(four));
+    for (const line of notices) expect(typeof line).toBe('string');
   });
 });
