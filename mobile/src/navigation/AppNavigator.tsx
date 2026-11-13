@@ -13,6 +13,7 @@ import { ChooseVersionScreen } from '../ui/screens/onboarding/ChooseVersionScree
 import { YourBodyScreen } from '../ui/screens/onboarding/YourBodyScreen';
 import { YourGoalsScreen } from '../ui/screens/onboarding/YourGoalsScreen';
 import { PlanReadyScreen } from '../ui/screens/onboarding/PlanReadyScreen';
+import { PlanRoutineScreen } from '../ui/screens/onboarding/PlanRoutineScreen';
 import { HomeScreen } from '../ui/screens/home/HomeScreen';
 import { CreatePostScreen } from '../ui/screens/home/CreatePostScreen';
 import { FriendsScreen } from '../ui/screens/home/FriendsScreen';
@@ -123,6 +124,7 @@ export function AppNavigator({ start }: { start: StartPage }) {
       <Root.Screen name="YourBody" component={YourBodyScreen} />
       <Root.Screen name="YourGoals" component={YourGoalsScreen} />
       <Root.Screen name="PlanReady" component={PlanReadyScreen} />
+      <Root.Screen name="PlanRoutine" component={PlanRoutineScreen} />
       <Root.Screen name="Main" component={MainTabs} options={{ animation: 'fade' }} />
       {/* The live workout takes the whole screen, like a dedicated training mode. */}
       <Root.Screen name="WorkoutSession" component={WorkoutSessionScreen} options={{ animation: 'slide_from_bottom', gestureEnabled: false }} />

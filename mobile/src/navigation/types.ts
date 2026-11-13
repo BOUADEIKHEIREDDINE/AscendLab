@@ -60,6 +60,7 @@ export type RootPages = {
   YourBody: undefined;
   YourGoals: undefined;
   PlanReady: undefined;
+  PlanRoutine: { name: string };
   // The app itself
   Main: NavigatorScreenParams<Tabs> | undefined;
   // Full-screen pages without the tab bar
