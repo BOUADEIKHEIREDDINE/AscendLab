@@ -280,7 +280,7 @@ describe('Workout records', () => {
   test('rankOf is shared by linked ids', () => {
     expect(ExerciseLibrary.rankOf('Machine_Bench_Press')).toBe(1);
     expect(ExerciseLibrary.rankOf('db_bench_press')).toBe(ExerciseLibrary.rankOf('Dumbbell_Bench_Press'));
-    expect(ExerciseLibrary.rankOf('db_bench_press')).toBe(2);
+    expect(ExerciseLibrary.rankOf('db_bench_press')).toBe(3);
     expect(ExerciseLibrary.rankOf('custom:nope')).toBeNull();
   });
 });

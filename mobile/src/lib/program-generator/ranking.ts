@@ -28,8 +28,8 @@ export type RankedEntry = { exerciseId: string; slot: Slot; basis: 'study' | 'pr
 export const RANKING: Record<RankedMuscle, RankedEntry[]> = {
   chest: [
     { exerciseId: 'Machine_Bench_Press', slot: 'chestPress', basis: 'study', source: 'hernandez2023 (equal to barbell); stability' },
-    { exerciseId: 'Dumbbell_Bench_Press', slot: 'chestPress', basis: 'principle', source: 'user decision; equipment' },
     { exerciseId: 'Butterfly', slot: 'chestFly', basis: 'principle', source: 'user decision; stability, isolation; pinto2025 (support)' },
+    { exerciseId: 'Dumbbell_Bench_Press', slot: 'chestPress', basis: 'principle', source: 'user decision; equipment' },
     { exerciseId: 'Leverage_Chest_Press', slot: 'chestPress', basis: 'principle', source: 'equipment, stability' },
     { exerciseId: 'Smith_Machine_Bench_Press', slot: 'chestPress', basis: 'principle', source: 'equipment, stability' },
     { exerciseId: 'Barbell_Bench_Press_-_Medium_Grip', slot: 'chestPress', basis: 'study', source: 'lanza2024, hernandez2023; free bar, injury (kerr2010)' },
@@ -41,8 +41,8 @@ export const RANKING: Record<RankedMuscle, RankedEntry[]> = {
   upperChest: [
     { exerciseId: 'Smith_Machine_Incline_Bench_Press', slot: 'inclinePress', basis: 'principle', source: 'chaves2020 (incline angle), equipment, stability' },
     { exerciseId: 'Leverage_Incline_Chest_Press', slot: 'inclinePress', basis: 'principle', source: 'equipment, stability, ease' },
-    { exerciseId: 'Barbell_Incline_Bench_Press_-_Medium_Grip', slot: 'inclinePress', basis: 'study', source: 'chaves2020' },
     { exerciseId: 'Incline_Dumbbell_Press', slot: 'inclinePress', basis: 'principle', source: 'equipment' },
+    { exerciseId: 'Barbell_Incline_Bench_Press_-_Medium_Grip', slot: 'inclinePress', basis: 'study', source: 'chaves2020' },
     { exerciseId: 'Incline_Cable_Chest_Press', slot: 'inclinePress', basis: 'principle', source: 'equipment; harder setup (ease)' },
     { exerciseId: 'Hammer_Grip_Incline_DB_Bench_Press', slot: 'inclinePress', basis: 'principle', source: 'anatomy; same stability as #4, less common grip' },
   ],
