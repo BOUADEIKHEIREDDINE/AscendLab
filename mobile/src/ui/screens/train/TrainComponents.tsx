@@ -103,7 +103,7 @@ export function ExercisePicker({ visible, onDismiss, onPick, muscle: initialMusc
             ) : undefined
           }
           renderItem={({ item }) => (
-            <ExerciseRow exerciseId={item.id} single={single} topPick={muscle != null && ExerciseLibrary.rankOf(item.id) != null} title={item.name} subtitle={isOut(item.id) ? ALREADY_IN : `${MUSCLE_LABEL[item.muscle]} · ${EQUIPMENT_LABEL[item.equipment]}`}
+            <ExerciseRow exerciseId={item.id} single={single} topPick={muscle != null && query.trim() === '' && ExerciseLibrary.rankOf(item.id) != null} title={item.name} subtitle={isOut(item.id) ? ALREADY_IN : `${MUSCLE_LABEL[item.muscle]} · ${EQUIPMENT_LABEL[item.equipment]}`}
               excluded={isOut(item.id)} selected={has(item)} onPress={() => toggle(item)} onInfo={() => setInfo(item)} />
           )}
         />

@@ -138,7 +138,7 @@ export const RANKING: Record<RankedMuscle, RankedEntry[]> = {
     { exerciseId: 'Romanian_Deadlift', slot: 'hinge', basis: 'study', source: 'morin2025 (stiff-leg deadlift); free bar' },
     { exerciseId: 'Stiff-Legged_Dumbbell_Deadlift', slot: 'hinge', basis: 'study', source: 'morin2025; dumbbells' },
     { exerciseId: 'Kettlebell_One-Legged_Deadlift', slot: 'hinge', basis: 'principle', source: 'single leg; least stable hinge' },
-    { exerciseId: 'Glute_Ham_Raise', slot: 'legCurl', basis: 'principle', source: 'see below' },
+    { exerciseId: 'Glute_Ham_Raise', slot: 'legCurl', basis: 'principle', source: 'ease, overload (bodyweight minimum)' },
   ],
   glutes: [
     { exerciseId: 'Ascend_Hip_Thrust_Machine', slot: 'hipThrust', basis: 'principle', source: 'user decision; stability, ease; plotkin2023, krauseneto2025 (support)' },

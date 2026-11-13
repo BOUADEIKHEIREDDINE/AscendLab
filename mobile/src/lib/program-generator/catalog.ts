@@ -174,7 +174,7 @@ const ROWS: Row[] = [
   ['Donkey_Calf_Raises', 'Donkey Calf Raises', 'bodyweight', 'isolation', 'lower', ['calves'], []],
   ['Standing_Dumbbell_Calf_Raise', 'Standing Dumbbell Calf Raise', 'dumbbell', 'isolation', 'lower', ['calves'], []],
   ['Standing_Barbell_Calf_Raise', 'Standing Barbell Calf Raise', 'barbell', 'isolation', 'lower', ['calves'], []],
-  ['Weighted_Crunches', 'Weighted Crunches', 'bodyweight', 'isolation', 'upper', ['abs'], []],
+  ['Weighted_Crunches', 'Weighted Crunches', 'dumbbell', 'isolation', 'upper', ['abs'], []],
   ['Reverse_Crunch', 'Reverse Crunch', 'bodyweight', 'isolation', 'upper', ['abs'], []],
   ['Knee_Hip_Raise_On_Parallel_Bars', 'Knee/Hip Raise On Parallel Bars', 'bodyweight', 'isolation', 'upper', ['abs'], []],
   ['Hanging_Leg_Raise', 'Hanging Leg Raise', 'bodyweight', 'isolation', 'upper', ['abs'], []],

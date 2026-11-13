@@ -5,7 +5,7 @@
  */
 import { Timestamp } from 'firebase/firestore';
 import {
-  BodyChecks, chosenDays, Convert, emptyProfile, gymPlan, pinLegacyDefaults, RANKING_VERSION, PlanCalculator, splitChoice, profileFromMap, profileToMap, UserProfile, withDays,
+  BodyChecks, chosenDays, Convert, emptyProfile, gymPlan, pinLegacyDefaults, settleStoredProfile, RANKING_VERSION, PlanCalculator, splitChoice, profileFromMap, profileToMap, UserProfile, withDays,
 } from '../profile';
 
 import { LEGACY_SLOT_OPTIONS, legacyDefault } from '../../lib/program-generator/legacy';
@@ -186,6 +186,18 @@ describe('BodyChecks (same results as the Android app)', () => {
     test('pins every focus and split the profile uses', () => {
       const p = { ...old, daysPerWeek: 5, trainingDays: [0, 1, 2, 4, 5], split: 'ppl_upper_lower' as const };
       for (const e of days(pinLegacyDefaults(p))) expect(e.exerciseId).toBe(legacyDefault(e.slot, 'intermediate'));
+    });
+
+    test('a stored map without a version is pinned and flagged for one save', () => {
+      const stored = profileToMap({ ...old, rankingVersion: null });
+      const { profile, pinned } = settleStoredProfile(profileFromMap(stored));
+      expect(pinned).toBe(true);
+      expect(profile.rankingVersion).toBe(RANKING_VERSION);
+      for (const e of days(profile)) expect(e.exerciseId).toBe(legacyDefault(e.slot, 'intermediate'));
+      // Read back again after the save: nothing more to do.
+      const again = settleStoredProfile(profileFromMap(profileToMap(profile)));
+      expect(again.pinned).toBe(false);
+      expect(again.profile.swaps).toEqual(profile.swaps);
     });
 
     test('home and incomplete profiles only get the version', () => {

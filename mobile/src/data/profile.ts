@@ -98,7 +98,11 @@ export interface UserProfile {
   rankingVersion: number | null;
 }
 
-/** Bump when the generator's default exercises change again. */
+/**
+ * Bump when the generator's default exercises change again. Bumping to 2 needs a snapshot of the
+ * version-1 defaults first (as legacy.ts keeps the pre-ranking ones), because pinLegacyDefaults
+ * only handles rankingVersion == null.
+ */
 export const RANKING_VERSION = 1;
 
 export const MIN_DAYS = 2;
@@ -363,6 +367,12 @@ export function pinLegacyDefaults(p: UserProfile): UserProfile {
     }
   }
   return { ...next, swaps };
+}
+
+/** A profile as read from storage, with plans saved before the ranking pinned. `pinned` = it changed and should be saved once. */
+export function settleStoredProfile(p: UserProfile): { profile: UserProfile; pinned: boolean } {
+  if (p.rankingVersion != null) return { profile: p, pinned: false };
+  return { profile: pinLegacyDefaults(p), pinned: true };
 }
 
 /** Planned lifting minutes a week: the generated sessions at the gym, the simple estimate at home. */

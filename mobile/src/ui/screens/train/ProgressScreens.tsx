@@ -427,7 +427,7 @@ export function ExerciseLibraryScreen() {
               borderTopLeftRadius: first ? radius.lg : 0, borderTopRightRadius: first ? radius.lg : 0,
               borderBottomLeftRadius: last ? radius.lg : 0, borderBottomRightRadius: last ? radius.lg : 0 }}>
               {!first && <Hairline inset={18} />}
-              <ListRow title={item.name} subtitle={`${MUSCLE_LABEL[item.muscle]} · ${EQUIPMENT_LABEL[item.equipment]}${muscle != null && ExerciseLibrary.rankOf(item.id) != null ? ' · Top pick' : ''}`}
+              <ListRow title={item.name} subtitle={`${MUSCLE_LABEL[item.muscle]} · ${EQUIPMENT_LABEL[item.equipment]}${muscle != null && query.trim() === '' && ExerciseLibrary.rankOf(item.id) != null ? ' · Top pick' : ''}`}
                 onPress={() => nav.navigate('ExerciseDetail', { exerciseId: item.id, name: item.name })}
                 trailing={sessionsById.has(ExerciseLibrary.key(item.id)) ? <T v="label" color={palette.primary}>{sessionsById.get(ExerciseLibrary.key(item.id))}×</T> : undefined} />
             </View>
