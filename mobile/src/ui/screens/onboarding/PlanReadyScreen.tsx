@@ -1,11 +1,13 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { View } from 'react-native';
-import { hasEverythingForPlan, PlanCalculator } from '../../../data/profile';
+import { hasEverythingForPlan, PlanCalculator, splitChoice } from '../../../data/profile';
 import { useStore } from '../../../lib/store';
 import { finishOnboarding, useNav } from '../../../navigation/types';
 import { draftStore, Onboarding } from '../../../state/session';
 import { palette } from '../../theme';
-import { Appear, Icon, Screen, T } from '../../components/core';
+import { Appear, Button, Icon, Screen, T } from '../../components/core';
+import { toast } from '../../components/overlays';
+import { SplitSheet } from '../train/TrainComponents';
 import { ExpressiveShape } from '../../shapes/ExpressiveShape';
 import { ShapeLoader } from '../../shapes/ShapeLoader';
 import { OnboardingScaffold } from '../../components/onboarding';
@@ -80,6 +82,10 @@ function PlanResult() {
   const targets = useMemo(() => PlanCalculator.nutrition(draft), [draft]);
   const week = useMemo(() => PlanCalculator.training(draft), [draft]);
   const [saving, setSaving] = useState(false);
+  const [splitMenu, setSplitMenu] = useState(false);
+  // Another split only when the days allow more than one (5–6); none for home plans.
+  const choice = useMemo(() => splitChoice(draft), [draft]);
+  const canChangeSplit = choice != null && choice.options.length > 1;
 
   return (
     <OnboardingScaffold
@@ -105,8 +111,29 @@ function PlanResult() {
       <View style={{ gap: 10 }}>
         <Appear index={2}><CalorieCard targets={targets} goal={draft.goal!} /></Appear>
         <Appear index={3}><MacroCard targets={targets} /></Appear>
-        <Appear index={4}><WeekCard week={week} /></Appear>
+        <Appear index={4}>
+          <WeekCard
+            week={week}
+            onOpenDay={(day) => nav.navigate('PlanRoutine', { name: day.title })}
+            actions={(
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginLeft: -12 }}>
+                {canChangeSplit && <Button kind="text" label="Change split" icon="swap-horiz" onPress={() => setSplitMenu(true)} compact />}
+                <Button kind="text" label="Change days" icon="calendar-month" onPress={() => nav.popTo('YourGoals')} compact />
+              </View>
+            )}
+          />
+        </Appear>
       </View>
+      {choice && canChangeSplit && (
+        <SplitSheet
+          visible={splitMenu}
+          onDismiss={() => setSplitMenu(false)}
+          options={choice.options}
+          current={choice.current}
+          // Nothing is saved yet, so no confirm step: the draft changes and the week updates.
+          onPick={(o) => { draftStore.update((p) => ({ ...p, split: o.split })); toast(`Switched to ${o.label}`); }}
+        />
+      )}
     </OnboardingScaffold>
   );
 }

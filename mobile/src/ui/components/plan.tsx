@@ -1,9 +1,9 @@
 /** The plan as shown on Plan ready, Edit goals and the Nutrition planner: tiles, not boxes of text. */
 import React, { useEffect } from 'react';
-import { View } from 'react-native';
-import { calorieReason, Goal, NutritionTargets, TrainingWeek } from '../../data/profile';
+import { Pressable, View } from 'react-native';
+import { calorieReason, Goal, NutritionTargets, PlannedDay, TrainingWeek } from '../../data/profile';
 import { data, palette } from '../theme';
-import { HelpNote, ProgressBar, T, Tile, TileHeader } from './core';
+import { HelpNote, Icon, ProgressBar, T, Tile, TileHeader } from './core';
 import { FuelBloom } from './fuel';
 import { RidgeWeek } from './progress';
 
@@ -55,7 +55,11 @@ function DelayedBar({ progress, color, delay }: { progress: number; color: strin
 }
 
 /** The week as a ridge (training days are peaks), then each session in words. */
-export function WeekCard({ week }: { week: TrainingWeek }) {
+/**
+ * The training week. With `onOpenDay`, each day opens its routine; `actions` sits under the split
+ * (Plan ready: Change split, Change days). Without them it's the plain summary.
+ */
+export function WeekCard({ week, onOpenDay, actions }: { week: TrainingWeek; onOpenDay?: (day: PlannedDay) => void; actions?: React.ReactNode }) {
   return (
     <Tile span="2x1" style={{ gap: 12 }}>
       <TileHeader icon="terrain" text="Your training week" />
@@ -67,15 +71,27 @@ export function WeekCard({ week }: { week: TrainingWeek }) {
         <T v="titleS">{week.splitName}</T>
         <T color={palette.textMuted}>{week.splitExplanation}</T>
       </View>
+      {actions}
       <View style={{ borderRadius: 20, backgroundColor: palette.surfaceHigh, paddingVertical: 6 }}>
         {week.days.map((day, i) => (
-          <View key={day.dayIndex} style={{ flexDirection: 'row', paddingHorizontal: 14, paddingVertical: 8, borderTopWidth: i > 0 ? 1 : 0, borderTopColor: palette.hairline }}>
-            <T v="label" color={palette.primary} style={{ width: 44, marginTop: 2 }}>{DAY_NAMES[day.dayIndex].slice(0, 3)}</T>
+          <Pressable
+            key={day.dayIndex}
+            disabled={!onOpenDay}
+            onPress={onOpenDay ? () => onOpenDay(day) : undefined}
+            accessibilityRole={onOpenDay ? 'button' : undefined}
+            accessibilityHint={onOpenDay ? 'Shows the exercises' : undefined}
+            style={({ pressed }) => ({
+              flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 8,
+              borderTopWidth: i > 0 ? 1 : 0, borderTopColor: palette.hairline, opacity: pressed ? 0.7 : 1,
+            })}
+          >
+            <T v="label" color={palette.primary} style={{ width: 44, marginTop: 2, alignSelf: 'flex-start' }}>{DAY_NAMES[day.dayIndex].slice(0, 3)}</T>
             <View style={{ flex: 1 }}>
               <T v="titleS">{day.title}</T>
               <T v="bodyS" color={palette.textMuted}>{day.focus}</T>
             </View>
-          </View>
+            {onOpenDay && <Icon name="chevron-right" color={palette.textMuted} />}
+          </Pressable>
         ))}
       </View>
       <HelpNote text={`Each exercise: ${week.setsAndReps}.`} background={palette.surfaceHigh} />
